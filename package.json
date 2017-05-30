@@ -1,0 +1,46 @@
+{
+  "name": "scyl.us",
+  "version": "1.0.0",
+  "description": "My personal webpage",
+  "main": "src/index.jsx",
+  "scripts": {
+    "start": "webpack-dev-server --hot --inline",
+    "build": "webpack -p"
+  },
+  "keywords": [],
+  "author": "Bryon Vandiver",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "babel-core": "^6.24.1",
+    "babel-loader": "^7.0.0",
+    "babel-plugin-inferno": "^3.2.0",
+    "babel-preset-es2015": "^6.24.1",
+    "css-loader": "^0.28.4",
+    "inferno": "^3.3.1",
+    "inferno-component": "^3.3.1",
+    "postcss-loader": "^2.0.5",
+    "recast": "^0.12.3",
+    "style-loader": "^0.18.1",
+    "webpack": "^2.6.1",
+    "webpack-dev-server": "^2.4.5"
+  },
+  "babel": {
+    "presets": [
+      "es2015"
+    ],
+    "plugins": [
+      "inferno"
+    ]
+  },
+  "bin": {
+    "scyl.us": "app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/asterick/scyl.us.git"
+  },
+  "bugs": {
+    "url": "https://github.com/asterick/scyl.us/issues"
+  },
+  "homepage": "https://github.com/asterick/scyl.us#readme"
+}

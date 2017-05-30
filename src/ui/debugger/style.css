@@ -1,0 +1,16 @@
+table.disassembler {
+	border: 1px solid;
+	display: inline-block;
+	margin: 0 4px;
+}
+
+table.registers {
+	border: 1px solid;
+	display: inline-block;
+}
+
+table.registers td:first-child { text-align: right; }
+
+table { background: white; }
+
+td { padding: 0 2px; }
