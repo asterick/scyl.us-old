@@ -77,7 +77,7 @@ function template(node, fields) {
 		case "Identifier":
 			return isField(node) ? `', ${node.name}, '` : node.name;
 		case "ThisExpression":
-			return "this";
+			return "that";
 
 		// Declarations
 		case "VariableDeclaration":
@@ -99,7 +99,7 @@ function template(node, fields) {
 		case "EmptyStatement":
 			return "";
 		case "ReturnStatement":
-			return `this.pc = ${generate(node.argument)}; continue ;`;
+			return `that.pc = ${generate(node.argument)}; continue ;`;
 		case "ExpressionStatement":
 			return `${generate(node.expression)};`;
 		case "BlockStatement":
@@ -168,7 +168,7 @@ function template(node, fields) {
 			if (node.prefix) {
 				return `(${node.operator}${generate(node.argument)})`;
 			} else {
-				return `(${generate(node.argument)}${node.operator})`;				
+				return `(${generate(node.argument)}${node.operator})`;
 			}
 
 		case "UnaryExpression":
@@ -182,7 +182,7 @@ function template(node, fields) {
 		default:
 			throw new Error(`Cannot handle expression: ${node.type}`);
 		}
-	}	
+	}
 
 	return `['${generate(node)}'].join("")`;
 }

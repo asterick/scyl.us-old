@@ -1,6 +1,21 @@
 const Exception = require("./exception").default;
 const Consts = require("./consts");
 
+
+/******
+ ** TrapInstructions
+ ******/
+
+export function ReservedInstruction(pc, delayed) {
+	throw new Exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
+}
+ReservedInstruction.assembly = () => `Reserved instruction`;
+
+export function CopUnusable(pc, delayed) {
+	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
+}
+CopUnusable.assembly = () => `COP\tunusable`;
+
 /******
  ** Load/Store instructions
  ******/

@@ -1,3 +1,5 @@
+const MAX_LOOPS = 5;
+
 const Registers = [
 	"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
 	  "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
@@ -37,4 +39,4 @@ const ExceptionNames = {
 	0x0C: "Overflow",
 };
 
-export { Registers, Exceptions, ExceptionNames };
+export { MAX_LOOPS, Registers, Exceptions, ExceptionNames };

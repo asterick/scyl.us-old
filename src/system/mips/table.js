@@ -3,14 +3,9 @@ import * as COP0 from "./process!./cop0";
 
 import Fields from "./fields";
 
-export function CopUnusable(pc, delayed) {
-	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
-}
-
-CopUnusable.assembly = () => `COP\tunusable`;
-
 const DecodeTable = {
 	field: "opcode",
+	fallback: Instructions.ReservedInstruction,
 	0x00: {
 		field: "funct",
 		0x00: Instructions.SLL,
@@ -64,9 +59,9 @@ const DecodeTable = {
 	0x0E: Instructions.XORI,
 	0x0F: Instructions.LUI,
 	0x10: COP0.default,
-	0x11: CopUnusable,
-	0x13: CopUnusable,
-	0x13: CopUnusable,
+	0x11: Instructions.CopUnusable,
+	0x13: Instructions.CopUnusable,
+	0x13: Instructions.CopUnusable,
 	0x20: Instructions.LB,
 	0x21: Instructions.LH,
 	0x22: Instructions.LWL,
@@ -80,26 +75,28 @@ const DecodeTable = {
 	0x2B: Instructions.SW,
 	0x2E: Instructions.SWR,
 	0x30: COP0.LWC,
-	0x31: CopUnusable,
-	0x13: CopUnusable,
-	0x33: CopUnusable,
+	0x31: Instructions.CopUnusable,
+	0x13: Instructions.CopUnusable,
+	0x33: Instructions.CopUnusable,
 	0x38: COP0.SWC,
-	0x39: CopUnusable,
-	0x13: CopUnusable,
-	0x3B: CopUnusable
+	0x39: Instructions.CopUnusable,
+	0x13: Instructions.CopUnusable,
+	0x3B: Instructions.CopUnusable
 };
 
 export function locate(word) {
 	const fields = new Fields(word);
+	var fallback = null;
 	var entry = DecodeTable;
 
 	while (typeof entry !== "function") {
-		if (entry === undefined) { return null; }
+		if (entry === undefined) { break ; }
 
+		fallback = entry.fallback || fallback;
 		entry = entry[fields[entry.field]];
 	}
 
-	fields.instruction = entry;
+	fields.instruction = entry || fallback;
 
 	return fields;
 }

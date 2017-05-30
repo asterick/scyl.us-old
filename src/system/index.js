@@ -5,6 +5,8 @@ import * as Instructions from "./mips/instructions";
 export default class Playstation extends MIPS {
 	constructor (bios) {
 		super();
+
+		this._compile(this.pc, this.pc + 32);
 	}
 
 	attach (canvas) {
@@ -13,26 +15,22 @@ export default class Playstation extends MIPS {
 	resize() {
 	}
 
-	trap(e) {
-		// TODO: Trap to COP0
-		this.clock++;
-		console.error("SYSTEM EXCEPTION:", e)
+	read_code (address) {
+		return (address & 4) ? 0x00000000 : 0x08000000;
 	}
 
 	read (address) {
-
+		return 0;
 	}
 
 	write (address, value, mask = ~0) {
-		// Invalidate memory regions
-		this._invalidate(address << 2);
 	}
 
 	// === COP0 Bindings ===
-	read_cop0(register, pc, delayed) {
+	read_cop0(register) {
 	}
 
-	write_cop0(register, value, pc, delayed) {
+	write_cop0(register, value) {
 	}
 
 	rte() {

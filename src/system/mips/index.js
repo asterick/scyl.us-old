@@ -1,12 +1,12 @@
 import Exception from "./exception";
+import { Exceptions } from "./consts";
 
 import { locate } from "./table";
 import { params } from "../../util";
+import { MAX_LOOPS } from "./consts";
 
 export default class MIPS {
 	constructor() {
-		this._cache = new Array();
-
 		this.clock = 0;
 		this.hi = 0;
 		this.lo = 0;
@@ -16,96 +16,57 @@ export default class MIPS {
 		this.signed_registers = new Int32Array(this.registers.buffer);
 	}
 
-	_fields (op, pc, build, delayed) {
-		return op.instruction.fields.map((f) => {
+	_evaluate (pc, delayed, execute) {
+		const op = locate(this.read_code(pc));
+
+		const fields = op.instruction.fields.map((f) => {
 			switch (f) {
 			case 'pc':
 				return pc;
 			case 'delayed':
 				return delayed;
 			case 'delay':
-				return (pc) => build(pc + 4, true);
+				return () => this._evaluate(pc + 4, true, execute);
 			default:
 				if (op[f] === undefined) throw new Error(`BAD FIELD ${f}`);
 				return op[f];
 			}
 		});
+
+		return execute(op, fields);
 	}
 
-	_invalidate (addr) {
-		const base = address & 0xF0000000;
-
-		this._cache[base] && (this._cache[base].valid = false);
-		this._cache[base | 0x80000000] && (this._cache[base | 0x80000000].valid = false);
-		this._cache[base | 0xA0000000] && (this._cache[base | 0xA0000000].valid = false);
-	}
-
-	_compile (pc) {
-		if (this._cache[pc] && this._cache[pc].valid) {
-			return this._cache[pc];
-		}
-
-		var terminate = false;
-
-		const build = (pc, delayed = false) => {
-			const op = locate(this.read(pc));
-
-			if (!op) {
-				terminate = true;
-				return `throw new Exception(${Exceptions.ReservedInstruction}, ${pc}, ${delayed})`;
-			}
-
-			const fields = this._fields(op, pc, build, delayed);
-
-			terminate = terminate || op.instruction.terminates;
-			return `${op.instruction.template(... fields)} this.clock++;`;
-		}
-
+	_compile (start, end) {
+		const build = (op, fields) => "that.clock++;" + op.instruction.template(... fields);
 		const lines = [];
-		var address = pc;
-		var op;
 
-		do {
-			try {
-				lines.push(`case 0x${address.toString(16)}: ${build(address)}`);
-				address += 4;
-			} catch (e) {
-				break ;
-			}
-		} while(!terminate);
+		for (var address = start; address <= end; address += 4) {
+			lines.push(`case 0x${address.toString(16)}: ${this._evaluate(address, false, build)}`);
+		}
 
-		var funct = new Function("Exception", `
-			for(var i = 0; i < 5; i++) {
-				switch (this.pc) {
-				${lines.join("\n")}
-					this.pc = ${address};
+		var funct = new Function("Exception", `return function (that) {
+			for(var loop_counter = ${MAX_LOOPS}; loop_counter >= 0; loop_counter--) {
+				switch (that.pc) {
+					\n${lines.join("\n")}
+					this.pc = 0x${end.toString(16)} >>> 0;
 				default:
 					return ;
 				}
 			}
-		`);
+		}`).call(Exception);
 
-		funct.start = pc;
-		funct.tail = address;
+		// These are used for compile cache support
+		funct.start = start;
+		funct.end = end;
 		funct.valid = true;
-
-		while (pc < address) {
-			this._cache[pc++] = funct;
-		}
 
 		return funct;
 	}
 
-	_execute (pc, delayed = false) {
-		const op = locate(this.read(pc));
-
-		if (!op) {
-			throw new Exception(Exceptions.ReservedInstruction, pc, delayed);
-		}
-
-		const fields = this._fields(op, pc, (pc) => this._execute(pc, true), delayed);
-		const ret_addr = op.instruction.apply(this, fields);
+	_execute (pc) {
 	 	this.clock++;
+
+		const ret_addr = this._evaluate(pc, false, (op, fields) => op.instruction.apply(this, fields));
 
 		if (ret_addr !== undefined) {
 			this.pc = ret_addr;
@@ -114,11 +75,17 @@ export default class MIPS {
 		}
 	}
 
+	_trap(e) {
+		// TODO: Trap to COP0
+		throw e;
+	}
+
 	run () {
 		try {
-			this._compile(this.pc).call(this, Exception);
+			// TODO: BETTER CACHE SUPPORT
+			this._compile(this.pc)(this);
 		} catch (e) {
-			this.trap(e);
+			this._trap(e);
 		}
 	}
 
@@ -126,35 +93,29 @@ export default class MIPS {
 		try {
 			this._execute(this.pc);
 		} catch (e) {
-			this.trap(e);
+			this._trap(e);
 		}
 	}
 
 	disassemble (pc) {
-		try {
-			const word = this.read(pc);
-			const op = locate(word);
+		const word = this.read_code(pc);
+		const op = locate(word);
 
-			if (!op) return { word };
-
-			if (!op.instruction.assembly.fields) {
-				op.instruction.assembly.fields = params(op.instruction.assembly);
-			}
-
-			const fields = op.instruction.assembly.fields.map((f) => {
-				switch (f) {
-				case 'pc':
-					return pc;
-				default:
-					return op[f];
-				}
-			});
-
-			const code = op.instruction.assembly(...fields);
-
-			return { word, code };
-		} catch (e) {
-			return null;
+		if (!op.instruction.assembly.fields) {
+			op.instruction.assembly.fields = params(op.instruction.assembly);
 		}
+
+		const fields = op.instruction.assembly.fields.map((f) => {
+			switch (f) {
+			case 'pc':
+				return pc;
+			default:
+				return op[f];
+			}
+		});
+
+		const code = op.instruction.assembly(...fields);
+
+		return { word, code };
 	}
 }
