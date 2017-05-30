@@ -84,7 +84,7 @@ const DecodeTable = {
 	0x3B: Instructions.CopUnusable
 };
 
-export function locate(word) {
+export default function (word) {
 	const fields = new Fields(word);
 	var fallback = null;
 	var entry = DecodeTable;

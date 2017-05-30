@@ -5,7 +5,7 @@ import style from "./style.css";
 
 import Debugger from "./debugger";
 
-export default class Playstation extends Component {
+export default class extends Component {
 	componentWillUnmount() {
 		this.props.runtime.attach(null);
 	}

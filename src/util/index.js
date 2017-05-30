@@ -10,7 +10,7 @@ export function load(url) {
 			if (xhr.readyState !== XMLHttpRequest.DONE) {
 				return ;
 			}
-			
+
 			if (xhr.status !== 200) {
 				error(xhr.status, xhr.statusText);
 				return ;
@@ -29,7 +29,7 @@ export function params(funct) {
 	return /\((.*)\)/g.exec(funct.toString())[1].split(/\s*,\s*/g);
 }
 
-export function hex(v = 0) { 
+export function hex(v = 0) {
 	v = v.toString(16);
 	return "00000000".substr(v.length) + v;
 }

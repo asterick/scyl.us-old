@@ -6,7 +6,7 @@ import style from "./style.css";
 import Assembly from "./assembly";
 import Registers from "./registers";
 
-export default class Debugger extends Component {
+export default class extends Component {
 	render() {
 		return <div>
 			<div style="display: inline-block">

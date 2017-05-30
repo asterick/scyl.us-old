@@ -1,7 +1,7 @@
 import Exception from "./exception";
 import { Exceptions } from "./consts";
 
-import { locate } from "./table";
+import locate from "./table";
 import { params } from "../../util";
 import { MAX_LOOPS } from "./consts";
 
@@ -55,6 +55,8 @@ export default class MIPS {
 			}
 		}`).call(Exception);
 
+		// Note: if a write invalidates at the bottom of a cache page, it should also invalidate the previous page
+		// to handle delay branch pitfalls
 		// These are used for compile cache support
 		funct.start = start;
 		funct.end = end;

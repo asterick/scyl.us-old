@@ -4,7 +4,7 @@ import style from "./style.css";
 
 import { hex, range } from "../../util";
 
-export default class Assembly extends Component {
+export default class extends Component {
 	render() {
 		return  <table class={style["disassembler"]}>{range(34).map((i) => {
 			const address = this.props.runtime.pc + i * 4;

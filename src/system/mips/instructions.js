@@ -1,9 +1,8 @@
 const Exception = require("./exception").default;
 const Consts = require("./consts");
 
-
 /******
- ** TrapInstructions
+ ** Trap Instructions
  ******/
 
 export function ReservedInstruction(pc, delayed) {

@@ -6,7 +6,7 @@ import style from "./style.css";
 import { Registers } from "../../system/mips/consts";
 import { hex, range } from "../../util";
 
-export default class RegistersView extends Component {
+export default class extends Component {
 	render() {
 		return <table class={style.registers}>
 			<tr><td>pc</td> <td>{hex(this.props.runtime.pc)}</td></tr>

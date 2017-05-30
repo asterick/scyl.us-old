@@ -1,8 +1,6 @@
 import MIPS from "./mips";
 
-import * as Instructions from "./mips/instructions";
-
-export default class Playstation extends MIPS {
+export default class extends MIPS {
 	constructor (bios) {
 		super();
 
@@ -10,17 +8,19 @@ export default class Playstation extends MIPS {
 	}
 
 	attach (canvas) {
+		// TODO
 	}
 
 	resize() {
 	}
 
+	// Helper function for reading from code space (prevent compiler from trashing strobe regs)
 	read_code (address) {
-		return (address & 4) ? 0x00000000 : 0x08000000;
+		return 0;
 	}
 
 	read (address) {
-		return 0;
+		return this.read_code(address);
 	}
 
 	write (address, value, mask = ~0) {
