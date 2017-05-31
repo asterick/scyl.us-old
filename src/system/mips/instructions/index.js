@@ -1,4 +1,4 @@
-import Instructions from "./process!./instructions";
+import Instructions from "./process!./base";
 
 // Field decode helper object
 class Fields {

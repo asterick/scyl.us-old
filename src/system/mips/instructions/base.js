@@ -1,8 +1,8 @@
 import COP0 from "./process!./cop0";
 
 // For the preprocessor to work, the name has to be pinned
-const Exception = require("./exception").default;
-const Consts = require("./consts");
+const Exception = require("../exception").default;
+const Consts = require("../consts");
 
 /******
  ** Trap Instructions

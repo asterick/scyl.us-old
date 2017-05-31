@@ -1,5 +1,5 @@
-const Exception = require("./exception").default;
-const Consts = require("./consts");
+const Exception = require("../exception").default;
+const Consts = require("../consts");
 
 const Registers = [
 	 "cop0dat0", "cop0dat1", "cop0dat2",      "BPC",

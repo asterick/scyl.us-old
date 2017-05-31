@@ -1,7 +1,7 @@
 import Exception from "./exception";
 import { Exceptions } from "./consts";
 
-import locate from "./table";
+import locate from "./instructions";
 import { params } from "../../util";
 import { MAX_LOOPS } from "./consts";
 
