@@ -187,24 +187,6 @@ function template(node, fields) {
 	return `['${generate(node)}'].join("")`;
 }
 
-function terminates(ast) {
-	var terminates = false;
-
-	walk(ast, (node) => {
-		switch (node.type) {
-			case "SwitchStatement":
-			case "IfStatement":
-				return false;
-			case "ReturnStatement":
-				terminates = true;
-		}
-
-		return !terminates;
-	});
-
-	return terminates;
-}
-
 module.exports = function (content) {
 	const tree = recast.parse(content);
 	const extra = [];
@@ -216,7 +198,6 @@ module.exports = function (content) {
 
 		extra.push(`${node.id.name}.fields = ${JSON.stringify(fields)}`);
 		extra.push(`${node.id.name}.template = function (${fields.join(", ")}) { return ${template(node.body, fields)}; }`);
-		extra.push(`${node.id.name}.terminates = ${terminates(node.body)};`)
 
 		return false;
 	})
