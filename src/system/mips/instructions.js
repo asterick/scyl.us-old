@@ -1,4 +1,6 @@
-const COP0 = require("./process!./cop0");
+import COP0 from "./process!./cop0";
+
+// For the preprocessor to work, the name has to be pinned
 const Exception = require("./exception").default;
 const Consts = require("./consts");
 
@@ -6,12 +8,12 @@ const Consts = require("./consts");
  ** Trap Instructions
  ******/
 
-export function ReservedInstruction(pc, delayed) {
+function ReservedInstruction(pc, delayed) {
 	throw new Exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
 }
 ReservedInstruction.assembly = () => `Reserved instruction`;
 
-export function CopUnusable(pc, delayed) {
+function CopUnusable(pc, delayed) {
 	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
 }
 CopUnusable.assembly = () => `COP\tunusable`;
@@ -20,7 +22,7 @@ CopUnusable.assembly = () => `COP\tunusable`;
  ** Load/Store instructions
  ******/
 
-export function LB(rt, rs, imm16) {
+function LB(rt, rs, imm16) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 	let v = this.read(address);
 
@@ -29,7 +31,7 @@ export function LB(rt, rs, imm16) {
 	}
 }
 
-export function LBU(rt, rs, imm16) {
+function LBU(rt, rs, imm16) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 	let v = this.read(address);
 
@@ -39,7 +41,7 @@ export function LBU(rt, rs, imm16) {
 	}
 }
 
-export function LH(rt, rs, imm16, pc, delayed) {
+function LH(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 
 	if (address & 1) throw new Exception(Consts.Exceptions.AddressLoad, pc, delayed);
@@ -50,7 +52,7 @@ export function LH(rt, rs, imm16, pc, delayed) {
 	}
 }
 
-export function LHU(rt, rs, imm16, pc, delayed) {
+function LHU(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 
 	if (address & 1) throw new Exception(Consts.Exceptions.AddressLoad, pc, delayed);
@@ -61,7 +63,7 @@ export function LHU(rt, rs, imm16, pc, delayed) {
 	}
 }
 
-export function LW(rt, rs, imm16, pc, delayed) {
+function LW(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 
 	if (address & 3) throw new Exception(Consts.Exceptions.AddressLoad, pc, delayed);
@@ -72,13 +74,13 @@ export function LW(rt, rs, imm16, pc, delayed) {
 	}
 }
 
-export function SB(rt, rs, imm16) {
+function SB(rt, rs, imm16) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 
 	this.write(address, rt ? this.registers[rt] << (address & 3) : 0, 0xFF << (8 * (address & 3)));
 }
 
-export function SH(rt, rs, imm16, pc, delayed) {
+function SH(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 
 	if (address & 1) throw new Exception(Consts.Exceptions.AddressStore, pc, delayed);
@@ -86,7 +88,7 @@ export function SH(rt, rs, imm16, pc, delayed) {
 	this.write(address, rt ? this.registers[rt] << (address & 2) : 0, 0xFFFF << (8 * (address & 3)));
 }
 
-export function SW(rt, rs, imm16, pc, delayed) {
+function SW(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 
 	if (address & 3) throw new Exception(Consts.Exceptions.AddressStore, pc, delayed);
@@ -94,7 +96,7 @@ export function SW(rt, rs, imm16, pc, delayed) {
 	this.write(address, rt ? this.registers[rt] : 0, ~0);
 }
 
-export function LWR(rt, rs, imm16) {
+function LWR(rt, rs, imm16) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 	var data = this.read(address);
 
@@ -105,7 +107,7 @@ export function LWR(rt, rs, imm16) {
 	}
 }
 
-export function LWL(rt, rs, imm16) {
+function LWL(rt, rs, imm16) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 	var data = this.read(address);
 
@@ -117,14 +119,14 @@ export function LWL(rt, rs, imm16) {
 	}
 }
 
-export function SWR(rt, rs, imm16) {
+function SWR(rt, rs, imm16) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 	var bit = 8 * (address & 3);
 
 	this.write(address, rt ? this.registers[rt] << bit : 0, ~0 << bit);
 }
 
-export function SWL(rt, rs, imm16) {
+function SWL(rt, rs, imm16) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 
 	if (~address & 3) {
@@ -137,7 +139,7 @@ export function SWL(rt, rs, imm16) {
  ** Arithmatic instructions
  ******/
 
-export function ADD(rd, rs, rt, pc, delayed) {
+function ADD(rd, rs, rt, pc, delayed) {
 	let value = (rs ? this.signed_registers[rs] : 0) + (rt ? this.signed_registers[rt] : 0);
 
 	if (value < -0x80000000 || value >= 0x80000000) {
@@ -149,13 +151,13 @@ export function ADD(rd, rs, rt, pc, delayed) {
 	}
 }
 
-export function ADDU(rd, rs, rt) {
+function ADDU(rd, rs, rt) {
 	if (rd) {
 		this.registers[rd] = (rs ? this.signed_registers[rs] : 0) + (rt ? this.signed_registers[rt] : 0);
 	}
 }
 
-export function SUB(rd, rs, rt, pc, delayed) {
+function SUB(rd, rs, rt, pc, delayed) {
 	let value = (rs ? this.signed_registers[rs] : 0) - (rt ? this.signed_registers[rt] : 0);
 
 	if (value < -0x80000000 || value >= 0x80000000) {
@@ -167,13 +169,13 @@ export function SUB(rd, rs, rt, pc, delayed) {
 	}
 }
 
-export function SUBU(rd, rs, rt) {
+function SUBU(rd, rs, rt) {
 	if (rd) {
 		this.registers[rd] = (rs ? this.signed_registers[rs] : 0) - (rt ? this.signed_registers[rt] : 0);
 	}
 }
 
-export function ADDI(rt, rs, simm16, pc, delayed) {
+function ADDI(rt, rs, simm16, pc, delayed) {
 	let value = rs ? this.signed_registers[rs] + simm16 : simm16;
 
 	if (value < -0x80000000 || value >= 0x80000000) {
@@ -185,7 +187,7 @@ export function ADDI(rt, rs, simm16, pc, delayed) {
 	}
 }
 
-export function ADDIU(rt, rs, simm16) {
+function ADDIU(rt, rs, simm16) {
 	if (rt) {
 		this.registers[rt] = rs ? this.signed_registers[rs] + simm16 : simm16;
 	}
@@ -194,25 +196,25 @@ export function ADDIU(rt, rs, simm16) {
 /******
  ** Comparison instructions
  ******/
-export function SLT(rd, rs, rt) {
+function SLT(rd, rs, rt) {
 	if (rd != 0) {
 		this.registers[rd] = (rs ? this.signed_registers[rs] : 0) < (rt ? this.signed_registers[rt] : 0) ? 1 : 0;
 	}
 }
 
-export function SLTU(rd, rs, rt) {
+function SLTU(rd, rs, rt) {
 	if (rd != 0) {
 		this.registers[rd] = (rs ? this.registers[rs] : 0) < (rt ? this.registers[rt] : 0) ? 1 : 0;
 	}
 }
 
-export function SLTI(rt, rs, simm16) {
+function SLTI(rt, rs, simm16) {
 	if (rt != 0) {
 		this.registers[rt] = (rs ? this.signed_registers[rs] : 0) < simm16 ? 1 : 0;
 	}
 }
 
-export function SLTIU(rt, rs, simm16) {
+function SLTIU(rt, rs, simm16) {
 	if (rt != 0) {
 		this.registers[rt] = (rs ? this.registers[rs] : 0) < (simm16 >>> 0) ? 1 : 0;
 	}
@@ -222,44 +224,44 @@ export function SLTIU(rt, rs, simm16) {
  ** Logical instructions
  ******/
 
-export function AND(rd, rs, rt) {
+function AND(rd, rs, rt) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) & (rs ? (this.registers[rs]) : 0);
 	}
 }
 
-export function OR(rd, rs, rt) {
+function OR(rd, rs, rt) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) | (rs ? (this.registers[rs]) : 0);
 	}
 }
 
 
-export function XOR(rd, rs, rt) {
+function XOR(rd, rs, rt) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) ^ (rs ? (this.registers[rs]) : 0);
 	}
 }
 
-export function NOR(rd, rs, rt) {
+function NOR(rd, rs, rt) {
 	if (rd) {
 		this.registers[rd] = ~((rt ? this.registers[rt] : 0) | (rs ? (this.registers[rs]) : 0));
 	}
 }
 
-export function ANDI(rt, rs, imm16) {
+function ANDI(rt, rs, imm16) {
 	if (rt) {
 		this.registers[rt] = (rs ? (this.registers[rs]) : 0) & imm16;
 	}
 }
 
-export function ORI(rt, rs, imm16) {
+function ORI(rt, rs, imm16) {
 	if (rt) {
 		this.registers[rt] = (rs ? (this.registers[rs]) : 0) | imm16;
 	}
 }
 
-export function XORI(rt, rs, imm16) {
+function XORI(rt, rs, imm16) {
 	if (rt) {
 		this.registers[rt] = (rs ? (this.registers[rs]) : 0) ^ imm16;
 	}
@@ -269,43 +271,43 @@ export function XORI(rt, rs, imm16) {
  ** Shift instructions
  ******/
 
-export function SLLV(rd, rt, rs) {
+function SLLV(rd, rt, rs) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) << (rs ? (this.registers[rs] & 0x1F) : 0);
 	}
 }
 
-export function SRLV(rd, rt, rs) {
+function SRLV(rd, rt, rs) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) >>> (rs ? (this.registers[rs] & 0x1F) : 0);
 	}
 }
 
-export function SRAV(rd, rt, rs) {
+function SRAV(rd, rt, rs) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) >> (rs ? (this.registers[rs] & 0x1F) : 0);
 	}
 }
 
-export function SLL(rd, rt, shamt) {
+function SLL(rd, rt, shamt) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) << shamt;
 	}
 }
 
-export function SRL(rd, rt, shamt) {
+function SRL(rd, rt, shamt) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) >>> shamt;
 	}
 }
 
-export function SRA(rd, rt, shamt) {
+function SRA(rd, rt, shamt) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) >> shamt;
 	}
 }
 
-export function LUI(rt, imm16) {
+function LUI(rt, imm16) {
 	if (rt) {
 		this.registers[rt] = imm16 << 16;
 	}
@@ -315,7 +317,7 @@ export function LUI(rt, imm16) {
  ** Multiply/Divide instructions
  ******/
 
-export function MULT(rs, rt) {
+function MULT(rs, rt) {
 	let x = rs ? this.signed_registers[rs] : 0;
 	let y = rt ? this.signed_registers[rt] : 0;
 
@@ -338,7 +340,7 @@ export function MULT(rs, rt) {
 	}
 }
 
-export function MULTU(rs, rt) {
+function MULTU(rs, rt) {
 	let x = rs ? this.registers[rs] : 0;
 	let y = rt ? this.registers[rt] : 0;
 
@@ -349,7 +351,7 @@ export function MULTU(rs, rt) {
 	this.lo = (xl * yl) + (((x & 0xFFFF0000) >>> 0) * yl + ((y & 0xFFFF0000) >>> 0) * xl) >>> 0;
 }
 
-export function DIV(rs, rt) {
+function DIV(rs, rt) {
 	let s = rs ? this.signed_registers[rs] : 0;
 	let t = rt ? this.signed_registers[rt] : 0;
 
@@ -365,7 +367,7 @@ export function DIV(rs, rt) {
 	}
 }
 
-export function DIVU(rs, rt) {
+function DIVU(rs, rt) {
 	let s = rs ? this.registers[rs] : 0;
 	let t = rt ? this.registers[rt] : 0;
 
@@ -378,19 +380,19 @@ export function DIVU(rs, rt) {
 	}
 }
 
-export function MFHI(rd) {
+function MFHI(rd) {
 	if (rd) this.registers[rd] = this.hi;
 }
 
-export function MFLO(rd) {
+function MFLO(rd) {
 	if (rd) this.registers[rd] = this.lo;
 }
 
-export function MTHI(rs) {
+function MTHI(rs) {
 	this.hi = rs ? this.registers[rs] : 0;
 }
 
-export function MTLO(rs) {
+function MTLO(rs) {
 	this.lo = rs ? this.registers[rs] : 0;
 }
 
@@ -398,24 +400,24 @@ export function MTLO(rs) {
  ** Branching instructions
  ******/
 
-export function J (pc, imm26, delay) {
-	delay(pc);
+function J (pc, imm26, delay) {
+	delay();
 	return ((pc & 0xF0000000) | (imm26 * 4)) >>> 0;
 }
 
-export function JAL (pc, imm26, delay) {
-	delay(pc);
+function JAL (pc, imm26, delay) {
+	delay();
 	this.registers[31] = pc + 8;
 	return ((pc & 0xF0000000) | (imm26 * 4)) >>> 0;
 }
 
-export function JR(rs, pc, delay) {
-	delay(pc);
+function JR(rs, pc, delay) {
+	delay();
 	return (rs ? this.registers[rs] & ~3: 0);
 }
 
-export function JALR(rs, rd, pc, delay) {
-	delay(pc);
+function JALR(rs, rd, pc, delay) {
+	delay();
 	if (rd) {
 		this.registers[rd] = pc + 8;
 	}
@@ -423,69 +425,69 @@ export function JALR(rs, rd, pc, delay) {
 	return (rs ? this.registers[rs] & ~3 : 0);
 }
 
-export function BEQ(pc, rs, rt, simm16, delay) {
+function BEQ(pc, rs, rt, simm16, delay) {
 	if ((rs ? this.signed_registers[rs] : 0) === (rt ? this.signed_registers[rt] : 0)) {
-		delay(pc);
+		delay();
 		return (pc + 4) + (simm16 * 4);
 	}
 }
 
-export function BNE(pc, rs, rt, simm16, delay) {
+function BNE(pc, rs, rt, simm16, delay) {
 	if ((rs ? this.signed_registers[rs] : 0) !== (rt ? this.signed_registers[rt] : 0)) {
-		delay(pc);
+		delay();
 		return (pc + 4) + (simm16 * 4);
 	}
 }
 
-export function BLTZ(pc, rs, simm16, delay) {
+function BLTZ(pc, rs, simm16, delay) {
 	if (((rs == 0) ? 0 : this.signed_registers[rs]) < 0) {
-		delay(pc);
+		delay();
 		return (pc + 4) + (simm16 * 4);
 	}
 }
 
-export function BGEZ(pc, rs, simm16, delay) {
+function BGEZ(pc, rs, simm16, delay) {
 	if (((rs == 0) ? 0 : this.signed_registers[rs]) >= 0) {
-		delay(pc);
+		delay();
 		return (pc + 4) + (simm16 * 4);
 	}
 }
 
-export function BGTZ(pc, rs, simm16, delay) {
+function BGTZ(pc, rs, simm16, delay) {
 	if ((rs ? this.signed_registers[rs] : 0) > 0) {
-		delay(pc);
+		delay();
 		return (pc + 4) + (simm16 * 4);
 	}
 }
 
-export function BLEZ(pc, rs, simm16, delay) {
+function BLEZ(pc, rs, simm16, delay) {
 	if (((rs == 0) ? 0 : this.signed_registers[rs]) <= 0) {
-		delay(pc);
+		delay();
 		return (pc + 4) + (simm16 * 4);
 	}
 }
 
-export function BLTZAL(pc, rs, simm16, delay) {
+function BLTZAL(pc, rs, simm16, delay) {
 	if (0 > ((rs == 0) ? 0 : this.signed_registers[rs])) {
-		delay(pc);
+		delay();
 		this.registers[31] = pc + 8;
 		return (pc + 4) + (simm16 * 4);
 	}
 }
 
-export function BGEZAL(pc, rs, simm16, delay) {
+function BGEZAL(pc, rs, simm16, delay) {
 	if (0 <= ((rs == 0) ? 0 : this.signed_registers[rs])) {
-		delay(pc);
+		delay();
 		this.registers[31] = pc + 8;
 		return (pc + 4) + (simm16 * 4);
 	}
 }
 
-export function SYSCALL(pc, delayed) {
+function SYSCALL(pc, delayed) {
 	throw new Exception(Consts.Exceptions.SysCall, pc, delayed);
 }
 
-export function BREAK(pc, delayed) {
+function BREAK(pc, delayed) {
 	throw new Exception(Consts.Exceptions.Breakpoint, pc, delayed);
 }
 

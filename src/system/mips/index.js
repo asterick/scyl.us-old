@@ -28,7 +28,9 @@ export default class MIPS {
 			case 'delay':
 				return () => this._evaluate(pc + 4, true, execute);
 			default:
-				if (op[f] === undefined) throw new Error(`BAD FIELD ${f}`);
+				if (op[f] === undefined) {
+					throw new Error(`BAD FIELD ${f}`);
+				}
 				return op[f];
 			}
 		});
@@ -48,16 +50,13 @@ export default class MIPS {
 			for(var loop_counter = ${MAX_LOOPS}; loop_counter >= 0; loop_counter--) {
 				switch (that.pc) {
 					\n${lines.join("\n")}
-					this.pc = 0x${end.toString(16)} >>> 0;
+					this.pc = 0x${(end >>> 0).toString(16)};
 				default:
 					return ;
 				}
 			}
 		}`).call(Exception);
 
-		// Note: if a write invalidates at the bottom of a cache page, it should also invalidate the previous page
-		// to handle delay branch pitfalls
-		// These are used for compile cache support
 		funct.start = start;
 		funct.end = end;
 		funct.valid = true;
@@ -67,7 +66,6 @@ export default class MIPS {
 
 	_execute (pc) {
 	 	this.clock++;
-
 		const ret_addr = this._evaluate(pc, false, (op, fields) => op.instruction.apply(this, fields));
 
 		if (ret_addr !== undefined) {
@@ -79,12 +77,13 @@ export default class MIPS {
 
 	_trap(e) {
 		// TODO: Trap to COP0
-		throw e;
 	}
 
 	run () {
 		try {
-			// TODO: BETTER CACHE SUPPORT
+			// TODO: CACHE SUPPORT
+			// Note: if a write invalidates at the bottom of a cache page, it should also invalidate the previous page
+			// to handle delay branch pitfalls
 			this._compile(this.pc)(this);
 		} catch (e) {
 			this._trap(e);

@@ -16,7 +16,7 @@ export default class extends MIPS {
 
 	// Helper function for reading from code space (prevent compiler from trashing strobe regs)
 	read_code (address) {
-		return 0;
+		return 0xFF000000;
 	}
 
 	read (address) {

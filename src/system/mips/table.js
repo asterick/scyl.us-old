@@ -1,4 +1,4 @@
-import * as Instructions from "./process!./instructions";
+import Instructions from "./process!./instructions";
 
 // Field decode helper object
 class Fields {
@@ -14,21 +14,18 @@ class Fields {
 	get rt() { return (this._word >> 16) & 0b11111; }
 	get rs() { return (this._word >> 21) & 0b11111; }
 	get imm16() { return this._word & 0xFFFF; }
+	get simm16() { return this._word << 16 >> 16; }
 	get imm20() { return (this._word >> 6) & 0xFFFFF; }
 	get imm25() { return this._word & 0x1FFFFFF; }
 	get imm26() { return this._word & 0x3FFFFFF; }
-
-	get simm16() { return this._word << 16 >> 16; }
 }
 
 export default function (word) {
 	const fields = new Fields(word);
+	var entry = Instructions;
 	var fallback = null;
-	var entry = Instructions.default;
 
-	while (typeof entry !== "function") {
-		if (entry === undefined) { break ; }
-
+	while (typeof entry === "object") {
 		fallback = entry.fallback || fallback;
 		entry = entry[fields[entry.field]];
 	}
