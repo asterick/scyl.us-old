@@ -104,5 +104,4 @@ export default {
 		0x08: TLBP,
 		0x10: RTE
 	},
-	// 0x11~0x1F: Throw reserved instruction exception
 };
