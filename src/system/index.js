@@ -13,7 +13,7 @@ export default class extends MIPS {
 
 	// This is the non-volatile code space (RAM/ROM)
 	read_code (address) {
-		return 0;
+		return address & 4 ? 0x08000000 : 0xFF000000;
 	}
 
 	read (address) {

@@ -106,14 +106,7 @@ export default class MIPS {
 			op.instruction.assembly.fields = /\((.*)\)/g.exec(op.instruction.assembly.toString())[1].split(/\s*,\s*/g);
 		}
 
-		const fields = op.instruction.assembly.fields.map((f) => {
-			switch (f) {
-			case 'pc':
-				return pc;
-			default:
-				return op[f];
-			}
-		});
+		const fields = op.instruction.assembly.fields.map((f) => (f === 'pc') ? pc : op[f]);
 
 		const code = op.instruction.assembly(...fields);
 

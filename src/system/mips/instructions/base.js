@@ -11,7 +11,7 @@ const Consts = require("../consts");
 function ReservedInstruction(pc, delayed) {
 	throw new Exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
 }
-ReservedInstruction.assembly = () => `Reserved instruction`;
+ReservedInstruction.assembly = () => `---`;
 
 function CopUnusable(pc, delayed) {
 	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
