@@ -16,9 +16,14 @@ export default class extends Component {
 			asm.fields = /\((.*)\)/g.exec(asm.toString())[1].split(/\s*,\s*/g);
 		}
 
-		const fields = asm.fields.map((f) => (f === 'pc') ? pc : op[f]);
-		const code = asm(...fields).split("\t");
-		return <tr><td>{hex(pc)}</td> <td>{hex(word)}</td> <td>{code[0]}</td> <td>{code[1]}</td></tr>;
+		op.pc = pc;
+
+		// Generate assembly string
+		const code = asm(...asm.fields.map((f) => op[f]))
+			.split("\t")
+			.map((v) => <td>{v}</td>);
+
+		return <tr><td>{hex(pc)}</td> <td>{hex(word)}</td> {code}</tr>;
 	}
 
 	listing() {
