@@ -97,19 +97,4 @@ export default class MIPS {
 			this._trap(e);
 		}
 	}
-
-	disassemble (pc) {
-		const word = this.read_code(pc);
-		const op = locate(word);
-
-		if (!op.instruction.assembly.fields) {
-			op.instruction.assembly.fields = /\((.*)\)/g.exec(op.instruction.assembly.toString())[1].split(/\s*,\s*/g);
-		}
-
-		const fields = op.instruction.assembly.fields.map((f) => (f === 'pc') ? pc : op[f]);
-
-		const code = op.instruction.assembly(...fields);
-
-		return { word, code };
-	}
 }
