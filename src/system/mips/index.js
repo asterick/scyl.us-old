@@ -103,7 +103,7 @@ export default class MIPS {
 		const op = locate(word);
 
 		if (!op.instruction.assembly.fields) {
-			op.instruction.assembly.fields = params(op.instruction.assembly);
+			op.instruction.assembly.fields = /\((.*)\)/g.exec(op.instruction.assembly.toString())[1].split(/\s*,\s*/g);
 		}
 
 		const fields = op.instruction.assembly.fields.map((f) => {

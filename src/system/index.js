@@ -11,12 +11,9 @@ export default class extends MIPS {
 		// TODO
 	}
 
-	resize() {
-	}
-
-	// Helper function for reading from code space (prevent compiler from trashing strobe regs)
+	// This is the non-volatile code space (RAM/ROM)
 	read_code (address) {
-		return 0xFF000000;
+		return 0;
 	}
 
 	read (address) {
@@ -24,16 +21,5 @@ export default class extends MIPS {
 	}
 
 	write (address, value, mask = ~0) {
-	}
-
-	// === COP0 Bindings ===
-	read_cop0(register) {
-	}
-
-	write_cop0(register, value) {
-	}
-
-	rte() {
-		// TODO
 	}
 }

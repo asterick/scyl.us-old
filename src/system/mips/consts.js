@@ -7,6 +7,17 @@ export const Registers = [
 	  "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"
 ];
 
+export const COP0Registers = [
+	 "cop0dat0", "cop0dat1", "cop0dat2",      "BPC",
+	 "cop0dat4",      "BDA", "JUMPDEST",     "DCIC",
+	 "BadVaddr",     "BDAM","cop0dat10",     "BPCM",
+	       "SR",    "CAUSE",      "EPC",     "PRID",
+	"cop0dat16","cop0dat17","cop0dat18","cop0dat19",
+	"cop0dat20","cop0dat21","cop0dat22","cop0dat23",
+	"cop0dat24","cop0dat25","cop0dat26","cop0dat27",
+	"cop0dat28","cop0dat29","cop0dat30","cop0dat31",
+];
+
 export const Exceptions = {
 	Interrupt: 0x00,
 	TLBMod: 0x01,

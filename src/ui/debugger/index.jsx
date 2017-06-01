@@ -8,7 +8,7 @@ import Registers from "./registers";
 
 export default class extends Component {
 	render() {
-		return <div>
+		return <div class={style.debugger}>
 			<div style="display: inline-block">
 				<input type="button" value="run" onClick={() => {
 					this.props.runtime.run();

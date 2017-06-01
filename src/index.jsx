@@ -1,10 +1,8 @@
 import Inferno from 'inferno';
 import System from "./system";
 
-import { load } from "./util";
-
-load("system0.rom").then((data) => {
-	var runtime = new System(data);
+fetch("system0.rom").then((data) => {
+	var runtime = new System(data.arrayBuffer());
 
 	function rerender() {
 	    const UI = require("./ui/index.jsx").default;
