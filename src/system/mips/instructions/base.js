@@ -24,7 +24,7 @@ CopUnusable.assembly = () => `COP\tunusable`;
 
 function LB(rt, rs, imm16) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
-	let v = this.read(address);
+	let v = this.load(address);
 
 	if (rt) {
 		this.registers[rt] = v << (24 - 8 * (address & 3)) >> 24;
@@ -33,7 +33,7 @@ function LB(rt, rs, imm16) {
 
 function LBU(rt, rs, imm16) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
-	let v = this.read(address);
+	let v = this.load(address);
 
 	if (rt) {
 		var bit = 8 * (address & 3);
@@ -45,7 +45,7 @@ function LH(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 
 	if (address & 1) throw new Exception(Consts.Exceptions.AddressLoad, pc, delayed);
-	let v = this.read(address);
+	let v = this.load(address);
 
 	if (rt) {
 		this.registers[rt] = (address & 2) ? (v >> 16) : (v << 16 >> 16);
@@ -56,7 +56,7 @@ function LHU(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 
 	if (address & 1) throw new Exception(Consts.Exceptions.AddressLoad, pc, delayed);
-	let v = this.read(address);
+	let v = this.load(address);
 
 	if (rt) {
 		this.registers[rt] = (address & 2) ? (v >>> 16) : (v & 0xFFFF);
@@ -67,7 +67,7 @@ function LW(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 
 	if (address & 3) throw new Exception(Consts.Exceptions.AddressLoad, pc, delayed);
-	let v = this.read(address);
+	let v = this.load(address);
 
 	if (rt) {
 		this.registers[rt] = v;
@@ -77,7 +77,7 @@ function LW(rt, rs, imm16, pc, delayed) {
 function SB(rt, rs, imm16) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 
-	this.write(address, rt ? this.registers[rt] << (address & 3) : 0, 0xFF << (8 * (address & 3)));
+	this.store(address, rt ? this.registers[rt] << (address & 3) : 0, 0xFF << (8 * (address & 3)));
 }
 
 function SH(rt, rs, imm16, pc, delayed) {
@@ -85,7 +85,7 @@ function SH(rt, rs, imm16, pc, delayed) {
 
 	if (address & 1) throw new Exception(Consts.Exceptions.AddressStore, pc, delayed);
 
-	this.write(address, rt ? this.registers[rt] << (address & 2) : 0, 0xFFFF << (8 * (address & 3)));
+	this.store(address, rt ? this.registers[rt] << (address & 2) : 0, 0xFFFF << (8 * (address & 3)));
 }
 
 function SW(rt, rs, imm16, pc, delayed) {
@@ -93,12 +93,12 @@ function SW(rt, rs, imm16, pc, delayed) {
 
 	if (address & 3) throw new Exception(Consts.Exceptions.AddressStore, pc, delayed);
 
-	this.write(address, rt ? this.registers[rt] : 0, ~0);
+	this.store(address, rt ? this.registers[rt] : 0, ~0);
 }
 
 function LWR(rt, rs, imm16) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
-	var data = this.read(address);
+	var data = this.load(address);
 
 	if (rt) {
 		var bit = 8 * (address & 3);
@@ -109,7 +109,7 @@ function LWR(rt, rs, imm16) {
 
 function LWL(rt, rs, imm16) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
-	var data = this.read(address);
+	var data = this.load(address);
 
 	if (rt && (~address & 3)) {
 		var bit = 8 * (address & 3) + 8;
@@ -123,7 +123,7 @@ function SWR(rt, rs, imm16) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 	var bit = 8 * (address & 3);
 
-	this.write(address, rt ? this.registers[rt] << bit : 0, ~0 << bit);
+	this.store(address, rt ? this.registers[rt] << bit : 0, ~0 << bit);
 }
 
 function SWL(rt, rs, imm16) {
@@ -131,7 +131,7 @@ function SWL(rt, rs, imm16) {
 
 	if (~address & 3) {
 		var bit = 8 * (address & 3) + 8;
-		this.write(address, rt ? this.registers[rt] >>> (32 - bit) : 0, ~(~0 << bit) >>> 0);
+		this.store(address, rt ? this.registers[rt] >>> (32 - bit) : 0, ~(~0 << bit) >>> 0);
 	}
 }
 

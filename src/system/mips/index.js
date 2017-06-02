@@ -5,8 +5,13 @@ import locate from "./instructions";
 import { params } from "../../util";
 import { MAX_LOOPS } from "./consts";
 
-export default class MIPS {
+import COP0 from "./cop0";
+
+// NOTE: Co-processors will eventually move to being 
+export default class MIPS extends COP0 {
 	constructor() {
+		super();
+
 		this.clock = 0;
 		this.hi = 0;
 		this.lo = 0;
@@ -16,8 +21,16 @@ export default class MIPS {
 		this.signed_registers = new Int32Array(this.registers.buffer);
 	}
 
+	load (address) {
+		return this.read(this._translate(address));
+	}
+
+	store (address, value, mask) {
+		this.write(this._translate(address), value, mask);
+	}
+
 	_evaluate (pc, delayed, execute) {
-		const op = locate(this.read_code(pc));
+		const op = locate(this.read(pc));
 
 		const fields = op.instruction.fields.map((f) => {
 			switch (f) {
@@ -38,25 +51,27 @@ export default class MIPS {
 		return execute(op, fields);
 	}
 
-	_compile (start, end) {
+	_compile (physical, start, length) {
 		const build = (op, fields) => "that.clock++;" + op.instruction.template(... fields);
 		const lines = [];
+		const end = start + length;
 
-		for (var address = start; address <= end; address += 4) {
-			lines.push(`case 0x${address.toString(16)}: ${this._evaluate(address, false, build)}`);
+		for (var i = 0; i < length; i += 4) {
+			lines.push(`case 0x${(start + i).toString(16)}: ${this._evaluate(physical + i, false, build)}`);
 		}
 
 		var funct = new Function("Exception", `return function (that) {
 			for(var loop_counter = ${MAX_LOOPS}; loop_counter >= 0; loop_counter--) {
 				switch (that.pc) {
 					\n${lines.join("\n")}
-					this.pc = 0x${(end >>> 0).toString(16)};
+					that.pc = 0x${(end >>> 0).toString(16)};
 				default:
 					return ;
 				}
 			}
 		}`).call(Exception);
 
+		funct.physical = physical;
 		funct.start = start;
 		funct.end = end;
 		funct.valid = true;
@@ -66,7 +81,7 @@ export default class MIPS {
 
 	_execute (pc) {
 	 	this.clock++;
-		const ret_addr = this._evaluate(pc, false, (op, fields) => op.instruction.apply(this, fields));
+		const ret_addr = this._evaluate(this._translate(pc), false, (op, fields) => op.instruction.apply(this, fields));
 
 		if (ret_addr !== undefined) {
 			this.pc = ret_addr;
@@ -75,16 +90,14 @@ export default class MIPS {
 		}
 	}
 
-	_trap(e) {
-		// TODO: Trap to COP0
-	}
-
 	run () {
 		try {
 			// TODO: CACHE SUPPORT
 			// Note: if a write invalidates at the bottom of a cache page, it should also invalidate the previous page
 			// to handle delay branch pitfalls
-			this._compile(this.pc)(this);
+			const physical = this._translate(this.pc);
+
+			this._compile(physical, this.pc, 4096)(this);
 		} catch (e) {
 			this._trap(e);
 		}

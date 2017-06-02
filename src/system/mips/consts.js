@@ -1,4 +1,4 @@
-export const MAX_LOOPS = 5;
+export const MAX_LOOPS = 32;
 
 export const Registers = [
 	"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
@@ -8,14 +8,14 @@ export const Registers = [
 ];
 
 export const COP0Registers = [
-	 "cop0dat0", "cop0dat1", "cop0dat2",      "BPC",
-	 "cop0dat4",      "BDA", "JUMPDEST",     "DCIC",
-	 "BadVaddr",     "BDAM","cop0dat10",     "BPCM",
-	       "SR",    "CAUSE",      "EPC",     "PRID",
-	"cop0dat16","cop0dat17","cop0dat18","cop0dat19",
-	"cop0dat20","cop0dat21","cop0dat22","cop0dat23",
-	"cop0dat24","cop0dat25","cop0dat26","cop0dat27",
-	"cop0dat28","cop0dat29","cop0dat30","cop0dat31",
+  	 "c0_index", "c0_random", "c0_entrylo",  "cop0reg3",
+   "c0_context",  "cop0reg5",   "cop0reg6",  "cop0reg7", 
+	 "c0_vaddr",  "cop0reg9", "c0_entryhi", "cop0reg11", 
+    "c0_status",  "c0_cause",     "c0_epc",   "c0_prid",
+	"cop0reg16", "cop0reg17",  "cop0reg18", "cop0reg19",
+	"cop0reg20", "cop0reg21",  "cop0reg22", "cop0reg23",
+	"cop0reg24", "cop0reg25",  "cop0reg26", "cop0reg27",
+	"cop0reg28", "cop0reg29",  "cop0reg30", "cop0reg31"
 ];
 
 export const Exceptions = {

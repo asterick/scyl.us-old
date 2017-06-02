@@ -8,7 +8,7 @@ import locate from "../../system/mips/instructions";
 
 export default class extends Component {
 	disassemble(pc) {
-		const word = this.props.runtime.read_code(pc);
+		const word = this.props.runtime.read(pc);
 		const op = locate(word);
 		const asm = op.instruction.assembly;
 
