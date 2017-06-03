@@ -11,6 +11,7 @@ import COP0 from "./cop0";
 export default class MIPS extends COP0 {
 	constructor() {
 		super();
+		this.resetCOP0();
 
 		this.clock = 0;
 		this.hi = 0;

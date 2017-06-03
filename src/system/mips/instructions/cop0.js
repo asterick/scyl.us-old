@@ -6,23 +6,15 @@ const Consts = require("../consts");
  ******/
 
 export function MFC0(rt, rd, pc, delayed) {
-	try {
-		let value = this._mfc0(rd);
-		if (rt) {
-			this.registers[rt] = value;
-		}
-	} catch(e) {
-		throw new Exception(e, pc, delayed);
+	let value = this._mfc0(rd, pc, delayed);
+	if (rt) {
+		this.registers[rt] = value;
 	}
 }
 MFC0.assembly = (rt, rd) => `mfc0\t${Consts.Registers[rt]}, ${Consts.COP0Registers[rd]}`;
 
 export function MTC0(rt, rd, pc, delayed) {
-	try {
-		this._mtc0(rd, rt ? this.registers[rt] : 0);
-	} catch (e) {
-		throw new Exception(e, pc, delayed);
-	}
+	this._mtc0(rd, rt ? this.registers[rt] : 0, pc, delayed);
 }
 MTC0.assembly = (rt, rd) => `mtc0\t${Consts.Registers[rt]}, ${Consts.COP0Registers[rd]}`;
 
@@ -30,28 +22,28 @@ MTC0.assembly = (rt, rd) => `mtc0\t${Consts.Registers[rt]}, ${Consts.COP0Registe
  ** Co-Processor instructions
  ******/
 
-export function RTE(imm25, pc, delayed) {
-	try { this._rte(); } catch(e) { throw new Exception(e, pc, delayed); }
+export function RFE(imm25, pc, delayed) {
+	this._rfe(pc, delayed);
 }
-RTE.assembly = () => `cop0\trte`;
+RFE.assembly = () => `cop0\trte`;
 
 export function TLBR(pc, delayed) {
-	try { this._tlbr(); } catch(e) { throw new Exception(e, pc, delayed); }
+	this._tlbr(pc, delayed);
 }
 TLBR.assembly = () => `cop0\ttlbr`;
 
 export function TLBWI(pc, delayed) {
-	try { this._tlbwi(); } catch(e) { throw new Exception(e, pc, delayed); }
+	this._tlbwi(pc, delayed);
 }
 TLBWI.assembly = () => `cop0\ttlbwi`;
 
 export function TLBWR(pc, delayed) {
-	try { this._tlbwr(); } catch(e) { throw new Exception(e, pc, delayed); }
+	this._tlbwr(pc, delayed);
 }
 TLBWR.assembly = () => `cop0\ttlbwr`;
 
 export function TLBP(pc, delayed) {
-	try { this._tlbp(); } catch(e) { throw new Exception(e, pc, delayed); }
+	this._tlbp(pc, delayed);
 }
 TLBP.assembly = () => `cop0\ttlbp`;
 
@@ -91,6 +83,6 @@ export default {
 		0x02: TLBWI,
 		0x06: TLBWR,
 		0x08: TLBP,
-		0x10: RTE
+		0x10: RFE
 	},
 };

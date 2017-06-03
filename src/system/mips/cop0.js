@@ -1,24 +1,52 @@
-import { PROCESSOR_ID } from "./consts";
+import { PROCESSOR_ID, Exceptions } from "./consts";
+import Exception from "./exception";
 
 // NOTE: I use a system random number generator instead of the clock counter
 // as this approach is faster and users should NOT depend on specific implementation
 // for how this works
+
+// NOTE: COP0 should be using the enable flags in _status, not test the kernel flag
+
+const STATUS_CU3 = 0x80000000;
+const STATUS_CU2 = 0x40000000;
+const STATUS_CU1 = 0x20000000;
+const STATUS_CU0 = 0x10000000;
+
+const STATUS_RE	 = 0x02000000;
+
+const STATUS_BEV = 0x00400000;
+const STATUS_TS	 = 0x00200000;
+const STATUS_PE	 = 0x00100000;
+const STATUS_CM	 = 0x00080000;
+const STATUS_PZ	 = 0x00040000;
+const STATUS_SwC = 0x00020000;
+const STATUS_IsC = 0x00010000;
+
+const STATUS_IM	 = 0x0000FF00;
+
+const STATUS_KUo = 0x00000020;
+const STATUS_IEo = 0x00000010;
+const STATUS_KUp = 0x00000008;
+const STATUS_IEp = 0x00000004;
+const STATUS_KUc = 0x00000002;
+const STATUS_IEc = 0x00000001;
 
 function random() {
 	return (Math.random() * 0x37 + 0x8) & 0x3F;
 }
 
 export default class {
-	constructor() {
+	resetCOP0() {
 		// Status values
-		this._Kernel  = true;
+		this._status = STATUS_KUc | STATUS_BEV;
+		this._cause = 0;
+		this._epc = 0;
 
 		// TLB
 		this._entryLo = 0;
 		this._entryHi = 0;
-
 		this._badAddr = 0;
-
+		this._targetAddr = 0;
 		this._ptBase = 0;
 		this._index	= 0;
 
@@ -27,7 +55,15 @@ export default class {
 		this._tlb   = [];
 	}
 
-	_mfc0(reg) {
+	_copEnabled(cop) {
+		return (((this._status >> 18) | ((this._status & STATUS_KUc) ? 1 : 0)) >>> cop) & 1;
+	}
+
+	_mfc0(reg, pc, delayed) {
+		if (!this._copEnabled(0)) {
+			throw new Exception(Const.Exceptions.CoprocessorUnusable, pc, delayed);
+		}
+
 		switch (reg) {
 		// Random registers
 		case 0xF: // c0_prid
@@ -50,14 +86,21 @@ export default class {
 
 		// Status/Exception registers
 		case 0xC: // c0_status
+			return this._status;
 		case 0xD: // c0_cause
+			return this._cause;
 		case 0xE: // c0_epc
+			return this._epc;
 		default:
 			return 0;
 		}
 	}
 
-	_mtc0(reg, word) {
+	_mtc0(reg, word, pc, delayed) {
+		if (!this._copEnabled(0)) {
+			throw new Exception(Const.Exceptions.CoprocessorUnusable, pc, delayed);
+		}
+
 		switch (reg) {
 		// Virtual-memory registers
 		case 0x0: // c0_index
@@ -76,13 +119,14 @@ export default class {
 		// Status/Exception registers
 		case 0xC: // c0_status
 		case 0xD: // c0_cause
+			// TODO
 		}
 	}
 
 	_translate(address, write) {
 		let cached = true;
-		if (address & 0x8000000) {
-			// TODO: VALIDATE USER IS KERNEL
+		if (address & 0x8000000 && ~this._status & STATUS_KUc) {
+			throw Const.Exceptions.CoprocessorUnusable;
 		}
 
 		if (address & 0xE0000000 === 0xA0000000) {
@@ -94,13 +138,14 @@ export default class {
 			let result = this._tlb[page | (this._entryHi & 0xFC0)] || this._tlb[page | 0xFFF];
 
 			cached = ~result & 0x0800;
+			this._targetAddr = address; // Holding register, trap will copy this to _badAddr if something goes wrong
 
 			if (~result & 0x0200) {
-				// TODO: THROW TLB MISS
+				throw write ? Const.Exceptions.TLBStore : Const.Exceptions.TLBLoad;
 			}
 
 			if (~result & 0x0400 && write) {
-				// TODO: THROW MOD EXCEPTION
+				throw Const.Exceptions.TLBMod;
 			}
 
 			return (result & 0xFFFFF000) | (address & 0x00000FFF);
@@ -110,8 +155,8 @@ export default class {
 	}
 
 	_writeTLB(index) {
+		// Ignore TLB entries that can cause a collision (normally would cause a system reset)
 		if (this._tbl[this._entryHi] || this._tlb[this._entryHi | 0xFFF]) {
-			// Ignore TLB entries that can cause a collision
 			return ;
 		}
 
@@ -132,20 +177,20 @@ export default class {
 		this._tlbHi[index] = this._entryHi;
 	}
 
-	_tlbr() {
+	_tlbr(pc, delayed) {
+		if (!this._copEnabled(0)) {
+			throw new Exception(Const.Exceptions.CoprocessorUnusable, pc, delayed);
+		}
+
 		this._entryLo = this._tlbLo[(this._index >> 8) & 0x3F];
 		this._entryHi = this._tlbHi[(this._index >> 8) & 0x3F];
 	}
 
-	_tlbwi() {
-		this._writeTLB((this._index >> 8) & 0x3F);
-	}
+	_tlbp(pc, delayed) {
+		if (!this._copEnabled(0)) {
+			throw new Exception(Const.Exceptions.CoprocessorUnusable, pc, delayed);
+		}
 
-	_tlbwr() {
-		this._writeTLB(random());
-	}
-
-	_tlbp() {
 		let found = this._tbl[this._entryHi] || this._tlb[this._entryHi | 0xFFF];
 
 		if (found & 0x200) {
@@ -155,13 +200,33 @@ export default class {
 		}
 	}
 
+	_tlbwi(pc, delayed) {
+		if (!this._copEnabled(0)) {
+			throw new Exception(Const.Exceptions.CoprocessorUnusable, pc, delayed);
+		}
+
+		this._writeTLB((this._index >> 8) & 0x3F, pc, delayed);
+	}
+
+	_tlbwr(pc, delayed) {
+		if (!this._copEnabled(0)) {
+			throw new Exception(Const.Exceptions.CoprocessorUnusable, pc, delayed);
+		}
+
+		this._writeTLB(random(), pc, delayed);
+	}
+
 	// Exception logic
 	_trap(e) {
 		// TODO: Trap to COP0
 		throw e;
 	}
 
-	_rte() {
+	_rfe(pc, delayed) {
+		if (!this._copEnabled(0)) {
+			throw new Exception(Const.Exceptions.CoprocessorUnusable, pc, delayed);
+		}
 
+		this._status = (this._status & ~0xF) | ((this._status >> 2) & 0xF);
 	}
 }
