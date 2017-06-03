@@ -1,5 +1,9 @@
 import { PROCESSOR_ID } from "./consts";
 
+// NOTE: I use a system random number generator instead of the clock counter
+// as this approach is faster and users should NOT depend on specific implementation
+// for how this works
+
 function random() {
 	return (Math.random() * 0x37 + 0x8) & 0x3F;
 }
@@ -17,12 +21,6 @@ export default class {
 
 		this._ptBase = 0;
 		this._index	= 0;
-		this._asid = 0;
-
-		this._tlbN = false;
-		this._tlbD = false;
-		this._tlbV = false;
-		this._tlbG = false;
 
 		this._tlbLo = new Uint32Array(64);
 		this._tlbHi = new Uint32Array(64);
@@ -111,11 +109,6 @@ export default class {
 		}
 	}
 
-	_tlbr() {
-		this._entryLo = this._tlbLo[(this._index >> 8) & 0x3F];
-		this._entryHi = this._tlbHi[(this._index >> 8) & 0x3F];
-	}
-
 	_writeTLB(index) {
 		if (this._tbl[this._entryHi] || this._tlb[this._entryHi | 0xFFF]) {
 			// Ignore TLB entries that can cause a collision
@@ -125,7 +118,7 @@ export default class {
 		// Clear out previous TLB element (if it was valid)
 		if (this._tlbLo[index] & 0x200) {
 			let indexWas = this._tlbHi[index] | ((this._tlbLo[index] & 0x100) ? 0xFFF : 0);
-			this._tlb[indexWas] = 0;
+			delete this._tlb[indexWas];
 		}
 
 		// Setup our fast lookup
@@ -137,6 +130,11 @@ export default class {
 		// Store our TLB (does not handle global)
 		this._tlbLo[index] = this._entryLo;
 		this._tlbHi[index] = this._entryHi;
+	}
+
+	_tlbr() {
+		this._entryLo = this._tlbLo[(this._index >> 8) & 0x3F];
+		this._entryHi = this._tlbHi[(this._index >> 8) & 0x3F];
 	}
 
 	_tlbwi() {
@@ -166,6 +164,4 @@ export default class {
 	_rte() {
 
 	}
-
-
 }
