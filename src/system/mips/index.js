@@ -51,7 +51,6 @@ export default class MIPS {
 		this.registers = new Uint32Array(32);
 		this.signed_registers = new Int32Array(this.registers.buffer);
 
-		// COP0 Reset
 		// Status values
 		this._status = STATUS_KUc | STATUS_BEV;
 		this._cause = 0;
@@ -68,6 +67,49 @@ export default class MIPS {
 		this._tlbLo = new Uint32Array(64);
 		this._tlbHi = new Uint32Array(64);
 		this._tlb   = [];
+
+		// Compiler cache
+		this._cache = [];
+	}
+
+	run () {
+		try {
+			// Note: if a write invalidates at the bottom of a cache page, it should also invalidate the previous page
+			// to handle delay branch pitfalls
+			const translated = this._translate(this.pc, false);
+			const size = 0x1000;
+			const physical = translated & ~0xFFF;
+			const logical = (this.pc & ~0xFFF) >>> 0;
+			var block = this._cache[physical];
+
+			if (block === undefined || block.logical !== logical) {
+				block = this._cache[physical] = this._compile(physical, logical);
+			}
+
+			block(this);
+		} catch (e) {
+			this._trap(e);
+		}
+	}
+
+	invalidate(address) {
+		const size = _blockSize(address);
+		const physical = address & ~0xFFF;
+		
+		delete this._cache[physical];
+
+		// Delete previous block to prevent delay slot errors
+		if ((address & 0xFFF) === 0) {
+			delete this._cache[(physical - size) >>> 0];
+		}
+	}
+
+	step () {
+		try {
+			this._execute(this.pc);
+		} catch (e) {
+			this._trap(e);
+		}
 	}
 
 	load (address, pc, delayed) {
@@ -85,6 +127,10 @@ export default class MIPS {
 			throw new Exception(e, pc, delayed, 0);
 		}
 	}
+
+	/****
+	 ** Begin private methods
+	 ****/
 
 	_evaluate (pc, delayed, execute) {
 		const op = locate(this.read(pc));
@@ -108,12 +154,12 @@ export default class MIPS {
 		return execute(op, fields);
 	}
 
-	_compile (physical, start, length) {
+	_compile (physical, start) {
 		const build = (op, fields) => "that.clock++;" + op.instruction.template(... fields);
 		const lines = [];
-		const end = start + length;
+		const end = start + 0x1000;
 
-		for (var i = 0; i < length; i += 4) {
+		for (var i = 0; i < 0x1000; i += 4) {
 			lines.push(`case 0x${(start + i).toString(16)}: ${this._evaluate(physical + i, false, build)}`);
 		}
 
@@ -129,7 +175,7 @@ export default class MIPS {
 		}`).call(Exception);
 
 		funct.physical = physical;
-		funct.start = start;
+		funct.logical = start;
 		funct.end = end;
 		funct.valid = true;
 
@@ -145,27 +191,6 @@ export default class MIPS {
 			this.pc = ret_addr;
 		} else {
 			this.pc = (this.pc + 4) >>> 0;
-		}
-	}
-
-	run () {
-		try {
-			// TODO: CACHE SUPPORT
-			// Note: if a write invalidates at the bottom of a cache page, it should also invalidate the previous page
-			// to handle delay branch pitfalls
-			const physical = this._translate(this.pc, false);
-
-			this._compile(physical, this.pc, 4096)(this);
-		} catch (e) {
-			this._trap(e);
-		}
-	}
-
-	step () {
-		try {
-			this._execute(this.pc);
-		} catch (e) {
-			this._trap(e);
 		}
 	}
 
@@ -268,7 +293,7 @@ export default class MIPS {
 				throw Exceptions.TLBMod;
 			}
 
-			return (result & 0xFFFFF000) | (address & 0x00000FFF);
+			return ((result & 0xFFFFF000) | (address & 0x00000FFF)) >>> 0;
 		} else {
 			return address & 0x1FFFFFFC;
 		}
