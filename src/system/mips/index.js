@@ -440,17 +440,7 @@ export default class MIPS {
 			this.pc = (this._status & STATUS_BEV) ? 0xbfc00100 : 0x80000000;
 			break ;
 
-		case Exceptions.TLBMod:
-		case Exceptions.Interrupt:
-		case Exceptions.AddressLoad:
-		case Exceptions.AddressStore:
-		case Exceptions.BusErrorInstruction:
-		case Exceptions.BusErrorData:
-		case Exceptions.SysCall:
-		case Exceptions.Breakpoint:
-		case Exceptions.ReservedInstruction:
-		case Exceptions.CoprocessorUnusable:
-		case Exceptions.Overflow:
+		default:
 			this.pc = (this._status & STATUS_BEV) ? 0xbfc00180 : 0x80000080;
 			break ;
 		}
