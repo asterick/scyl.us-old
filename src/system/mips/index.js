@@ -60,7 +60,6 @@ export default class MIPS {
 		this._entryLo = 0;
 		this._entryHi = 0;
 		this._badAddr = 0;
-		this._targetAddr = 0;
 		this._ptBase = 0;
 		this._index	= 0;
 
@@ -72,7 +71,15 @@ export default class MIPS {
 		this._cache = [];
 	}
 
+	reset() {
+		this.pc = 0xBFC00000;
+		this._status = STATUS_KUc | STATUS_BEV;
+		this._cause = 0;
+	}
+
 	run () {
+		this._interrupt();
+
 		try {
 			// Note: if a write invalidates at the bottom of a cache page, it should also invalidate the previous page
 			// to handle delay branch pitfalls
@@ -92,19 +99,9 @@ export default class MIPS {
 		}
 	}
 
-	invalidate(address) {
-		const size = _blockSize(address);
-		const physical = address & ~0xFFF;
-		
-		delete this._cache[physical];
-
-		// Delete previous block to prevent delay slot errors
-		if ((address & 0xFFF) === 0) {
-			delete this._cache[(physical - size) >>> 0];
-		}
-	}
-
 	step () {
+		this._interrupt();
+
 		try {
 			this._execute(this.pc);
 		} catch (e) {
@@ -114,7 +111,7 @@ export default class MIPS {
 
 	load (address, pc, delayed) {
 		try {
-			return this.read(this._translate(address, false));
+			return this.read(false, this._translate(address, false));
 		} catch (e) {
 			throw new Exception(e, pc, delayed, 0);
 		}
@@ -123,8 +120,33 @@ export default class MIPS {
 	store (address, value, mask, pc, delayed) {
 		try {
 			this.write(this._translate(address, true), value, mask);
+
+			const size = _blockSize(address);
+			const physical = address & ~0xFFF;
+			
+			delete this._cache[physical];
+
+			// Delete previous block to prevent delay slot errors
+			if ((address & 0xFFF) === 0) {
+				delete this._cache[(physical - size) >>> 0];
+			}
 		} catch (e) {
 			throw new Exception(e, pc, delayed, 0);
+		}
+	}
+
+	readSafe(address) {
+		if (address & 0xC0000000 !== 0x80000000) {
+			let page = address & 0xFFFFF000;
+			let result = this._tlb[page | (this._entryHi & 0xFC0)] || this._tlb[page | 0xFFF];
+
+			if (~result & 0x0200) {
+				throw "TLB MISS";
+			}
+
+			return this.read(true, ((result & 0xFFFFF000) | (address & 0x00000FFF)) >>> 0);
+		} else {
+			return this.read(true, address & 0x1FFFFFFC);
 		}
 	}
 
@@ -132,35 +154,40 @@ export default class MIPS {
 	 ** Begin private methods
 	 ****/
 
-	_evaluate (pc, delayed, execute) {
-		const op = locate(this.read(pc));
+	_evaluate (pc, delayed, execute, exception) {
+		try {
+			const op = locate(this.read(true, pc));
 
-		const fields = op.instruction.fields.map((f) => {
-			switch (f) {
-			case 'pc':
-				return pc;
-			case 'delayed':
-				return delayed;
-			case 'delay':
-				return () => this._evaluate(pc + 4, true, execute);
-			default:
-				if (op[f] === undefined) {
-					throw new Error(`BAD FIELD ${f}`);
+			const fields = op.instruction.fields.map((f) => {
+				switch (f) {
+				case 'pc':
+					return pc;
+				case 'delayed':
+					return delayed;
+				case 'delay':
+					return () => this._evaluate(pc + 4, true, execute);
+				default:
+					if (op[f] === undefined) {
+						throw new Error(`BAD FIELD ${f}`);
+					}
+					return op[f];
 				}
-				return op[f];
-			}
-		});
+			});
 
-		return execute(op, fields);
+			return execute(op, fields);
+		} catch (e) {
+			return exception(e, pc, delayed);
+		}
 	}
 
 	_compile (physical, start) {
 		const build = (op, fields) => "that.clock++;" + op.instruction.template(... fields);
+		const exception = (e, pc, delayed) => `that.clock++; throw new Exception(${e}, ${pc}, ${delayed})`
 		const lines = [];
 		const end = start + 0x1000;
 
 		for (var i = 0; i < 0x1000; i += 4) {
-			lines.push(`case 0x${(start + i).toString(16)}: ${this._evaluate(physical + i, false, build)}`);
+			lines.push(`case 0x${(start + i).toString(16)}: ${this._evaluate(physical + i, false, build, exception)}`);
 		}
 
 		var funct = new Function("Exception", `return function (that) {
@@ -172,7 +199,7 @@ export default class MIPS {
 					return ;
 				}
 			}
-		}`).call(Exception);
+		}`).call(null, Exception);
 
 		funct.physical = physical;
 		funct.logical = start;
@@ -185,7 +212,9 @@ export default class MIPS {
 	_execute (pc) {
 	 	this.clock++;
 		const physical = this._translate(this.pc, false);
-		const ret_addr = this._evaluate(physical, false, (op, fields) => op.instruction.apply(this, fields));
+		const ret_addr = this._evaluate(physical, false, 
+			(op, fields) => op.instruction.apply(this, fields), 
+			(e, pc, delayed) => { throw new Exception(e, pc, delayed) });
 
 		if (ret_addr !== undefined) {
 			this.pc = ret_addr;
@@ -199,6 +228,17 @@ export default class MIPS {
 	 *******/
 	_copEnabled(cop) {
 		return (((this._status >> 18) | ((this._status & STATUS_KUc) ? 1 : 0)) >>> cop) & 1;
+	}
+
+	interrupt(i) {
+		this._status |= (1 << (i + 8)) & STATUS_IM;
+	}
+
+	_interrupt() {
+		// Pending interrupts?
+		if (this._status & STATUS_IEc && this._cause & this._status & STATUS_IM) {
+			this._trap(new Exception(Exceptions.Interrupt, this.pc, false));
+		}
 	}
 
 	_mfc0(reg, pc, delayed) {
@@ -283,13 +323,18 @@ export default class MIPS {
 			let result = this._tlb[page | (this._entryHi & 0xFC0)] || this._tlb[page | 0xFFF];
 
 			cached = ~result & 0x0800;
-			this._targetAddr = address; // Holding register, trap will copy this to _badAddr if something goes wrong
 
+			// TLB line is inactive
 			if (~result & 0x0200) {
+				this._badAddr = address;
+				this._entryHi = (this._entryHi & ~0xFFFFF000) | (address & 0xFFFFF000);
 				throw write ? Exceptions.TLBStore : Exceptions.TLBLoad;
 			}
 
-			if (~result & 0x0400 && write) {
+			// Writes are not permitted
+			if (write && ~result & 0x0400) {
+				this._badAddr = address;
+				this._entryHi = (this._entryHi & ~0xFFFFF000) | (address & 0xFFFFF000);
 				throw Exceptions.TLBMod;
 			}
 
@@ -392,16 +437,10 @@ export default class MIPS {
 		switch (e.exception) {
 		case Exceptions.TLBLoad:
 		case Exceptions.TLBStore:
-			this._badAddr = this._targetAddr;
-			this._entryHi = (this._entryHi & ~0xFFFFF000) | (this._targetAddr & 0xFFFFF000);
-
 			this.pc = (this._status & STATUS_BEV) ? 0xbfc00100 : 0x80000000;
 			break ;
 
 		case Exceptions.TLBMod:
-			this._badAddr = this._targetAddr;
-			this._entryHi = (this._entryHi & ~0xFFFFF000) | (this._targetAddr & 0xFFFFF000);
-
 		case Exceptions.Interrupt:
 		case Exceptions.AddressLoad:
 		case Exceptions.AddressStore:

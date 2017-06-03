@@ -1,18 +1,33 @@
 import MIPS from "./mips";
+import { Exceptions } from "./mips/consts";
 
 export default class extends MIPS {
 	constructor (bios) {
 		super();
+
+		// 4MB of ram
+		this.ram = new Uint32Array(0x100000);
 	}
 
 	attach (canvas) {
 		// TODO
 	}
 
-	read (address) {
-		return 0;
+	read (code, address) {
+		if (address < 0x400000) {
+			return this.ram[address >> 2];
+		}
+		else if (address >= 0x1FC00000 && address < 0x1FC00010) {
+			return 0; // THIS IS BIOS EVENTUALLY
+		}
+		
+		throw code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData;
 	}
 
 	write (address, value, mask = ~0) {
+		if (address < 0x400000) {
+			address >>= 2;
+			this.ram[address] = (this.ram[address] & ~mask) | (value & mask);
+		}
 	}
 }
