@@ -2,90 +2,90 @@ const Exception = require("../exception").default;
 const Consts = require("../consts");
 
 /******
+ ** Co-Processor Move registers
+ ******/
+
+export function MFC0(rt, rd, pc, delayed) {
+	try {
+		let value = this._mfc0(rd);
+		if (rt) {
+			this.registers[rt] = value;
+		}
+	} catch(e) {
+		throw new Exception(e, pc, delayed);
+	}
+}
+MFC0.assembly = (rt, rd) => `mfc0\t${Consts.Registers[rt]}, ${Consts.COP0Registers[rd]}`;
+
+export function MTC0(rt, rd, pc, delayed) {
+	try {
+		this._mtc0(rd, rt ? this.registers[rt] : 0);
+	} catch (e) {
+		throw new Exception(e, pc, delayed);
+	}
+}
+MTC0.assembly = (rt, rd) => `mtc0\t${Consts.Registers[rt]}, ${Consts.COP0Registers[rd]}`;
+
+/******
  ** Co-Processor instructions
  ******/
 
-export function MFC(rt, rd, pc, delayed) {
-	let value = this.read_cop0(rd, pc, delayed);
-	if (rt) {
-		this.registers[rt] = value;
-	}
-}
-
-export function MTC(rt, rd, pc, delayed) {
-	this.write_cop0(rd, rt ? this.registers[rt] : 0, pc, delayed);
-}
-
 export function RTE(imm25, pc, delayed) {
-	this.rte();
+	try { this._rte(); } catch(e) { throw new Exception(e, pc, delayed); }
 }
-
-export function CFC(pc, delayed) {
-	throw new Exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
-}
-
-export function CTC(pc, delayed) {
-	throw new Exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
-}
-
-export function LWC(pc, delayed) {
-	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
-}
-
-export function SWC(pc, delayed) {
-	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
-}
-
-export function BCF(pc, delayed) {
-	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
-}
-
-export function BCT(pc, delayed) {
-	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
-}
+RTE.assembly = () => `cop0\trte`;
 
 export function TLBR(pc, delayed) {
-	throw new Exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
+	try { this._tlbr(); } catch(e) { throw new Exception(e, pc, delayed); }
 }
+TLBR.assembly = () => `cop0\ttlbr`;
 
 export function TLBWI(pc, delayed) {
-	throw new Exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
+	try { this._tlbwi(); } catch(e) { throw new Exception(e, pc, delayed); }
 }
+TLBWI.assembly = () => `cop0\ttlbwi`;
 
 export function TLBWR(pc, delayed) {
-	throw new Exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
+	try { this._tlbwr(); } catch(e) { throw new Exception(e, pc, delayed); }
 }
+TLBWR.assembly = () => `cop0\ttlbwr`;
 
 export function TLBP(pc, delayed) {
-	throw new Exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
+	try { this._tlbp(); } catch(e) { throw new Exception(e, pc, delayed); }
 }
-
-MFC.assembly = (rt, rd) => `mfc0\t${Consts.Registers[rt]}, ${Consts.COP0Registers[rd]}`;
-CFC.assembly = (rt, rd) => `cfc0\t${Consts.Registers[rt]}, cop0cnt${rd}`;
-MTC.assembly = (rt, rd) => `mtc0\t${Consts.Registers[rt]}, ${Consts.COP0Registers[rd]}`;
-CTC.assembly = (rt, rd) => `ctc0\t${Consts.Registers[rt]}, cop0cnt${rd}`;
-LWC.assembly = (rs, rt, imm16) => `lwc0\t${Consts.COP0Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`;
-SWC.assembly = (rs, rt, imm16) => `swc0\t${Consts.COP0Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`;
-BCT.assembly = (simm16, pc) => `bc0t\t${((pc + 4) + (simm16 * 4)).toString(16)}`;
-BCF.assembly = (simm16, pc) => `bc0f\t${((pc + 4) + (simm16 * 4)).toString(16)}`;
-TLBR.assembly = () => `cop0\ttlbr`;
-TLBWI.assembly = () => `cop0\ttlbwi`;
-TLBWR.assembly = () => `cop0\ttlbwr`;
 TLBP.assembly = () => `cop0\ttlbp`;
-TLBP.assembly = () => `cop0\trte`;
+
+/***********
+ ** Unused move instructions
+ ***********/
+export function CFC0(pc, delayed) {
+	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
+}
+CFC0.assembly = (rt, rd) => `cfc0\t${Consts.Registers[rt]}, cop0cnt${rd}`;
+
+export function CTC0(pc, delayed) {
+	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
+}
+CTC0.assembly = (rt, rd) => `ctc0\t${Consts.Registers[rt]}, cop0cnt${rd}`;
+
+export function LWC0(pc, delayed) {
+	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
+}
+LWC0.assembly = (rs, rt, imm16) => `lwc0\t${Consts.COP0Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`;
+
+export function SWC0(pc, delayed) {
+	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
+}
+SWC0.assembly = (rs, rt, imm16) => `swc0\t${Consts.COP0Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`;
 
 export default {
 	field: "rs",
-  	0x00: MFC,
-  	0x02: CFC,
-  	0x04: MTC,
-  	0x06: CTC,
-  	0x08: {
-  		field: "rt",
-  		0x00: BCF,
-  		0x01: BCT,
-  	},
+  	0x00: MFC0,
+  	0x02: CFC0,
+  	0x04: MTC0,
+  	0x06: CTC0,
 	0x10: {
+		// Note: this does not match all the extra zeros
 		field: "function",
 		0x01: TLBR,
 		0x02: TLBWI,

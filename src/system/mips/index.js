@@ -7,7 +7,7 @@ import { MAX_LOOPS } from "./consts";
 
 import COP0 from "./cop0";
 
-// NOTE: Co-processors will eventually move to being 
+// NOTE: Co-processors will eventually move to being
 export default class MIPS extends COP0 {
 	constructor() {
 		super();
@@ -21,12 +21,20 @@ export default class MIPS extends COP0 {
 		this.signed_registers = new Int32Array(this.registers.buffer);
 	}
 
-	load (address) {
-		return this.read(this._translate(address));
+	load (address, pc, delayed) {
+		try {
+			return this.read(this._translate(address, false));
+		} catch (e) {
+			throw new Exception(e, pc, delayed);
+		}
 	}
 
-	store (address, value, mask) {
-		this.write(this._translate(address), value, mask);
+	store (address, value, mask, pc, delayed) {
+		try {
+			this.write(this._translate(address, true), value, mask);
+		} catch (e) {
+			throw new Exception(e, pc, delayed);
+		}
 	}
 
 	_evaluate (pc, delayed, execute) {
@@ -81,7 +89,8 @@ export default class MIPS extends COP0 {
 
 	_execute (pc) {
 	 	this.clock++;
-		const ret_addr = this._evaluate(this._translate(pc), false, (op, fields) => op.instruction.apply(this, fields));
+		const physical = this._translate(this.pc,false);
+		const ret_addr = this._evaluate(physical, false, (op, fields) => op.instruction.apply(this, fields));
 
 		if (ret_addr !== undefined) {
 			this.pc = ret_addr;
@@ -95,7 +104,7 @@ export default class MIPS extends COP0 {
 			// TODO: CACHE SUPPORT
 			// Note: if a write invalidates at the bottom of a cache page, it should also invalidate the previous page
 			// to handle delay branch pitfalls
-			const physical = this._translate(this.pc);
+			const physical = this._translate(this.pc, false);
 
 			this._compile(physical, this.pc, 4096)(this);
 		} catch (e) {

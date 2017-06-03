@@ -1,4 +1,5 @@
 export const MAX_LOOPS = 32;
+export const PROCESSOR_ID = 0x00000301;
 
 export const Registers = [
 	"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
@@ -9,8 +10,8 @@ export const Registers = [
 
 export const COP0Registers = [
   	 "c0_index", "c0_random", "c0_entrylo",  "cop0reg3",
-   "c0_context",  "cop0reg5",   "cop0reg6",  "cop0reg7", 
-	 "c0_vaddr",  "cop0reg9", "c0_entryhi", "cop0reg11", 
+   "c0_context",  "cop0reg5",   "cop0reg6",  "cop0reg7",
+	 "c0_vaddr",  "cop0reg9", "c0_entryhi", "cop0reg11",
     "c0_status",  "c0_cause",     "c0_epc",   "c0_prid",
 	"cop0reg16", "cop0reg17",  "cop0reg18", "cop0reg19",
 	"cop0reg20", "cop0reg21",  "cop0reg22", "cop0reg23",

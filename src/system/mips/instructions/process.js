@@ -198,6 +198,7 @@ module.exports = function (content) {
 
 		extra.push(`${node.id.name}.fields = ${JSON.stringify(fields)}`);
 		extra.push(`${node.id.name}.template = function (${fields.join(", ")}) { return ${template(node.body, fields)}; }`);
+		extra.push(`${node.id.name}.template = function (${fields.join(", ")}) { return ${template(node.body, fields)}; }`);
 
 		return false;
 	})
