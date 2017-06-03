@@ -51,22 +51,22 @@ TLBP.assembly = () => `cop0\ttlbp`;
  ** Unused move instructions
  ***********/
 export function CFC0(pc, delayed) {
-	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
+	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, 0);
 }
 CFC0.assembly = (rt, rd) => `cfc0\t${Consts.Registers[rt]}, cop0cnt${rd}`;
 
 export function CTC0(pc, delayed) {
-	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
+	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, 0);
 }
 CTC0.assembly = (rt, rd) => `ctc0\t${Consts.Registers[rt]}, cop0cnt${rd}`;
 
 export function LWC0(pc, delayed) {
-	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
+	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, 0);
 }
 LWC0.assembly = (rs, rt, imm16) => `lwc0\t${Consts.COP0Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`;
 
 export function SWC0(pc, delayed) {
-	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
+	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, 0);
 }
 SWC0.assembly = (rs, rt, imm16) => `swc0\t${Consts.COP0Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`;
 

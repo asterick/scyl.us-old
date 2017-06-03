@@ -13,10 +13,10 @@ function ReservedInstruction(pc, delayed) {
 }
 ReservedInstruction.assembly = () => `---`;
 
-function CopUnusable(pc, delayed) {
-	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
+function CopUnusable(pc, delayed, cop) {
+	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, cop);
 }
-CopUnusable.assembly = () => `COP\tunusable`;
+CopUnusable.assembly = (cop) => `COP${cop}\tunusable`;
 
 /******
  ** Load/Store instructions
