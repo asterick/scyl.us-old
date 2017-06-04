@@ -13,7 +13,7 @@ export default class extends Component {
 		const asm = op.instruction.assembly;
 
 		if (!asm.fields) {
-			asm.fields = /\((.*)\)/g.exec(asm.toString())[1].split(/\s*,\s*/g);
+			asm.fields = /\((.*?)\)/g.exec(asm.toString())[1].split(/\s*,\s*/g);
 		}
 
 		op.pc = pc;

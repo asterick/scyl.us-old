@@ -1,6 +1,8 @@
-	.section	reset,"ax",@progbits
+	.section	reset, "ax", @progbits
 	.align	2
+	.globl	_reset
 	.globl	main
-main:
-	j	$31
+_reset:
+	#la	$r0, main
+	j	main
 	nop

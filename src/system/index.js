@@ -7,6 +7,9 @@ export default class extends MIPS {
 
 		// 4MB of ram
 		this.ram = new Uint32Array(0x100000);
+		this.rom = new Uint32Array(0x20000);
+
+		this.rom.set(new Uint32Array(bios));
 	}
 
 	attach (canvas) {
@@ -15,10 +18,10 @@ export default class extends MIPS {
 
 	read (code, address) {
 		if (address < 0x400000) {
-			return this.ram[address >> 2];
+			return this.ram[address >>> 2];
 		}
-		else if (address >= 0x1FC00000 && address < 0x1FC00010) {
-			return 0; // THIS IS BIOS EVENTUALLY
+		else if (address >= 0x1FC00000 && address < 0x1FC80000) {
+			return this.rom[(address >>> 2) & 0x1FFFF];
 		}
 		
 		throw code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData;
