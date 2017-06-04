@@ -1,6 +1,7 @@
 OUTPUT = ../bin/system0.rom
 BINARY = system0.elf
 OBJECTS = main.o startup.o
+LD_SCRIPT = ./linker.x
 
 AS = mipsel-unknown-elf-as
 CC = mipsel-unknown-elf-gcc
@@ -9,8 +10,8 @@ OBJCOPY = mipsel-unknown-elf-objcopy
 
 TARGET = -mips1 -EL
 ASFLAGS = $(TARGET)
-CFLAGS = $(TARGET) -Wall -O3
-LDFLAGS = -T ./linker.x
+CFLAGS = $(TARGET) -Wall
+LDFLAGS = -T $(LD_SCRIPT)
 
 all: $(OUTPUT)
 
