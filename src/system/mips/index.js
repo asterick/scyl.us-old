@@ -2,7 +2,7 @@ import Exception from "./exception";
 import locate from "./instructions";
 
 import { params } from "../../util";
-import { MAX_LOOPS, PROCESSOR_ID, Exceptions } from "./consts";
+import { MAX_BLOCK_CLOCK, PROCESSOR_ID, Exceptions } from "./consts";
 
 const STATUS_CU3 = 0x80000000;
 const STATUS_CU2 = 0x40000000;
@@ -93,7 +93,7 @@ export default class MIPS {
 				block = this._cache[physical] = this._compile(physical, logical);
 			}
 
-			block(this);
+			block(Exception, this);
 		} catch (e) {
 			this._trap(e);
 		}
@@ -191,16 +191,16 @@ export default class MIPS {
 			lines.push(`case 0x${(start + i).toString(16)}: ${this._evaluate(start + i, physical + i, false, build, exception)}`);
 		}
 
-		var funct = new Function("Exception", `return function (that) {
-			for(var loop_counter = ${MAX_LOOPS}; loop_counter >= 0; loop_counter--) {
-				switch (that.pc) {
-					\n${lines.join("\n")}
-					that.pc = 0x${(end >>> 0).toString(16)};
-				default:
-					return ;
-				}
+		var funct = new Function("Exception", "that", `
+		while (that.clock < ${MAX_BLOCK_CLOCK}) {
+			switch (that.pc) {
+				\n${lines.join("\n")}
+				that.pc = 0x${(end >>> 0).toString(16)};
+			default:
+				return ;
 			}
-		}`).call(null, Exception);
+		}
+		`);
 
 		funct.physical = physical;
 		funct.logical = start;

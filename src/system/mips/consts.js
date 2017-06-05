@@ -1,4 +1,4 @@
-export const MAX_LOOPS = 32;
+export const MAX_BLOCK_CLOCK = 500000;
 export const PROCESSOR_ID = 0x00000301;
 
 export const Registers = [

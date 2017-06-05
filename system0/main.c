@@ -14,4 +14,5 @@ void* memcpy(void* dest, const void* src, size_t n) {
 
 int main(void) {
 	memcpy(_DATA_TARGET, _DATA_START, _DATA_SIZE);
+	for (;;) ;
 }

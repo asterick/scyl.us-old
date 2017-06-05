@@ -414,7 +414,7 @@ function JAL (pc, imm26, delay) {
 
 function JR(rs, pc, delay) {
 	delay();
-	return (rs ? this.registers[rs] & ~3: 0);
+	return (rs ? this.registers[rs] & ~3: 0) >>> 0;
 }
 
 function JALR(rs, rd, pc, delay) {
@@ -423,7 +423,7 @@ function JALR(rs, rd, pc, delay) {
 		this.registers[rd] = pc + 8;
 	}
 
-	return (rs ? this.registers[rs] & ~3 : 0);
+	return (rs ? this.registers[rs] & ~3 : 0) >>> 0;
 }
 
 function BEQ(pc, rs, rt, simm16, delay) {

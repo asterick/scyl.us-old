@@ -5,8 +5,8 @@
 
 _reset:
 	li 	$sp, 0x80400000	# Initialize the stack to the top of memory
-	j	main
-	nop
+	jal main
+	j   _reset
 
 	# TLB Exception handler
 	.section	.tlb, "ax", @progbits
