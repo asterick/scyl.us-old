@@ -2,7 +2,7 @@ import Exception from "./exception";
 import locate from "./instructions";
 
 import { params } from "../../util";
-import { MAX_BLOCK_CLOCK, PROCESSOR_ID, Exceptions } from "./consts";
+import { MAX_COMPILE_SIZE, MAX_BLOCK_CLOCK, TLB_PAGE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
 
 const STATUS_CU3 = 0x80000000;
 const STATUS_CU2 = 0x40000000;
@@ -81,18 +81,19 @@ export default class MIPS {
 		this._interrupt();
 
 		const translated = this._translate(this.pc, false);
-		const block_size = 0x1000;
-		const physical = (translated & ~0xFFF) >>> 0;
-		const logical = (this.pc & ~0xFFF) >>> 0;
+		const block_size = TLB_PAGE_SIZE;
+		const block_mask = ~(block_size - 1);
+		const physical = (translated & block_mask) >>> 0;
+		const logical = (this.pc & block_mask) >>> 0;
 		var funct = this._cache[physical];
 
-		if (funct === undefined || funct.d !== d) {
+		if (funct === undefined || funct.logical !== logical) {
 			const build = (op, pc, fields) => {
-				if ((pc & ~0xFFF) === logical) {
+				if ((pc & block_mask) >>> 0 === logical) {
 					return "that.clock++;" + op.instruction.template(... fields)
 				} else {
 					return `{
-						const ret_addr = that._tail_delay(${pc});
+						const ret_addr = that._tailDelay(${pc});
 						if (ret_addr !== undefined) {
 							that.pc = ret_addr;
 							continue ;
@@ -132,17 +133,6 @@ export default class MIPS {
 		}
 	}
 
-	// This forces delay slots at the end of a page to
-	// be software interpreted so TLB changes don't
-	// cause cache failsures
-	_tail_delay(pc) {
-	 	this.clock++;
-		const physical = this._translate(pc, false);
-		return this._evaluate(pc, physical, true,
-				(op, pc, fields) => op.instruction.apply(this, fields),
-				(e, pc, delayed) => { throw new Exception(e, pc, delayed) });
-	}
-
 	step () {
 		this._interrupt();
 
@@ -174,7 +164,12 @@ export default class MIPS {
 		try {
 			const physical = this._translate(address, true);
 			this.write(physical, value, mask);
-			this._cache[physical & ~0xFFF] = null;
+
+			// Invalidate cache line
+			const block_size = TLB_PAGE_SIZE;
+			const block_mask = ~(block_size - 1);
+
+			this._cache[physical & block_mask] = null;
 		} catch (e) {
 			throw new Exception(e, pc, delayed, 0);
 		}
@@ -198,7 +193,6 @@ export default class MIPS {
 	/****
 	 ** Begin private methods
 	 ****/
-
 	_evaluate (logical, physical, delayed, execute, exception) {
 		try {
 			const op = locate(this.read(true, physical));
@@ -223,6 +217,17 @@ export default class MIPS {
 		} catch (e) {
 			return exception(e, logical, delayed);
 		}
+	}
+
+	// This forces delay slots at the end of a page to
+	// be software interpreted so TLB changes don't
+	// cause cache failures
+	_tailDelay(pc) {
+	 	this.clock++;
+		const physical = this._translate(pc, false);
+		return this._evaluate(pc, physical, true,
+				(op, pc, fields) => op.instruction.apply(this, fields),
+				(e, pc, delayed) => { throw new Exception(e, pc, delayed) });
 	}
 
 	/*******

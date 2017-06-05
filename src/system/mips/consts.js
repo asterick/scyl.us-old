@@ -1,3 +1,5 @@
+export const TLB_PAGE_SIZE = 0x1000;
+export const MAX_COMPILE_SIZE = 0x1000;
 export const MAX_BLOCK_CLOCK = 500000;
 export const PROCESSOR_ID = 0x00000301;
 

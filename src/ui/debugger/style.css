@@ -8,6 +8,7 @@ table.disassembler {
 	border: 1px solid;
 	display: inline-block;
 	margin: 0 4px;
+	min-width: 60ex;
 }
 
 table.registers {

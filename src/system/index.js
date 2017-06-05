@@ -16,6 +16,15 @@ export default class extends MIPS {
 		// TODO
 	}
 
+	blockSize(address) {
+		if (address < 0x400000) {
+			return this.ram.length;
+		}
+		else if (address >= 0x1FC00000 && address < 0x1FC80000) {
+			return this.rom.length;
+		}
+	}
+
 	read (code, address) {
 		if (address < 0x400000) {
 			return this.ram[address >>> 2];
@@ -23,7 +32,7 @@ export default class extends MIPS {
 		else if (address >= 0x1FC00000 && address < 0x1FC80000) {
 			return this.rom[(address >>> 2) & 0x1FFFF];
 		}
-		
+
 		throw code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData;
 	}
 
