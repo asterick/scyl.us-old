@@ -2,7 +2,7 @@ import Exception from "./exception";
 import locate from "./instructions";
 
 import { params } from "../../util";
-import { MAX_COMPILE_SIZE, MAX_BLOCK_CLOCK, TLB_PAGE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
+import { MAX_COMPILE_SIZE, FRAME_CLOCK, TLB_PAGE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
 
 const STATUS_CU3 = 0x80000000;
 const STATUS_CU2 = 0x40000000;
@@ -77,63 +77,75 @@ export default class MIPS {
 		this._cause = 0;
 	}
 
+	// Execute a single frame
 	run () {
-		this._interrupt();
+		const old = +new Date();
 
-		const translated = this._translate(this.pc, false);
-		const block_size = this._blockSize(this.pc);
-		const block_mask = ~(block_size - 1);
-		const physical = (translated & block_mask) >>> 0;
-		const logical = (this.pc & block_mask) >>> 0;
+		while (this.clock < FRAME_CLOCK) {
+			const translated = this._translate(this.pc, false);
+			const block_size = this._blockSize(this.pc);
+			const block_mask = ~(block_size - 1);
+			const physical = (translated & block_mask) >>> 0;
+			const logical = (this.pc & block_mask) >>> 0;
 
-		var funct = this._cache[physical];
+			var funct = this._cache[physical];
 
-		if (funct === undefined || funct.logical !== logical) {
-			const build = (op, pc, fields) => {
-				if ((pc & block_mask) >>> 0 === logical) {
-					return "that.clock++;" + op.instruction.template(... fields)
-				} else {
-					return `{
-						const ret_addr = that._tailDelay(${pc});
-						if (ret_addr !== undefined) {
-							that.pc = ret_addr;
-							continue ;
-						}
-					}`;
-				}
-			};
-			const exception = (e, pc, delayed) => `that.clock++; throw new Exception(${e}, ${pc}, ${delayed})`
-			const lines = [];
-
-			for (var i = 0; i < block_size; i += 4) {
-				lines.push(`case 0x${(logical + i).toString(16)}: ${this._evaluate(logical + i, physical + i, false, build, exception)}`);
-			}
-
-			funct = {
-				code: new Function("Exception", "that", `
-					while (that.clock < ${MAX_BLOCK_CLOCK}) {
-						switch (that.pc) {
-							\n${lines.join("\n")}
-							that.pc = 0x${(logical + block_size).toString(16)};
-						default:
-							return ;
-						}
+			if (funct === undefined || funct.logical !== logical) {
+				const build = (op, pc, fields, delayed) => {
+					if ((pc & block_mask) >>> 0 === logical) {
+						return ((delayed) ? `that.clock += ${pc} - last_pc;` : "") + op.instruction.template(... fields)
+					} else {
+						return `{
+							that.clock += ${pc} - last_pc;
+							const ret_addr = that._tailDelay(${pc});
+							if (ret_addr !== undefined) {
+								that.pc = ret_addr;
+								continue ;
+							}
+						}`;
 					}
-					`),
-				logical: logical,
-				valid: true
-			};
+				};
+				const exception = (e, pc, delayed) => `that.clock += ${pc} - last_pc; throw new Exception(${e}, ${pc}, ${delayed})`
+				const lines = [];
 
-			for (let start = physical; start < physical + block_size; start += TLB_PAGE_SIZE) {
-				this._cache[start] = funct;
+				for (var i = 0; i < block_size; i += 4) {
+					lines.push(`case 0x${(logical + i).toString(16)}: ${this._evaluate(logical + i, physical + i, false, build, exception)}`);
+				}
+
+				funct = {
+					code: new Function("Exception", "that", `
+						while (that.clock < ${FRAME_CLOCK}) {
+							const last_pc = that.pc;
+							that._interrupt();
+
+							switch (that.pc) {
+								\n${lines.join("\n")}
+								that.pc = 0x${(logical + block_size).toString(16)};
+								that.clock += ${logical + block_size} - last_pc;
+							default:
+								return ;
+							}
+						}
+						`),
+					logical: logical,
+					valid: true
+				};
+
+				for (let start = physical; start < physical + block_size; start += TLB_PAGE_SIZE) {
+					this._cache[start] = funct;
+				}
+			}
+
+			try {
+				funct.code(Exception, this);
+			} catch (e) {
+				this._trap(e);
 			}
 		}
 
-		try {
-			funct.code(Exception, this);
-		} catch (e) {
-			this._trap(e);
-		}
+		// Advance our clock
+		this.clock -= FRAME_CLOCK;
+		console.log(+new Date()  - old)
 	}
 
 	step () {
@@ -213,7 +225,7 @@ export default class MIPS {
 				case 'delayed':
 					return delayed;
 				case 'delay':
-					return () => this._evaluate(logical + 4, physical + 4, true, execute);
+					return () => this._evaluate(logical + 4, physical + 4, true, execute, exception);
 				default:
 					if (op[f] === undefined) {
 						throw new Error(`BAD FIELD ${f}`);
@@ -222,7 +234,7 @@ export default class MIPS {
 				}
 			});
 
-			return execute(op, logical, fields);
+			return execute(op, logical, fields, delayed);
 		} catch (e) {
 			return exception(e, logical, delayed);
 		}
@@ -232,7 +244,6 @@ export default class MIPS {
 	// be software interpreted so TLB changes don't
 	// cause cache failures
 	_tailDelay(pc) {
-	 	this.clock++;
 		const physical = this._translate(pc, false);
 		return this._evaluate(pc, physical, true,
 				(op, pc, fields) => op.instruction.apply(this, fields),
