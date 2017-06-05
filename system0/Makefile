@@ -24,7 +24,7 @@ dump: $(BINARY)
 $(OUTPUT): $(BINARY)
 	$(OBJCOPY) -I elf32-littlemips -O binary $< $@
 
-$(BINARY): $(OBJECTS)
+$(BINARY): $(OBJECTS) $(LD_SCRIPT)
 	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
 
 %.o: %.s

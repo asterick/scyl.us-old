@@ -28,9 +28,9 @@ const STATUS_IEp = 0x00000004;
 const STATUS_KUc = 0x00000002;
 const STATUS_IEc = 0x00000001;
 
-const ALL_STATUS_BITS = 
+const ALL_STATUS_BITS =
 	STATUS_CU3 | STATUS_CU2 | STATUS_CU1 | STATUS_CU0 |
-	STATUS_BEV | STATUS_IM | 
+	STATUS_BEV | STATUS_IM |
 	STATUS_KUo | STATUS_IEo | STATUS_KUp | STATUS_IEp | STATUS_KUc | STATUS_IEc;
 
 function random() {
@@ -123,7 +123,7 @@ export default class MIPS {
 
 			const size = _blockSize(address);
 			const physical = address & ~0xFFF;
-			
+
 			delete this._cache[physical];
 
 			// Delete previous block to prevent delay slot errors
@@ -154,18 +154,18 @@ export default class MIPS {
 	 ** Begin private methods
 	 ****/
 
-	_evaluate (pc, delayed, execute, exception) {
+	_evaluate (logical, physical, delayed, execute, exception) {
 		try {
-			const op = locate(this.read(true, pc));
+			const op = locate(this.read(true, physical));
 
 			const fields = op.instruction.fields.map((f) => {
 				switch (f) {
 				case 'pc':
-					return pc;
+					return logical;
 				case 'delayed':
 					return delayed;
 				case 'delay':
-					return () => this._evaluate(pc + 4, true, execute);
+					return () => this._evaluate(logical + 4, physical + 4, true, execute);
 				default:
 					if (op[f] === undefined) {
 						throw new Error(`BAD FIELD ${f}`);
@@ -176,7 +176,7 @@ export default class MIPS {
 
 			return execute(op, fields);
 		} catch (e) {
-			return exception(e, pc, delayed);
+			return exception(e, logical, delayed);
 		}
 	}
 
@@ -187,7 +187,7 @@ export default class MIPS {
 		const end = start + 0x1000;
 
 		for (var i = 0; i < 0x1000; i += 4) {
-			lines.push(`case 0x${(start + i).toString(16)}: ${this._evaluate(physical + i, false, build, exception)}`);
+			lines.push(`case 0x${(start + i).toString(16)}: ${this._evaluate(start + i, physical + i, false, build, exception)}`);
 		}
 
 		var funct = new Function("Exception", `return function (that) {
@@ -209,11 +209,11 @@ export default class MIPS {
 		return funct;
 	}
 
-	_execute (pc) {
+	_execute () {
 	 	this.clock++;
 		const physical = this._translate(this.pc, false);
-		const ret_addr = this._evaluate(physical, false, 
-			(op, fields) => op.instruction.apply(this, fields), 
+		const ret_addr = this._evaluate(this.pc, physical, false,
+			(op, fields) => op.instruction.apply(this, fields),
 			(e, pc, delayed) => { throw new Exception(e, pc, delayed) });
 
 		if (ret_addr !== undefined) {

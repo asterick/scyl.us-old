@@ -1,10 +1,10 @@
 SECTIONS
 {
-	.text 0xbcf00000 : {
+	.text 0xbfc00000 : {
 		*(.reset)
-		. = 0x80;
-		*(.tlb)
 		. = 0x100;
+		*(.tlb)
+		. = 0x180;
 		*(.exception)
 		*(.text)
 	}
