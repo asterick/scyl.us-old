@@ -8,9 +8,9 @@ CC = mipsel-unknown-elf-gcc
 LD = mipsel-unknown-elf-ld
 OBJCOPY = mipsel-unknown-elf-objcopy
 
-TARGET = -mips1 -EL
+TARGET = -mips1 -EL -mhard-float
 ASFLAGS = $(TARGET)
-CFLAGS = $(TARGET) -Wall
+CFLAGS = $(TARGET) -Wall -G0 -nostdlib -Wimplicit-function-declaration
 LDFLAGS = -T $(LD_SCRIPT)
 
 all: $(OUTPUT)
@@ -19,16 +19,16 @@ clean:
 	rm -Rf  $(OBJECTS)
 
 dump: $(BINARY)
-	mipsel-unknown-elf-objdump -x -d $<
+	mipsel-unknown-elf-objdump -x -s -d $<
 
 $(OUTPUT): $(BINARY)
 	$(OBJCOPY) -I elf32-littlemips -O binary $< $@
 
 $(BINARY): $(OBJECTS)
-	$(LD) $(LDFLAGS) -o $@ $<
+	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
 
 %.o: %.s
 	$(AS) -o $@ $<
 
 %.o: %.c
-	$(CC) $(CFLAGS) -o $@ -c $< 
+	$(CC) $(CFLAGS) -o $@ -c $<
