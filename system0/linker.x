@@ -7,6 +7,7 @@ SECTIONS
 		. = 0x180;
 		*(.exception)
 		*(.text)
+		*(.rodata)
 	}
 
 	_DATA_START = .;

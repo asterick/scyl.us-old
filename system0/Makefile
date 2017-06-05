@@ -10,7 +10,7 @@ OBJCOPY = mipsel-unknown-elf-objcopy
 
 TARGET = -mips1 -EL -mhard-float
 ASFLAGS = $(TARGET)
-CFLAGS = $(TARGET) -Wall -G0 -nostdlib -Wimplicit-function-declaration
+CFLAGS = $(TARGET) -Wall -O3 -G0 -nostdlib -Wimplicit-function-declaration
 LDFLAGS = -T $(LD_SCRIPT)
 
 all: $(OUTPUT)
@@ -18,11 +18,13 @@ all: $(OUTPUT)
 clean:
 	rm -Rf  $(OBJECTS)
 
-dump: $(BINARY)
-	mipsel-unknown-elf-objdump -x -s -d $<
+dump: $(OUTPUT)
+	mipsel-unknown-elf-objdump -x -s -d $(BINARY)
 
 $(OUTPUT): $(BINARY)
-	$(OBJCOPY) -I elf32-littlemips -O binary $< $@
+	$(OBJCOPY) -I elf32-littlemips -O binary -R ".data" $< $@
+	$(OBJCOPY) -I elf32-littlemips -O binary -j ".data" $< data.bin
+	cat data.bin >> $@
 
 $(BINARY): $(OBJECTS) $(LD_SCRIPT)
 	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
