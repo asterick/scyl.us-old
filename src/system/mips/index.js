@@ -121,7 +121,7 @@ export default class MIPS {
 		try {
 			this.write(this._translate(address, true), value, mask);
 
-			const size = _blockSize(address);
+			const size = 0x1000;
 			const physical = address & ~0xFFF;
 
 			delete this._cache[physical];
@@ -181,12 +181,13 @@ export default class MIPS {
 	}
 
 	_compile (physical, start) {
+		const block_size = 0x1000;
 		const build = (op, fields) => "that.clock++;" + op.instruction.template(... fields);
 		const exception = (e, pc, delayed) => `that.clock++; throw new Exception(${e}, ${pc}, ${delayed})`
 		const lines = [];
-		const end = start + 0x1000;
+		const end = start + block_size;
 
-		for (var i = 0; i < 0x1000; i += 4) {
+		for (var i = 0; i < block_size; i += 4) {
 			lines.push(`case 0x${(start + i).toString(16)}: ${this._evaluate(start + i, physical + i, false, build, exception)}`);
 		}
 
