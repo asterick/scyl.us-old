@@ -81,10 +81,11 @@ export default class MIPS {
 		this._interrupt();
 
 		const translated = this._translate(this.pc, false);
-		const block_size = TLB_PAGE_SIZE;
+		const block_size = this._blockSize(this.pc);
 		const block_mask = ~(block_size - 1);
 		const physical = (translated & block_mask) >>> 0;
 		const logical = (this.pc & block_mask) >>> 0;
+
 		var funct = this._cache[physical];
 
 		if (funct === undefined || funct.logical !== logical) {
@@ -108,26 +109,28 @@ export default class MIPS {
 				lines.push(`case 0x${(logical + i).toString(16)}: ${this._evaluate(logical + i, physical + i, false, build, exception)}`);
 			}
 
-			var funct = new Function("Exception", "that", `
-			while (that.clock < ${MAX_BLOCK_CLOCK}) {
-				switch (that.pc) {
-					\n${lines.join("\n")}
-					that.pc = 0x${(logical + block_size).toString(16)};
-				default:
-					return ;
-				}
+			funct = {
+				code: new Function("Exception", "that", `
+					while (that.clock < ${MAX_BLOCK_CLOCK}) {
+						switch (that.pc) {
+							\n${lines.join("\n")}
+							that.pc = 0x${(logical + block_size).toString(16)};
+						default:
+							return ;
+						}
+					}
+					`),
+				logical: logical,
+				valid: true
+			};
+
+			for (let start = physical; start < physical + block_size; start += TLB_PAGE_SIZE) {
+				this._cache[start] = funct;
 			}
-			`);
-
-			funct.physical = physical;
-			funct.logical = logical;
-			funct.valid = true;
-
-			this._cache[physical] = funct;
 		}
 
 		try {
-			funct(Exception, this);
+			funct.code(Exception, this);
 		} catch (e) {
 			this._trap(e);
 		}
@@ -166,10 +169,16 @@ export default class MIPS {
 			this.write(physical, value, mask);
 
 			// Invalidate cache line
-			const block_size = TLB_PAGE_SIZE;
+			const block_size = this._blockSize(address);
 			const block_mask = ~(block_size - 1);
+			const address = physical & block_mask;
+			const entry = this._cache[address];
 
-			this._cache[physical & block_mask] = null;
+			if (entry) {
+				// Clear this row out (de-reference the function so we don't leak)
+				entry.valid = false;
+				entry.code = null;
+			}
 		} catch (e) {
 			throw new Exception(e, pc, delayed, 0);
 		}
@@ -228,6 +237,14 @@ export default class MIPS {
 		return this._evaluate(pc, physical, true,
 				(op, pc, fields) => op.instruction.apply(this, fields),
 				(e, pc, delayed) => { throw new Exception(e, pc, delayed) });
+	}
+
+	_blockSize(address) {
+		if (address & 0xC0000000 !== 0x80000000) {
+			return TLB_PAGE_SIZE;
+		} else {
+			return Math.min(MAX_COMPILE_SIZE, this.blockSize(address & 0x1FFFFFFC) || TLB_PAGE_SIZE);
+		}
 	}
 
 	/*******
@@ -440,7 +457,6 @@ export default class MIPS {
 			(e.coprocessor << 28) |
 			(e.exception << 2);
 
-		// THIS IS NOT FULLY FLESHED OUT
 		switch (e.exception) {
 		case Exceptions.TLBLoad:
 		case Exceptions.TLBStore:

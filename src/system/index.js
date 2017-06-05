@@ -17,12 +17,11 @@ export default class extends MIPS {
 	}
 
 	blockSize(address) {
-		if (address < 0x400000) {
-			return this.ram.length;
-		}
-		else if (address >= 0x1FC00000 && address < 0x1FC80000) {
+		if (address >= 0x1FC00000 && address < 0x1FC80000) {
 			return this.rom.length;
 		}
+
+		// Use the default page size
 	}
 
 	read (code, address) {
