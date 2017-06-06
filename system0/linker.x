@@ -9,11 +9,12 @@ SECTIONS
 		*(.text)
 		*(.rodata)
 	}
-
 	_DATA_START = .;
+
 	. = 0x80000000;
 	_DATA_TARGET = ABSOLUTE(.);
 	.data : { *(.data) }
    	_DATA_SIZE = . - _DATA_TARGET;
    	.bss : { *(.bss) }
+   	_STACK_START = . + 0x20000;
 }

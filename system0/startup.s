@@ -2,9 +2,10 @@
 	.section	.reset, "ax", @progbits
 	.align		4
 	.globl		main
+	.globl		_STACK_START
 
 _reset:
-	li 	$sp, 0x80400000	# Initialize the stack to the top of memory
+	la 	$sp, _STACK_START
 	jal main
 	j   _reset
 
