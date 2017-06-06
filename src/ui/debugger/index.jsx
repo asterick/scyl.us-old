@@ -3,6 +3,7 @@ import Component from 'inferno-component';
 
 import style from "./style.css";
 
+import Memory from "./memory";
 import Assembly from "./assembly";
 import Registers from "./registers";
 
@@ -19,6 +20,7 @@ export default class extends Component {
 					this.forceUpdate();
 				}}/>
 			</div>
+			<Memory runtime={this.props.runtime} />
 			<Assembly runtime={this.props.runtime} />
 			<Registers runtime={this.props.runtime} />
 		</div>

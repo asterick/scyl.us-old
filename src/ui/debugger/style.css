@@ -11,6 +11,11 @@ table.disassembler {
 	min-width: 60ex;
 }
 
+table.memory {
+	border: 1px solid;
+	display: inline-block;
+}
+
 table.registers {
 	border: 1px solid;
 	display: inline-block;
