@@ -1,6 +1,7 @@
 export const TLB_PAGE_SIZE 		= 0x1000;		// Used for block size grainularity
-export const MAX_COMPILE_SIZE	= 0x1000;		// 64K blocks are the maximum block compile size
-export const FRAME_CLOCK		= 15000000 / 60 * 4;	// Ticks are counting bytes, not instructions
+export const MAX_COMPILE_SIZE	= 0x20000;		// 128K blocks are the maximum block compile size
+export const CLOCK_BLOCK		= 15000;		// Clock ticks per ms
+
 export const PROCESSOR_ID 		= 0x00000301;
 
 export const Registers = [
