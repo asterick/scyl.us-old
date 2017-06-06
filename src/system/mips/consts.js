@@ -1,5 +1,5 @@
 export const TLB_PAGE_SIZE 		= 0x1000;		// Used for block size grainularity
-export const MAX_COMPILE_SIZE	= 0x20000;		// 128K blocks are the maximum block compile size
+export const MAX_COMPILE_SIZE	= 0x10000;		// 64K blocks are the maximum block compile size
 export const CLOCK_BLOCK		= 15000;		// Clock ticks per ms
 
 export const PROCESSOR_ID 		= 0x00000301;
