@@ -9,12 +9,17 @@ SECTIONS
 		*(.text)
 		*(.rodata)
 	}
-	_DATA_START = .;
+	. = ALIGN(8);
+	_DATA_ROM = .;
 
 	. = 0x80020000;
-	_STACK_START = .;
-	_DATA_TARGET = .;
+	_STACK_TOP = .;
+	_DATA_START = .;
 	.data : { *(.data) }
-   	_DATA_SIZE = . - _DATA_TARGET;
+	. = ALIGN(4);
+   	_DATA_SIZE = . - _DATA_START;
+
+   	_BSS_START = .;
    	.bss : { *(.bss) }
+   	_BSS_END = .;
 }

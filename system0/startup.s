@@ -2,10 +2,10 @@
 	.section	.reset, "ax", @progbits
 	.align		4
 	.globl		main
-	.globl		_STACK_START
+	.globl		_STACK_TOP
 
 _reset:
-	la 	$sp, _STACK_START
+	la 	$sp, _STACK_TOP
 	jal main
 	j   _reset
 
