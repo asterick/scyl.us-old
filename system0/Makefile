@@ -8,7 +8,7 @@ CC = mipsel-unknown-elf-gcc
 LD = mipsel-unknown-elf-ld
 OBJCOPY = mipsel-unknown-elf-objcopy
 
-TARGET = -mips1 -EL -mhard-float
+TARGET = -march=r3000 -EL -mhard-float
 ASFLAGS = $(TARGET)
 CFLAGS = $(TARGET) -Wall -O3 -G0 -nostdlib -Wimplicit-function-declaration
 LDFLAGS = -T $(LD_SCRIPT)

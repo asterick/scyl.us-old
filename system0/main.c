@@ -5,7 +5,7 @@ extern const uint32_t _DATA_ROM;
 extern const uint32_t _DATA_START;
 extern const uint32_t _DATA_SIZE;
 
-unsigned char DATA[] = {1,2,3,4,5,6,7,8,9};
+volatile uint32_t DATA[] = {1,1,1,1,1,1,1,1,1};
 
 void* memcpy(void* dest, const void* src, size_t n) {
 	unsigned char *t = (unsigned char*) dest;
@@ -16,6 +16,5 @@ void* memcpy(void* dest, const void* src, size_t n) {
 }
 
 int main(void) {
-	memcpy(&_DATA_START, &_DATA_ROM, (uint32_t)&_DATA_SIZE);
-	for (;;) ;
+	memcpy((void*)&_DATA_START, &_DATA_ROM, (uint32_t)&_DATA_SIZE);
 }

@@ -2,7 +2,7 @@ import Exception from "./exception";
 import locate from "./instructions";
 
 import { params } from "../../util";
-import { MAX_COMPILE_SIZE, CLOCK_BLOCK, TLB_PAGE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
+import { MAX_COMPILE_SIZE, CLOCK_BLOCK, MIN_COMPILE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
 
 const STATUS_CU3 = 0x80000000;
 const STATUS_CU2 = 0x40000000;
@@ -122,7 +122,7 @@ export default class MIPS {
 				logical: logical
 			};
 
-			for (let start = physical; start < physical + block_size; start += TLB_PAGE_SIZE) {
+			for (let start = physical; start < physical + block_size; start += MIN_COMPILE_SIZE) {
 				this._cache[start] = funct;
 			}
 		}
@@ -230,9 +230,9 @@ export default class MIPS {
 
 	_blockSize(address) {
 		if (address & 0xC0000000 !== 0x80000000) {
-			return TLB_PAGE_SIZE;
+			return MIN_COMPILE_SIZE;
 		} else {
-			return Math.min(MAX_COMPILE_SIZE, this.blockSize(address & 0x1FFFFFFC) || TLB_PAGE_SIZE);
+			return Math.min(MAX_COMPILE_SIZE, this.blockSize(address & 0x1FFFFFFC) || MIN_COMPILE_SIZE);
 		}
 	}
 
