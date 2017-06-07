@@ -17,4 +17,5 @@ void* memcpy(void* dest, const void* src, size_t n) {
 
 int main(void) {
 	memcpy((void*)&_DATA_START, &_DATA_ROM, (uint32_t)&_DATA_SIZE);
+	for (;;) ;
 }

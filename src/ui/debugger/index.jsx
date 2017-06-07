@@ -11,15 +11,22 @@ export default class extends Component {
 	render() {
 		return <div class={style.debugger}>
 			<div style="display: inline-block">
-				<input type="button" value="run" onClick={() => {
-					this.props.runtime.run();
-					this.forceUpdate();
-				}}/>
+				{ this.props.runtime.running
+					? <input type="button" value="stop" onClick={() => {
+						this.props.runtime.stop();
+						this.forceUpdate();
+					}}/>
+					: <input type="button" value="start" onClick={() => {
+						this.props.runtime.start();
+						this.forceUpdate()
+					}}/>
+				}
 				<input type="button" value="step" onClick={() => {
 					this.props.runtime.step();
 					this.forceUpdate();
 				}}/>
 			</div>
+
 			<Memory runtime={this.props.runtime} />
 			<Assembly runtime={this.props.runtime} />
 			<Registers runtime={this.props.runtime} />

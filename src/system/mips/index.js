@@ -78,7 +78,7 @@ export default class MIPS {
 	}
 
 	// Execute a single frame
-	_tick () {
+	_executeBlock (time) {
 		const block_size = this._blockSize(this.pc);
 		const block_mask = ~(block_size - 1);
 		const physical = (this._translate(this.pc, false) & block_mask) >>> 0;
@@ -106,9 +106,9 @@ export default class MIPS {
 			}
 
 			funct = {
-				code: new Function("Exception", "that", `
+				code: new Function("Exception", "that", "time", `
 					// Can only run in a hard loop for 1ms (virtual)
-					while (that.clock < ${CLOCK_BLOCK}) {
+					while (that.clock < time) {
 						const last_pc = that.pc;
 
 						switch (last_pc) {
@@ -129,15 +129,16 @@ export default class MIPS {
 
 		try {
 			this._interrupt();
-			funct.code(Exception, this);
+			funct.code(Exception, this, time);
 		} catch (e) {
 			this._trap(e);
 		}
 	}
 
-	run () {
-		while (this.clock < CLOCK_BLOCK)
-			this._tick();
+	_tick (ticks) {
+		const time = ticks * CLOCK_BLOCK;
+		while (this.clock < time)
+			this._executeBlock(time);
 
 		// Advance our clock
 		this.clock -= CLOCK_BLOCK;
