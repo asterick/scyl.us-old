@@ -105,6 +105,7 @@ export default class {
 		gl.viewport(0, 0, this._viewportWidth, this._viewportHeight);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		gl.useProgram(this._copyShader.program);
 		gl.uniformMatrix4fv(this._copyShader.uniforms.uPMatrix, false, this._displayMatrix);
 
