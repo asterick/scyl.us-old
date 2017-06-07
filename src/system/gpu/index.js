@@ -29,21 +29,40 @@ export default class {
 
 		// Setup or rendering programs
 		this._copyShader = this._createShader (CopyVertexShader, CopyFragmentShader);
-		//this._drawShader = this._createShader (DrawVertexShader, DrawFragmentShader);
+		this._drawShader = this._createShader (DrawVertexShader, DrawFragmentShader);
 
 		// Setup our texture / frame buffer
+		this._blank = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, this._blank);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_SHORT_5_5_5_1, new Uint16Array([0xFFFF]));
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+
+		const pixels = new Uint16Array(VRAM_WIDTH*VRAM_HEIGHT);
+		for (var i = 0; i < pixels.length; i++) pixels[i] = i | 1;
 		this._vram = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, this._vram);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_SHORT_5_5_5_1, new Uint16Array(VRAM_WIDTH*VRAM_HEIGHT));
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_SHORT_5_5_5_1, pixels);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+
+		this._shadow = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, this._shadow);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_SHORT_5_5_5_1, pixels);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.bindTexture(gl.TEXTURE_2D, null);
 
 		this._frame = gl.createFramebuffer();
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._frame);
-		this._frame.width = VRAM_WIDTH;
-		this._frame.height = VRAM_HEIGHT;  		
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._vram, 0);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+		this._shadowFrame = gl.createFramebuffer();
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this._shadowFrame);
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._shadow, 0);
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
 		// Setup our Render buffers
@@ -55,12 +74,22 @@ export default class {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyUV);
 		gl.bufferData(gl.ARRAY_BUFFER, this._viewport, gl.STATIC_DRAW);
 
+		this._shadowUV = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._shadowUV);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), gl.STATIC_DRAW)
+
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+		this._drawXY = gl.createBuffer();
+		this._drawUV = gl.createBuffer();
+		this._drawRGB = gl.createBuffer();
 
 		// Setup context and programs
 		gl.clearColor(0.0, 0.0, 0.0, 1.0);
 		gl.disable(gl.DEPTH_TEST);
 		gl.disable(gl.BLEND);
+
+		this.repaint();
 	}
 
 	setViewport (x, y, width, height) {
@@ -107,19 +136,19 @@ export default class {
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		gl.useProgram(this._copyShader.program);
-		gl.uniformMatrix4fv(this._copyShader.uniforms.uPMatrix, false, this._displayMatrix);
+		gl.uniformMatrix4fv(this._copyShader.uniforms.projection, false, this._displayMatrix);
 
     	gl.activeTexture(gl.TEXTURE0);
     	gl.bindTexture(gl.TEXTURE_2D, this._vram);
-    	gl.uniform1i(this._copyShader.uniforms.uSampler, 0);
+    	gl.uniform1i(this._copyShader.uniforms.vram, 0);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyXY);
-		gl.enableVertexAttribArray(this._copyShader.attributes.aVertexPosition);
-		gl.vertexAttribPointer(this._copyShader.attributes.aVertexPosition, 2, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(this._copyShader.attributes.aVertex);
+		gl.vertexAttribPointer(this._copyShader.attributes.aVertex, 2, gl.FLOAT, false, 0, 0);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyUV);
-		gl.enableVertexAttribArray(this._copyShader.attributes.aTexturePosition);
-		gl.vertexAttribPointer(this._copyShader.attributes.aTexturePosition, 2, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(this._copyShader.attributes.aTexture);
+		gl.vertexAttribPointer(this._copyShader.attributes.aTexture, 2, gl.FLOAT, false, 0, 0);
 
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
 	}
@@ -134,6 +163,7 @@ export default class {
 		gl.compileShader(fragmentShader);
 
 		if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+			console.log("FRAGMENT", gl.getShaderInfoLog(fragmentShader));
 			return null;
 		}
 
@@ -141,6 +171,7 @@ export default class {
 		gl.compileShader(vertexShader);
 
 		if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+			console.log("VERTEX", gl.getShaderInfoLog(vertexShader));
 			return null;
 		}
 
@@ -150,6 +181,7 @@ export default class {
 		gl.linkProgram(shaderProgram);
 
 		if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+			console.log("LINK");
 			return null;
 		}
 

@@ -1,11 +1,11 @@
-attribute vec2 aVertexPosition;
-attribute vec2 aTexturePosition;
+attribute vec2 aVertex;
+attribute vec2 aTexture;
 
-uniform mat4 uPMatrix;
+varying vec2 vTexture;
 
-varying vec2 vTexturePosition;
+uniform mat4 projection;
 
 void main(void) {
-	vTexturePosition = aTexturePosition;
-    gl_Position = uPMatrix * vec4(aVertexPosition, 0.5, 1.0);
+	vTexture = aTexture;
+    gl_Position = projection * vec4(aVertex, 0.5, 1.0);
 }
