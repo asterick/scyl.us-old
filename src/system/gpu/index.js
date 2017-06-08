@@ -35,7 +35,6 @@ export default class {
 
 		this._canvas = canvas;
 		this._gl = gl;
-
 		this.resize();
 
 		// Global enable / disables
@@ -47,6 +46,13 @@ export default class {
 		// Setup or rendering programs
 		this._copyShader = this._createShader (CopyVertexShader, CopyFragmentShader);
 		this._drawShader = this._createShader (DrawVertexShader, DrawFragmentShader);
+
+		// Setup our vertex buffers
+		this._copyBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, -1, 1, 1, 1, 1, -1]), gl.STATIC_DRAW);
+
+		this._drawBuffer = gl.createBuffer();
 
 		// Setup our textures
 		this._blank = gl.createTexture();
@@ -76,15 +82,16 @@ export default class {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._shadowFrame);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._shadow, 0);
 
-		// Setup our Render buffers
-		this._copyXY = gl.createBuffer();
-		this._copyUV = gl.createBuffer();
-
-		this._shadowBuffer = gl.createBuffer();
-		this._drawBuffer = gl.createBuffer();
-
 		// Set context to render by default
 		this._enterRender();
+		/*
+        this._render(gl.TRIANGLE_FAN, false, new Float32Array([
+            1, 1, 0.0625, 0.0625, 1, 1, 0,
+           -1, 1,      0, 0.0625, 0, 1, 0,
+           -1,-1,      0,      0, 0, 0, 0,
+            1,-1, 0.0625,      0, 1, 0, 0,
+        ]));
+        */
 	}
 
 	setDraw(x, y, width, height) {
@@ -99,28 +106,13 @@ export default class {
 		y /= VRAM_HEIGHT;
 		width /= VRAM_WIDTH;
 		height /= VRAM_HEIGHT;
-
-		this._drawRegion = new Float32Array([
-			-1, -1,         x,          y,
-			 1, -1, x + width,          y,
-			 1,  1, x + width, y + height,
-			-1,  1,         x, y + height
-		]);
 	}
 
 	setViewport (x, y, width, height) {
-		this._leaveRender();
-
-		x /= VRAM_WIDTH;
-		y /= VRAM_HEIGHT;
-		width /= VRAM_WIDTH;
-		height /= VRAM_HEIGHT;
-
-		this._viewport = new Float32Array([
-			x, y,
-			x + width, y,
-			x + width, y + height,
-			x, y + height]);
+		this._viewX = x / VRAM_WIDTH;
+		this._viewY = y / VRAM_HEIGHT
+		this._viewWidth = width / VRAM_WIDTH;
+		this._viewHeight = height / VRAM_HEIGHT;
 	}
 
 	getData (x, y, width, height, target) {
@@ -156,8 +148,7 @@ export default class {
 		this._canvas.width  = this._viewportWidth;
 		this._canvas.height = this._viewportHeight;
 
-		const aspect = (this._viewportHeight / this._viewportWidth) * (4 / 3);
-		this._project = new Float32Array([-aspect, 1, aspect, 1, aspect, -1, -aspect, -1]);
+		this._aspectRatio = (this._viewportHeight / this._viewportWidth) * (4 / 3);
 	}
 
 	repaint () {
@@ -171,13 +162,13 @@ export default class {
 		gl.viewport(0, 0, this._viewportWidth, this._viewportHeight);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyXY);
-		gl.bufferData(gl.ARRAY_BUFFER, this._project, gl.STATIC_DRAW);
-		gl.vertexAttribPointer(this._copyShader.attributes.aVertex, 2, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyBuffer);
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyUV);
-		gl.bufferData(gl.ARRAY_BUFFER, this._viewport, gl.STATIC_DRAW);
-		gl.vertexAttribPointer(this._copyShader.attributes.aTexture, 2, gl.FLOAT, false, 0, 0);
+	   	gl.uniform1f(this._copyShader.uniforms.aspectRatio, this._aspectRatio);
+	   	gl.uniform2f(this._copyShader.uniforms.viewPosition, this._viewX, this._viewY);
+	   	gl.uniform2f(this._copyShader.uniforms.viewSize, this._viewWidth, this._viewHeight);
+
+		gl.vertexAttribPointer(this._copyShader.attributes.aVertex, 2, gl.FLOAT, false, 0, 0);
 
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
 	}
