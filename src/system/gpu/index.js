@@ -58,15 +58,13 @@ export default class {
 		this._vram = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, this._vram);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_SHORT_5_5_5_1, pixels);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.bindTexture(gl.TEXTURE_2D, null);
 
 		this._shadow = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, this._shadow);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_SHORT_5_5_5_1, pixels);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.bindTexture(gl.TEXTURE_2D, null);
 
 		// Setup the draw targets
@@ -133,8 +131,6 @@ export default class {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._vramFrame);
 		gl.readPixels(x, y, width, height, gl.RGBA, gl.UNSIGNED_SHORT_5_5_5_1, target);
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-		return target ;
 	}
 
 	setData (x, y, width, height, target) {
@@ -149,8 +145,6 @@ export default class {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._vramFrame);
 		gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, x, y, x, y, width, height);
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-		return target ;
 	}
 
 	resize () {
@@ -243,27 +237,20 @@ export default class {
 		gl.disableVertexAttribArray(this._drawShader.attributes.aTexture);
 		gl.disableVertexAttribArray(this._drawShader.attributes.aColor);
 
+		// ==== Copy rendered changes back to active VRAM ====
+		gl.bindTexture(gl.TEXTURE_2D, this._vram);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this._shadowFrame);
+		gl.copyTexSubImage2D(gl.TEXTURE_2D, 0,
+			this._drawX, this._drawY,
+			this._drawX, this._drawY,
+			this._drawWidth, this._drawHeight);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
 		// ==== Setup program
 		gl.useProgram(this._copyShader.program);
 
 		gl.enableVertexAttribArray(this._copyShader.attributes.aVertex);
 		gl.enableVertexAttribArray(this._copyShader.attributes.aTexture);
-
-		// ==== Copy rendered changes back to active VRAM ====
-		gl.bindFramebuffer(gl.FRAMEBUFFER, this._vramFrame);
-		gl.viewport(this._drawX, this._drawY, this._drawWidth, this._drawHeight);
-
-		gl.uniform1i(this._copyShader.uniforms.vram, 0);
-		gl.bindTexture(gl.TEXTURE_2D, this._shadow);
-
-		// ==== Mask in shadow frame ====
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._shadowBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, this._drawRegion, gl.DYNAMIC_DRAW);
-
-		gl.vertexAttribPointer(this._copyShader.attributes.aVertex, 2, gl.FLOAT, false,  16, 0);
-		gl.vertexAttribPointer(this._copyShader.attributes.aTexture, 2, gl.FLOAT, false, 16, 8);
-
-		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
 
 		// ==== SETUP RENDER CONTEXT ====
 		// Setup for frame copy
