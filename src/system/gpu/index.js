@@ -35,7 +35,6 @@ export default class {
 
 		this._canvas = canvas;
 		this._gl = gl;
-		this._dirty = false;
 
 		this.resize();
 
@@ -194,8 +193,6 @@ export default class {
 
 		this._enterRender();
 
-		this._dirty = true;
-
 		gl.viewport(this._drawX, this._drawY, this._drawWidth, this._drawHeight);
 
 		// Render our shit
@@ -253,24 +250,20 @@ export default class {
 		gl.enableVertexAttribArray(this._copyShader.attributes.aTexture);
 
 		// ==== Copy rendered changes back to active VRAM ====
-		if (this._dirty) {
-			gl.bindFramebuffer(gl.FRAMEBUFFER, this._vramFrame);
-			gl.viewport(this._drawX, this._drawY, this._drawWidth, this._drawHeight);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this._vramFrame);
+		gl.viewport(this._drawX, this._drawY, this._drawWidth, this._drawHeight);
 
-    		gl.uniform1i(this._copyShader.uniforms.vram, 0);
-    		gl.bindTexture(gl.TEXTURE_2D, this._shadow);
+		gl.uniform1i(this._copyShader.uniforms.vram, 0);
+		gl.bindTexture(gl.TEXTURE_2D, this._shadow);
 
-    		// ==== Mask in shadow frame ====
-			gl.bindBuffer(gl.ARRAY_BUFFER, this._shadowBuffer);
-			gl.bufferData(gl.ARRAY_BUFFER, this._drawRegion, gl.DYNAMIC_DRAW);
+		// ==== Mask in shadow frame ====
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._shadowBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, this._drawRegion, gl.DYNAMIC_DRAW);
 
-			gl.vertexAttribPointer(this._copyShader.attributes.aVertex, 2, gl.FLOAT, false,  16, 0);
-			gl.vertexAttribPointer(this._copyShader.attributes.aTexture, 2, gl.FLOAT, false, 16, 8);
+		gl.vertexAttribPointer(this._copyShader.attributes.aVertex, 2, gl.FLOAT, false,  16, 0);
+		gl.vertexAttribPointer(this._copyShader.attributes.aTexture, 2, gl.FLOAT, false, 16, 8);
 
-			gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
-
-			this._dirty = false;
-		}
+		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
 
 		// ==== SETUP RENDER CONTEXT ====
 		// Setup for frame copy
