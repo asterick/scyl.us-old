@@ -88,29 +88,6 @@ export default class {
 
 		// Set context to render by default
 		this._enterRender();
-
-		var target = new Uint16Array(256);
-
-		for (var i = 0; i < target.length; i++) target[i] = (i << 2) | 0x0001;
-		this.setData(0, 0, 16, 16, target);
-
-		this._render(gl.TRIANGLE_FAN, false, new Float32Array([
-			1, 1, 0.0625, 0.0625, 1, 1, 0,
-		    0, 1,      0, 0.0625, 0, 1, 0,
-		    0, 0,      0,      0, 0, 0, 0,
-		    1, 0, 0.0625,      0, 1, 0, 0,
-		]));
-
-		this.repaint();
-
-		this._render(gl.TRIANGLE_FAN, false, new Float32Array([
-			-1, 1, 0.0625, 0.0625, 1, 1, 0,
-		    0, 1,      0, 0.0625, 0, 1, 0,
-		    0, 0,      0,      0, 0, 0, 0,
-		    -1, 0, 0.0625,      0, 1, 0, 0,
-		]));
-
-		this.repaint();
 	}
 
 	setDraw(x, y, width, height) {
@@ -197,8 +174,6 @@ export default class {
 
 		this._leaveRender();
 
-		this._dirty = true;
-
 		// Copy our viewport to the screen
 		gl.viewport(0, 0, this._viewportWidth, this._viewportHeight);
 		gl.clear(gl.COLOR_BUFFER_BIT);
@@ -218,6 +193,8 @@ export default class {
 		const gl = this._gl;
 
 		this._enterRender();
+
+		this._dirty = true;
 
 		gl.viewport(this._drawX, this._drawY, this._drawWidth, this._drawHeight);
 
