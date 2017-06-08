@@ -13,7 +13,7 @@ varying vec2 vTexture;
 
 void main(void) {
 	vColor = aColor;
-	vTexture = aTexture / vec2(256.0, 256.0);
+	vTexture = aTexture;
 	vAbsolute = aVertex;
     gl_Position = vec4(aVertex / uDrawSize * 2.0 - 1.0 - uDrawPos, 1.0, 1.0);
 }

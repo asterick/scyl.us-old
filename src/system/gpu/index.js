@@ -1,11 +1,9 @@
 /***
  TODO
  ====
- * Be less crazy about copying data into buffers every frame
  * Blend / Mask modes
  * Rendering primitives
- * Paletted modes (?)
- * Shader based dithering
+ * Paletted modes
  ***/
 
 import CopyFragmentShader from "raw-loader!./shaders/copy.fragment.glsl";
@@ -16,12 +14,7 @@ import DrawVertexShader from "raw-loader!./shaders/draw.vertex.glsl";
 const VRAM_WIDTH = 1024;
 const VRAM_HEIGHT = 512;
 
-const DITHER_PATTERN = new Uint8Array([
-			15,  7, 13,  5,
-			 3, 11,  1,  9,
-			12,  4, 14,  6,
-			 0,  8,  2, 10
-		]);
+const DITHER_PATTERN = new Uint8Array([ 15, 7, 13, 5, 3, 11, 1, 9, 12, 4, 14, 6, 0, 8, 2, 10 ]);
 
 export default class {
 	constructor () {
@@ -47,8 +40,8 @@ export default class {
 		this.resize();
 
 		// Global enable / disables
+		gl.disable(gl.STENCIL_TEST);
 		gl.disable(gl.DEPTH_TEST);
-		gl.disable(gl.BLEND);
 		gl.enable(gl.DITHER);
 		gl.colorMask(true, true, true, true);
 		gl.clearColor(0, 0, 0, 1);
@@ -96,12 +89,11 @@ export default class {
 		this._enterRender();
         this._render(gl.TRIANGLE_FAN, false, new Float32Array([
             0,   0, 0, 0, 0, 0, 0,
-            0, 255, 0, 0, 0, 1, 0,
-          255, 255, 0, 0, 1, 1, 0,
-          255,   0, 0, 0, 1, 0, 0,
+            0, 256, 0, 0, 0, 1, 0,
+          256, 256, 0, 0, 1, 1, 0,
+          256,   0, 0, 0, 1, 0, 0,
         ]));
 
-        /*
         this._leaveRender();
 
         this._render(gl.TRIANGLE_FAN, true, new Float32Array([
@@ -110,7 +102,6 @@ export default class {
            192, 192, 255, 255, 1, 1, 1,
            192,  64, 255,   0, 1, 1, 1,
         ]));
-        */
 	}
 
 	setDraw(x, y, width, height) {
@@ -237,11 +228,14 @@ export default class {
 
     	gl.uniform1i(this._drawShader.uniforms.sVram, 0);
     	gl.activeTexture(gl.TEXTURE0);
-    	gl.bindTexture(gl.TEXTURE_2D, this._dither);
+    	gl.bindTexture(gl.TEXTURE_2D, this._vram);
 
-    	gl.uniform1i(this._drawShader.uniforms.uDither, 1);
+    	gl.uniform1i(this._drawShader.uniforms.sDither, 1);
     	gl.activeTexture(gl.TEXTURE1);
     	gl.bindTexture(gl.TEXTURE_2D, this._dither);
+
+    	// TODO: SETUP BLEND
+		gl.disable(gl.BLEND);
 	}
 
 	_leaveRender () {
@@ -269,14 +263,14 @@ export default class {
 		gl.enableVertexAttribArray(this._copyShader.attributes.aVertex);
 		gl.enableVertexAttribArray(this._copyShader.attributes.aTexture);
 
-		// ==== SETUP RENDER CONTEXT ====
 		// Setup for frame copy
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-		gl.disable(gl.STENCIL_TEST);
 
     	// Select vram as our source texture
     	gl.activeTexture(gl.TEXTURE0);
     	gl.bindTexture(gl.TEXTURE_2D, this._vram);
+
+		gl.disable(gl.BLEND);
 	}
 
 	_createShader (vertex, fragment) {
