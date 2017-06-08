@@ -2,8 +2,8 @@
  TODO
  ====
  * Blend / Mask modes
- * Rendering primitives
  * Paletted modes
+ * Rendering primitives
  ***/
 
 import CopyFragmentShader from "raw-loader!./shaders/copy.fragment.glsl";
@@ -14,16 +14,18 @@ import DrawVertexShader from "raw-loader!./shaders/draw.vertex.glsl";
 const VRAM_WIDTH = 1024;
 const VRAM_HEIGHT = 512;
 
-const DITHER_PATTERN = new Uint8Array([ 15, 7, 13, 5, 3, 11, 1, 9, 12, 4, 14, 6, 0, 8, 2, 10 ]);
+const ORDERED_DITHER = new Uint8Array([ 15, 7, 13, 5, 3, 11, 1, 9, 12, 4, 14, 6, 0, 8, 2, 10 ]);
 
 export default class {
 	constructor () {
 		// SETUP DEFAULT REGIONS
-		this.setViewport(0, 0, 256, 256);
-		this.setDraw(0, 0, 256, 256);
-		this._dither = true;
+		this.setViewport(0, 0, 256, 240);
+		this.setDraw(0, 0, 256, 240);
 		this._textureX = 0;
 		this._textureY = 0;
+		this._clutX = 0;
+		this._clutY = 0;
+		this._clutMode = 1;
 	}
 
 	attach (canvas) {
@@ -60,7 +62,7 @@ export default class {
 		// Setup our textures
 		this._dither = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, this._dither);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 4, 4, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, DITHER_PATTERN);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 4, 4, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, ORDERED_DITHER);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
@@ -87,20 +89,27 @@ export default class {
 
 		// Set context to render by default
 		this._enterRender();
-        this._render(gl.TRIANGLE_FAN, false, new Float32Array([
+        this._render(gl.TRIANGLE_FAN, false, false, false, new Float32Array([
             0,   0, 0, 0, 0, 0, 0,
-            0, 256, 0, 0, 0, 1, 0,
-          256, 256, 0, 0, 1, 1, 0,
+            0, 240, 0, 0, 0, 1, 0,
+          256, 240, 0, 0, 1, 1, 0,
           256,   0, 0, 0, 1, 0, 0,
         ]));
 
-        this._leaveRender();
+        const palette = new Uint16Array(256);
+        for (var i = 0; i < palette.length; i++) palette[i] = ((i >>> 3) * 0x0842) | 1
+        this.setData(0, 239, 256, 1, palette);
 
-        this._render(gl.TRIANGLE_FAN, true, new Float32Array([
+        const px = new Uint8Array(512);
+        for (var i = 0; i < px.length; i++) px[i] = i / 2;
+    	this.setData(0, 0,  16, 16, new Uint16Array(px.buffer))
+
+        const dither = false;
+        this._render(gl.TRIANGLE_FAN, dither, false,  true, new Float32Array([
             64,  64,   0,   0, 1, 1, 1,
-            64, 192,   0, 255, 1, 1, 1,
-           192, 192, 255, 255, 1, 1, 1,
-           192,  64, 255,   0, 1, 1, 1,
+            64, 192,   0,  16, 1, 1, 1,
+           192, 192,  32,  16, 1, 1, 1,
+           192,  64,  32,   0, 1, 1, 1,
         ]));
 	}
 
@@ -183,7 +192,7 @@ export default class {
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
 	}
 
-	_render (type, textured, vertexes) {
+	_render (type, dithered, masked, textured, vertexes) {
 		const gl = this._gl;
 
 		this._enterRender();
@@ -191,11 +200,17 @@ export default class {
 		gl.viewport(this._drawX, this._drawY, this._drawWidth, this._drawHeight);
 
 		// Render our shit
-	   	gl.uniform1i(this._drawShader.uniforms.uDither, this._dither ? 1 : 0);
-	   	gl.uniform1i(this._drawShader.uniforms.uTextured, textured ? 1 : 0);
-	   	gl.uniform2f(this._drawShader.uniforms.uTextureOffset, this._textureX, this._textureY);
+	   	
 	   	gl.uniform2f(this._drawShader.uniforms.uDrawPos, this._drawX, this._drawY);
 	   	gl.uniform2f(this._drawShader.uniforms.uDrawSize, this._drawWidth, this._drawHeight);
+
+	   	gl.uniform1i(this._drawShader.uniforms.uDither, dithered);
+
+	   	gl.uniform1i(this._drawShader.uniforms.uTextured, textured);
+	   	gl.uniform1i(this._drawShader.uniforms.uMasked, masked);
+	   	gl.uniform2f(this._drawShader.uniforms.uTextureOffset, this._textureX, this._textureY);
+	   	gl.uniform1i(this._drawShader.uniforms.uClutMode, this._clutMode);
+	   	gl.uniform2f(this._drawShader.uniforms.uClutOffset, this._clutX, this._clutY);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._drawBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.DYNAMIC_DRAW);
@@ -283,6 +298,7 @@ export default class {
 		gl.compileShader(fragmentShader);
 
 		if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+			console.error(gl.getShaderInfoLog(fragmentShader));
 			return null;
 		}
 
@@ -290,6 +306,7 @@ export default class {
 		gl.compileShader(vertexShader);
 
 		if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+			console.error(gl.getShaderInfoLog(vertexShader));
 			return null;
 		}
 
@@ -299,6 +316,7 @@ export default class {
 		gl.linkProgram(shaderProgram);
 
 		if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+			console.error(gl.getError());
 			return null;
 		}
 

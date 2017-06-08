@@ -13,8 +13,6 @@ export default class extends MIPS {
 
 		// Copy in our bios (and discard it)
 		this._rom.set(new Uint32Array(bios));
-
-		this.start();
 	}
 
 	start () {
@@ -43,6 +41,7 @@ export default class extends MIPS {
 
 	attach (canvas) {
 		this._gpu.attach(canvas);
+		this.start();
 	}
 
 	resize () {
