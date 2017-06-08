@@ -1,19 +1,21 @@
+#version 300 es
 precision mediump float;
 
 uniform vec2 uDrawSize;
 uniform vec2 uDrawPos;
 
-attribute vec3 aColor;
-attribute vec2 aVertex;
-attribute vec2 aTexture;
+in vec3 aColor;
+in vec2 aVertex;
+in vec2 aTexture;
 
-varying vec3 vColor;
-varying vec2 vAbsolute;
-varying vec2 vTexture;
+out vec3 vColor;
+out vec2 vAbsolute;
+out vec2 vTexture;
 
 void main(void) {
 	vColor = aColor;
 	vTexture = aTexture;
 	vAbsolute = aVertex;
+
     gl_Position = vec4(aVertex / uDrawSize * 2.0 - 1.0 - uDrawPos, 1.0, 1.0);
 }

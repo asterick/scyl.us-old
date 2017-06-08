@@ -30,7 +30,7 @@ export default class {
 
 	attach (canvas) {
 		// Create our context
-		const gl = canvas.getContext("webgl", {
+		const gl = canvas.getContext("webgl2", {
 			alpha: false,
 			antialias: false,
 			depth: false,
@@ -200,7 +200,7 @@ export default class {
 		gl.viewport(this._drawX, this._drawY, this._drawWidth, this._drawHeight);
 
 		// Render our shit
-	   	
+
 	   	gl.uniform2f(this._drawShader.uniforms.uDrawPos, this._drawX, this._drawY);
 	   	gl.uniform2f(this._drawShader.uniforms.uDrawSize, this._drawWidth, this._drawHeight);
 
@@ -294,19 +294,19 @@ export default class {
 		var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 		var vertexShader =  gl.createShader(gl.VERTEX_SHADER);
 
-		gl.shaderSource(fragmentShader, fragment);
-		gl.compileShader(fragmentShader);
-
-		if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
-			console.error(gl.getShaderInfoLog(fragmentShader));
-			return null;
-		}
-
 		gl.shaderSource(vertexShader, vertex);
 		gl.compileShader(vertexShader);
 
 		if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
 			console.error(gl.getShaderInfoLog(vertexShader));
+			return null;
+		}
+
+		gl.shaderSource(fragmentShader, fragment);
+		gl.compileShader(fragmentShader);
+
+		if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+			console.error(gl.getShaderInfoLog(fragmentShader));
 			return null;
 		}
 
