@@ -3,6 +3,7 @@
  ====
  * Blend / Mask modes
  * Rendering primitives
+ * Move dither pattern to a int array in the shader
  ***/
 
 import CopyFragmentShader from "raw-loader!./shaders/copy.fragment.glsl";
