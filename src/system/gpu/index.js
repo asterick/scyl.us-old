@@ -88,12 +88,12 @@ export default class {
 	_test () {
 		const gl = this._gl;
 
-        this._render(gl.TRIANGLE_FAN, false, false, new Float32Array([
-            0,   0, 0, 0, 0, 0, 0,
-            0, 240, 0, 0, 0, 1, 0,
-          256, 240, 0, 0, 1, 1, 0,
-          256,   0, 0, 0, 1, 0, 0,
-        ]));
+        this._render(new Int16Array([
+            0,   0, 0, 0, 0b0000000000000001,
+            0, 240, 0, 0, 0b0000011111000001,
+          256, 240, 0, 0, 0b1111111111000001,
+          256,   0, 0, 0, 0b1111100000000001,
+        ]), gl.TRIANGLE_FAN, false, false);
 
         const palette = new Uint16Array(16);
         for (var i = 0; i < palette.length; i++) palette[i] = ((i * 2) * 0x42) | 1
@@ -107,12 +107,12 @@ export default class {
     	]);
     	this.setData(0, 0,  1, 4, px);
 
-        this._render(gl.TRIANGLE_FAN, false,  true, new Float32Array([
-            64,  64, 0, 0, 1, 1, 1,
-            64, 192, 0, 4, 1, 1, 1,
-           192, 192, 4, 4, 1, 1, 1,
-           192,  64, 4, 0, 1, 1, 1,
-        ]));
+        this._render(new Int16Array([
+            64,  64, 0, 0, 0b1111111111111111,
+            64, 192, 0, 4, 0b1111111111111111,
+           192, 192, 4, 4, 0b1111111111111111,
+           192,  64, 4, 0, 0b1111111111111111,
+        ]), gl.TRIANGLE_FAN, false,  true);
 
 		this._enterRender();
 	}
@@ -198,7 +198,7 @@ export default class {
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
 	}
 
-	_render (type, masked, textured, vertexes) {
+	_render (vertexes, type, masked, textured) {
 		const gl = this._gl;
 
 		this._enterRender();
@@ -208,7 +208,7 @@ export default class {
 			gl.enable(gl.BLEND);
 			gl.blendColor(0.5, 0.5, 0.5, 0.25);
 			gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
-			gl.blendFuncSeparate(gl.CONSTANT_ALPHA, gl.CONSTANT_COLOR, gl.ONE, gl.ZERO);
+			gl.blendFuncSeparate(gl.CONSTANT_COLOR, gl.CONSTANT_COLOR, gl.ONE, gl.ZERO);
 		}
 
 		// Render our shit
@@ -220,11 +220,11 @@ export default class {
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._drawBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.DYNAMIC_DRAW);
-		gl.vertexAttribPointer( this._drawShader.attributes.aVertex, 2, gl.FLOAT, false, 28,  0);
-		gl.vertexAttribPointer(this._drawShader.attributes.aTexture, 2, gl.FLOAT, false, 28,  8);
-		gl.vertexAttribPointer(  this._drawShader.attributes.aColor, 3, gl.FLOAT, false, 28, 16);
+		gl.vertexAttribIPointer( this._drawShader.attributes.aVertex, 2,          gl.SHORT, 10, 0);
+		gl.vertexAttribIPointer(this._drawShader.attributes.aTexture, 2,          gl.SHORT, 10, 4);
+		gl.vertexAttribIPointer(  this._drawShader.attributes.aColor, 1, gl.UNSIGNED_SHORT, 10, 8);
 
-		gl.drawArrays(type, 0, vertexes.buffer.byteLength / 28);
+		gl.drawArrays(type, 0, vertexes.buffer.byteLength / 10);
 	}
 
 	_enterRender (force) {
