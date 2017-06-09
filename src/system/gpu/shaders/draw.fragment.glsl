@@ -10,10 +10,11 @@ uniform int uClutMode;
 
 uniform bool uTextured;
 uniform bool uMasked;
+uniform bool uSetMask;
 
 in vec2 vTexture;
 in vec2 vAbsolute;
-in vec3 vColor;
+in vec4 vColor;
 
 out vec4 fragColor;
 
@@ -26,7 +27,7 @@ int pack(vec4 color) {
 }
 
 void main(void) {
-	vec4 texel;
+	fragColor = vColor;
 
 	// Load our texture
 	if (uTextured) {
@@ -49,12 +50,11 @@ void main(void) {
 			texpos = ivec2(vTex) + uTextureOffset;
 		}
 
-		texel = texelFetch(sVram, texpos, 0);
+		vec4 texel = texelFetch(sVram, texpos, 0);
 
 		if (texel.a < 0.5) discard ;
-	} else {
-		texel = vec4(1.0, 1.0, 1.0, 1.0);
-	}
 
-	fragColor = vec4(texel.rgb * vColor, 1.0);
+		fragColor.rgb *= texel.rgb;
+		fragColor.a = uSetMask ? 1.0 : texel.a;
+	}
 }

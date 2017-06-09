@@ -8,15 +8,16 @@ in uint aColor;
 in ivec2 aVertex;
 in ivec2 aTexture;
 
-out vec3 vColor;
+out vec4 vColor;
 out vec2 vAbsolute;
 out vec2 vTexture;
 
-vec3 unpack(uint color) {
-	return vec3(
+vec4 unpack(uint color) {
+	return vec4(
 			float((color >> 11) & 0x1Fu) / 31.0,
 			float((color >>  6) & 0x1Fu) / 31.0,
-			float((color >>  1) & 0x1Fu) / 31.0
+			float((color >>  1) & 0x1Fu) / 31.0,
+			float(color & 1u)
 		);
 }
 

@@ -2,7 +2,6 @@
  TODO
  ====
  * Blend modes
- * Mask set / reset / copy behavior
  ***/
 
 import CopyFragmentShader from "raw-loader!./shaders/copy.fragment.glsl";
@@ -25,6 +24,7 @@ export default class {
 		this._clutMode = 2;
 		this._dither = true;
 		this._masked = true;
+		this._setMask = false;
 
 		// Bind our function
 		this._requestFrame = () => this._repaint();
@@ -41,7 +41,7 @@ export default class {
 		// Create our context
 		const gl = canvas.getContext("webgl2", {
 			alpha: false,
-			antialias: false,
+			antialias: true,
 			depth: false,
 			stencil: false
 		});
@@ -75,14 +75,14 @@ export default class {
 		this._vram = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, this._vram);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB5_A1, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_SHORT_5_5_5_1, vram);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
 		this._shadow = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, this._shadow);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, shadow);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
 		// Setup the draw targets
 		this._vramFrame = gl.createFramebuffer();
@@ -162,6 +162,11 @@ export default class {
 		this._dither = dither;
 	}
 
+	setMask (masked, setMask) {
+		this._masked = masked;
+		this._setMask = setMask;
+	}
+
 	render (type, textured, color, vertexes) {
 		const gl = this._gl;
 		const flat = color >= 0;
@@ -173,6 +178,7 @@ export default class {
 		// Render our shit
 	   	gl.uniform1i(this._drawShader.uniforms.uTextured, textured);
 	   	gl.uniform1i(this._drawShader.uniforms.uMasked, this._masked);
+	   	gl.uniform1i(this._drawShader.uniforms.uSetMask, this._setMask);
 	   	gl.uniform2i(this._drawShader.uniforms.uTextureOffset, this._textureX, this._textureY);
 	   	gl.uniform1i(this._drawShader.uniforms.uClutMode, this._clutMode);
 	   	gl.uniform2i(this._drawShader.uniforms.uClutOffset, this._clutX, this._clutY);
