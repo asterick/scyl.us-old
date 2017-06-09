@@ -1,9 +1,8 @@
 /***
  TODO
  ====
- * Blend / Mask modes
+ * Blend / Mask modes (HOW?!)
  * Rendering primitives
- * Move dither pattern to a int array in the shader
  ***/
 
 import CopyFragmentShader from "raw-loader!./shaders/copy.fragment.glsl";
@@ -13,8 +12,6 @@ import DrawVertexShader from "raw-loader!./shaders/draw.vertex.glsl";
 
 const VRAM_WIDTH = 1024;
 const VRAM_HEIGHT = 512;
-
-const ORDERED_DITHER = new Uint8Array([15, 7, 13, 5, 3, 11, 1, 9, 12, 4, 14, 6, 0, 8, 2, 10]);
 
 export default class {
 	constructor () {
@@ -56,13 +53,6 @@ export default class {
 		this._copyXY = gl.createBuffer();
 		this._copyUV = gl.createBuffer();
 		this._drawBuffer = gl.createBuffer();
-
-		// Dither pattern
-		this._dither = gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D, this._dither);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, 4, 4, 0, gl.RED, gl.UNSIGNED_BYTE, ORDERED_DITHER);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
 		// 16BPP look up
 		const palette = new Uint16Array(0x10000);
@@ -275,12 +265,8 @@ export default class {
     	gl.activeTexture(gl.TEXTURE0);
     	gl.bindTexture(gl.TEXTURE_2D, this._vram);
 
-    	gl.uniform1i(this._drawShader.uniforms.sDither, 1);
+    	gl.uniform1i(this._drawShader.uniforms.sPalette, 1);
     	gl.activeTexture(gl.TEXTURE1);
-    	gl.bindTexture(gl.TEXTURE_2D, this._dither);
-
-    	gl.uniform1i(this._drawShader.uniforms.sPalette, 2);
-    	gl.activeTexture(gl.TEXTURE2);
     	gl.bindTexture(gl.TEXTURE_2D, this._palette);
 
     	// TODO: SETUP BLEND
