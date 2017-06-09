@@ -43,7 +43,6 @@ export default class {
 		gl.disable(gl.STENCIL_TEST);
 		gl.disable(gl.DEPTH_TEST);
 		gl.enable(gl.DITHER);
-		gl.disable(gl.BLEND);
 		gl.colorMask(true, true, true, true);
 		gl.clearColor(0, 0, 0, 1);
 
@@ -206,12 +205,15 @@ export default class {
 
 		this._enterRender();
 
-		gl.viewport(this._drawX, this._drawY, this._drawWidth, this._drawHeight);
+    	// TODO: ACTUAL BLEND VALUES HERE
+		/*
+		gl.enable(gl.BLEND);
+		gl.blendColor(0.5, 0.5, 0.5, 0.2);
+		gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
+		gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ONE, gl.ZERO);
+		*/
 
 		// Render our shit
-	   	gl.uniform2f(this._drawShader.uniforms.uDrawPos, this._drawX, this._drawY);
-	   	gl.uniform2f(this._drawShader.uniforms.uDrawSize, this._drawWidth, this._drawHeight);
-
 	   	gl.uniform1i(this._drawShader.uniforms.uTextured, textured);
 	   	gl.uniform1i(this._drawShader.uniforms.uMasked, masked);
 	   	gl.uniform2i(this._drawShader.uniforms.uTextureOffset, this._textureX, this._textureY);
@@ -235,8 +237,6 @@ export default class {
 
 		this._shadowCopy(this._shadowFrame, this._vram, false);
 
-		gl.disable(gl.BLEND);
-
 		gl.disableVertexAttribArray(this._copyShader.attributes.aVertex);
 		gl.disableVertexAttribArray(this._copyShader.attributes.aTexture);
 
@@ -255,11 +255,8 @@ export default class {
     	gl.activeTexture(gl.TEXTURE0);
     	gl.bindTexture(gl.TEXTURE_2D, this._vram);
 
-    	// TODO: SETUP BLEND
-		gl.enable(gl.BLEND);
-		gl.blendColor(0.5, 0.5, 0.5, 0.2);
-		gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
-		gl.blendFuncSeparate(gl.CONSTANT_COLOR, gl.CONSTANT_COLOR, gl.ONE, gl.ZERO);
+	   	gl.uniform2f(this._drawShader.uniforms.uDrawPos, this._drawX, this._drawY);
+	   	gl.uniform2f(this._drawShader.uniforms.uDrawSize, this._drawWidth, this._drawHeight);
 	}
 
 	_leaveRender () {
@@ -268,9 +265,7 @@ export default class {
 
 		const gl = this._gl;
 
-		gl.disable(gl.BLEND);
-
-		this._shadowCopy(this._vramFrame, this._shadow, true);
+		this._shadowCopy(this._vramFrame, this._shadow, this._dither);
 
 		gl.disableVertexAttribArray(this._drawShader.attributes.aVertex);
 		gl.disableVertexAttribArray(this._drawShader.attributes.aTexture);
@@ -281,6 +276,7 @@ export default class {
 
 		// ==== Setup program
 		gl.useProgram(this._copyShader.program);
+		gl.disable(gl.BLEND);
 
 		// Setup for frame copy
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -302,6 +298,7 @@ export default class {
 		gl.enableVertexAttribArray(this._copyShader.attributes.aTexture);
 
 		gl.useProgram(this._copyShader.program);
+		gl.disable(gl.BLEND);
 
 		// Setup for frame copy
 		gl.bindFramebuffer(gl.FRAMEBUFFER, target);
@@ -311,7 +308,7 @@ export default class {
     	gl.activeTexture(gl.TEXTURE0);
     	gl.bindTexture(gl.TEXTURE_2D, source);
     	gl.uniform1i(this._copyShader.uniforms.sVram, 0);
-	   	gl.uniform1i(this._copyShader.uniforms.uDither, this._dither);
+	   	gl.uniform1i(this._copyShader.uniforms.uDither, dither);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyXY);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
