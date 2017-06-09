@@ -67,8 +67,14 @@ export default class {
 		this._displayShader = this._createShader (DisplayVertexShader, DisplayFragmentShader);
 
 		// Setup our vertex buffers
-		this._copyXY = gl.createBuffer();
 		this._copyBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+			-1,  1,
+			-1, -1,
+			 1, -1,
+			 1,  1,
+		]), gl.STATIC_DRAW);
 		this._drawBuffer = gl.createBuffer();
 
 		// Video memory
@@ -276,12 +282,6 @@ export default class {
 	   	gl.uniform2f(this._displayShader.uniforms.uViewportPosition, this._viewX, this._viewY);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-			-1,  1,
-			-1, -1,
-			 1, -1,
-			 1,  1,
-		]), gl.STATIC_DRAW);
 		gl.vertexAttribPointer(this._displayShader.attributes.aVertex, 2, gl.FLOAT, false, 0, 0);
 
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
@@ -376,19 +376,14 @@ export default class {
     	// Select vram as our source texture
     	gl.activeTexture(gl.TEXTURE0);
     	gl.bindTexture(gl.TEXTURE_2D, source);
+
     	gl.uniform1i(this._copyShader.uniforms.sVram, 0);
 	   	gl.uniform1i(this._copyShader.uniforms.uDither, dither);
+	   	gl.uniform2f(this._copyShader.uniforms.uDrawPosition, this._drawX, this._drawY);
+	   	gl.uniform2f(this._copyShader.uniforms.uDrawSize, this._drawWidth, this._drawHeight);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-			-1, -1, this._drawX, this._drawY,
-			-1,  1, this._drawX, this._drawY + this._drawHeight,
-			 1,  1, this._drawX + this._drawWidth, this._drawY + this._drawHeight,
-			 1, -1, this._drawX + this._drawWidth, this._drawY,
-		]), gl.STATIC_DRAW);
-
-		gl.vertexAttribPointer(this._copyShader.attributes.aVertex, 2, gl.FLOAT, false, 16, 0);
-		gl.vertexAttribPointer(this._copyShader.attributes.aTexture, 2, gl.FLOAT, false, 16, 8);
+		gl.vertexAttribPointer(this._copyShader.attributes.aVertex, 2, gl.FLOAT, false, 8, 0);
 
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
 	}
