@@ -17,5 +17,5 @@ void main(void) {
 	vTexture = aTexture;
 	vAbsolute = aVertex;
 
-    gl_Position = vec4(aVertex / uDrawSize * 2.0 - 1.0 - uDrawPos, 1.0, 1.0);
+    gl_Position = vec4(aVertex / vec2(uDrawSize) * 2.0 - 1.0 - vec2(uDrawPos), 1.0, 1.0);
 }

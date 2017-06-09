@@ -2,7 +2,6 @@
  TODO
  ====
  * Blend / Mask modes
- * Paletted modes
  * Rendering primitives
  ***/
 
@@ -14,7 +13,7 @@ import DrawVertexShader from "raw-loader!./shaders/draw.vertex.glsl";
 const VRAM_WIDTH = 1024;
 const VRAM_HEIGHT = 512;
 
-const ORDERED_DITHER = new Uint8Array([ 15, 7, 13, 5, 3, 11, 1, 9, 12, 4, 14, 6, 0, 8, 2, 10 ]);
+const ORDERED_DITHER = new Uint8Array([15, 7, 13, 5, 3, 11, 1, 9, 12, 4, 14, 6, 0, 8, 2, 10]);
 
 export default class {
 	constructor () {
@@ -24,8 +23,8 @@ export default class {
 		this._textureX = 0;
 		this._textureY = 0;
 		this._clutX = 0;
-		this._clutY = 0;
-		this._clutMode = 1;
+		this._clutY = 220;
+		this._clutMode = 2;
 	}
 
 	attach (canvas) {
@@ -60,7 +59,7 @@ export default class {
 		// Dither pattern
 		this._dither = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, this._dither);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, 4, 4, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, ORDERED_DITHER);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, 4, 4, 0, gl.RED, gl.UNSIGNED_BYTE, ORDERED_DITHER);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
@@ -74,9 +73,7 @@ export default class {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
 		// Video memory
-		const pixels16 = new Uint16Array(VRAM_WIDTH*VRAM_HEIGHT);
-		const pixels = new Uint8Array(pixels16.buffer);
-		for (i = 0; i < pixels16.length; i++) pixels16[i] = i;
+		const pixels = new Uint8Array(VRAM_WIDTH*VRAM_HEIGHT*2);
 
 		this._vram = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, this._vram);
@@ -100,6 +97,12 @@ export default class {
 
 		// Set context to render by default
 		this._enterRender();
+		this._test();
+	}
+
+	_test () {
+		const gl = this._gl;
+
         this._render(gl.TRIANGLE_FAN, true, false, false, new Float32Array([
             0,   0, 0, 0, 0, 0, 0,
             0, 240, 0, 0, 0, 1, 0,
@@ -107,23 +110,27 @@ export default class {
           256,   0, 0, 0, 1, 0, 0,
         ]));
 
-        /*
-        const palette = new Uint16Array(256);
-        for (var i = 0; i < palette.length; i++) palette[i] = ((i >>> 3) * 0x0842) | 1
-        this.setData(0, 239, 256, 1, palette);
+        const palette = new Uint16Array(16);
+        for (var i = 0; i < palette.length; i++) palette[i] = ((i * 2) * 0x42) | 1
+        this.setData(this._clutX, this._clutY, 16, 1, palette);
 
-        const px = new Uint8Array(512);
-        for (var i = 0; i < px.length; i++) px[i] = i / 2;
-    	this.setData(0, 0,  16, 16, new Uint16Array(px.buffer));
+        const px = new Uint8Array([
+        	0x10, 0x32, 0x10, 0x32,
+        	0x54, 0x76, 0x54, 0x76,
+        	0x98, 0xBA, 0x98, 0xBA,
+        	0xDC, 0xFE, 0xDC, 0xFE,
+    	]);
+    	this.setData(0, 0,  2, 4, px);
 
         const dither = false;
         this._render(gl.TRIANGLE_FAN, dither, false,  true, new Float32Array([
-            64,  64,   0,   0, 1, 1, 1,
-            64, 192,   0,  16, 1, 1, 1,
-           192, 192,  32,  16, 1, 1, 1,
-           192,  64,  32,   0, 1, 1, 1,
+            64,  64, 0, 0, 1, 1, 1,
+            64, 192, 0, 4, 1, 1, 1,
+           192, 192, 4, 4, 1, 1, 1,
+           192,  64, 4, 0, 1, 1, 1,
         ]));
-        */
+
+		this._enterRender();
 	}
 
 	setDraw(x, y, width, height) {
@@ -147,18 +154,22 @@ export default class {
 
 		const gl = this._gl;
 
+		throw new Error("REIMPLEMENT");
+		/*
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._vramFrame);
 		gl.readPixels(x, y, width, height, gl.RGBA, gl.UNSIGNED_SHORT_5_5_5_1, target);
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		*/
 	}
 
+	// NOTE: THIS WILL CAUSE ISSUES OF THE Width is not a multiple of 32bits
 	setData (x, y, width, height, target) {
 		this._leaveRender();
 
 		const gl = this._gl;
 
 		gl.bindTexture(gl.TEXTURE_2D, this._vram);
-		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA, gl.UNSIGNED_SHORT_5_5_5_1, target);
+		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RG_INTEGER, gl.UNSIGNED_BYTE, new Uint8Array(target.buffer));
 
 		gl.bindTexture(gl.TEXTURE_2D, this._shadow);
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._vramFrame);
@@ -226,9 +237,9 @@ export default class {
 
 	   	gl.uniform1i(this._drawShader.uniforms.uTextured, textured);
 	   	gl.uniform1i(this._drawShader.uniforms.uMasked, masked);
-	   	gl.uniform2f(this._drawShader.uniforms.uTextureOffset, this._textureX, this._textureY);
+	   	gl.uniform2i(this._drawShader.uniforms.uTextureOffset, this._textureX, this._textureY);
 	   	gl.uniform1i(this._drawShader.uniforms.uClutMode, this._clutMode);
-	   	gl.uniform2f(this._drawShader.uniforms.uClutOffset, this._clutX, this._clutY);
+	   	gl.uniform2i(this._drawShader.uniforms.uClutOffset, this._clutX, this._clutY);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._drawBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.DYNAMIC_DRAW);
@@ -236,7 +247,7 @@ export default class {
 		gl.vertexAttribPointer(this._drawShader.attributes.aTexture, 2, gl.FLOAT, false, 28,  8);
 		gl.vertexAttribPointer(  this._drawShader.attributes.aColor, 3, gl.FLOAT, false, 28, 16);
 
-		gl.drawArrays(type, 0, vertexes.length / 7);
+		gl.drawArrays(type, 0, vertexes.buffer.byteLength / 28);
 	}
 
 	_enterRender () {
@@ -267,8 +278,8 @@ export default class {
     	gl.activeTexture(gl.TEXTURE1);
     	gl.bindTexture(gl.TEXTURE_2D, this._dither);
 
-    	gl.uniform1i(this._drawShader.uniforms.sPalette, 1);
-    	gl.activeTexture(gl.TEXTURE1);
+    	gl.uniform1i(this._drawShader.uniforms.sPalette, 2);
+    	gl.activeTexture(gl.TEXTURE2);
     	gl.bindTexture(gl.TEXTURE_2D, this._palette);
 
     	// TODO: SETUP BLEND
