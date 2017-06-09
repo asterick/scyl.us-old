@@ -1,8 +1,10 @@
 #version 300 es
+
 precision mediump float;
 
 uniform sampler2D sVram;
 uniform sampler2D sDither;
+uniform mediump usampler2D sPalette;
 
 uniform vec2 uTextureOffset;
 uniform vec2 uClutOffset;
@@ -26,14 +28,27 @@ void main(void) {
 		ivec2 texpos;
 
 		if (uClutMode == 1) {
-			texpos = ivec2(vTexture / 2.0 + uTextureOffset);
+			texpos = ivec2(vTexture.x / 2.0, vTexture.y + uTextureOffset);
+			texel = texelFetch(sVram, texpos, 0);
+
+			uint word =
+				(uint(texel.r * 32.0) << 11) +
+				(uint(texel.g * 32.0) <<  6) +
+				(uint(texel.b * 32.0) <<  1) +
+				(uint(texel.a));
+
+
+			uint offset = (texpos.x & 1) != 0 ? (word >> 8) : (word & 0xFFu);
+			float part = float(offset) / 255.0;
+
+			texel = vec4(part, part, part, 1.0);
 		} else if (uClutMode == 2) {
 			texpos = ivec2(vTexture / 4.0 + uTextureOffset);
+			texel = texelFetch(sVram, texpos, 0);
 		} else {
 			texpos = ivec2(vTexture + uTextureOffset);
+			texel = texelFetch(sVram, texpos, 0);
 		}
-
-		texel = texelFetch(sVram, texpos, 0);
 	} else {
 		texel = vec4(1.0, 1.0, 1.0, 1.0);
 	}

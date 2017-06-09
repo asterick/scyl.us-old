@@ -1,8 +1,14 @@
+#version 300 es
+
 precision mediump float;
 
-varying vec2 vTexture;
-uniform sampler2D vram;
+in vec2 vTexture;
+out vec4 fragColor;
+
+uniform mediump usampler2D sVram;
+uniform sampler2D sPalette;
 
 void main(void) {
-	gl_FragColor = texture2D(vram, vTexture);
+	uvec2 color = texelFetch(sVram, ivec2(vTexture), 0).rg;
+	fragColor = texelFetch(sPalette, ivec2(color), 0);
 }
