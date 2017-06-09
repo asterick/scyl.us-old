@@ -122,12 +122,19 @@ export default class {
     	]);
     	this.setData(0, 0,  1, 4, px);
 
-        this.render(gl.TRIANGLE_FAN,  true, 0b1111111111111111, new Int16Array([
+        this.render(gl.TRIANGLE_STRIP,  true, 0b1111111111111111, new Int16Array([
             64,  64, 0, 0,
             64, 192, 0, 4,
-           192, 192, 4, 4,
            192,  64, 4, 0,
+           192, 192, 4, 4,
         ]));
+
+        this.render(gl.LINE_STRIP, false, 0b0111101111011110, new Int16Array([
+            96,  96,
+            96, 160,
+           160,  96,
+           160, 160,
+        ]))
 	}
 
 	setTexture(x, y) {
