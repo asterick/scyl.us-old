@@ -3,7 +3,6 @@
 precision mediump float;
 
 uniform mediump usampler2D sVram;
-uniform sampler2D sDither;
 uniform sampler2D sPalette;
 
 uniform ivec2 uTextureOffset;
