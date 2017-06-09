@@ -106,12 +106,8 @@ export default class {
 		// Setup our vertex buffers
 		this._copyBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-			-1,  1,
-			-1, -1,
-			 1, -1,
-			 1,  1,
-		]), gl.STATIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([ 1, 1, 1,-1,-1, 1,-1,-1]), gl.STATIC_DRAW);
+
 		this._drawBuffer = gl.createBuffer();
 
 		// Video memory
@@ -247,7 +243,7 @@ export default class {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyBuffer);
 		gl.vertexAttribPointer(this._displayShader.attributes.aVertex, 2, gl.FLOAT, false, 0, 0);
 
-		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
 		this._animationFrame = 0;
 	}
@@ -344,7 +340,7 @@ export default class {
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyBuffer);
 		gl.vertexAttribPointer(this._copyShader.attributes.aVertex, 2, gl.FLOAT, false, 8, 0);
 
-		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
 		gl.disableVertexAttribArray(this._displayShader.attributes.aVertex);
 	}
