@@ -42,7 +42,7 @@ export default class {
 		// Global enable / disables
 		gl.disable(gl.STENCIL_TEST);
 		gl.disable(gl.DEPTH_TEST);
-		gl.enable(gl.DITHER);
+		gl.disable(gl.DITHER);
 		gl.colorMask(true, true, true, true);
 		gl.clearColor(0, 0, 0, 1);
 
@@ -81,7 +81,7 @@ export default class {
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._shadow, 0);
 
 		// Set context to render by default
-		this._enterRender();
+		this._enterRender(true);
 		this._test();
 	}
 
@@ -105,11 +105,8 @@ export default class {
         	0xBA98, 0xBA98,
         	0xFEDC, 0xFEDC,
     	]);
-    	this.setData(0, 0,  2, 4, px);
-    	this.getData(1, 0,  2, 4, px);
-    	this.setData(0, 0,  2, 4, px);
+    	this.setData(0, 0,  1, 4, px);
 
-        const dither = false;
         this._render(gl.TRIANGLE_FAN, false,  true, new Float32Array([
             64,  64, 0, 0, 1, 1, 1,
             64, 192, 0, 4, 1, 1, 1,
@@ -136,6 +133,7 @@ export default class {
 		this._viewHeight = height;
 	}
 
+	// NOTE: DATA WILL BE 32-BIT WORD ALIGNED ON THE LINE BOUNDARY
 	getData (x, y, width, height, target) {
 		this._leaveRender();
 
@@ -146,7 +144,7 @@ export default class {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	}
 
-	// NOTE: THIS WILL CAUSE ISSUES OF THE Width is not a multiple of 32bits
+	// NOTE: DATA WILL BE 32-BIT WORD ALIGNED ON THE LINE BOUNDARY
 	setData (x, y, width, height, target) {
 		this._leaveRender();
 
@@ -206,12 +204,12 @@ export default class {
 		this._enterRender();
 
     	// TODO: ACTUAL BLEND VALUES HERE
-		/*
-		gl.enable(gl.BLEND);
-		gl.blendColor(0.5, 0.5, 0.5, 0.2);
-		gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
-		gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ONE, gl.ZERO);
-		*/
+		if (textured) {
+			gl.enable(gl.BLEND);
+			gl.blendColor(0.5, 0.5, 0.5, 0.25);
+			gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
+			gl.blendFuncSeparate(gl.CONSTANT_ALPHA, gl.CONSTANT_COLOR, gl.ONE, gl.ZERO);
+		}
 
 		// Render our shit
 	   	gl.uniform1i(this._drawShader.uniforms.uTextured, textured);
@@ -229,8 +227,8 @@ export default class {
 		gl.drawArrays(type, 0, vertexes.buffer.byteLength / 28);
 	}
 
-	_enterRender () {
-		if (this._isRendering) return ;
+	_enterRender (force) {
+		if (!force && this._isRendering) return ;
 		this._isRendering = true;
 
 		const gl = this._gl;
@@ -259,8 +257,8 @@ export default class {
 	   	gl.uniform2f(this._drawShader.uniforms.uDrawSize, this._drawWidth, this._drawHeight);
 	}
 
-	_leaveRender () {
-		if (!this._isRendering) return ;
+	_leaveRender (force) {
+		if (!force && !this._isRendering) return ;
 		this._isRendering = false;
 
 		const gl = this._gl;

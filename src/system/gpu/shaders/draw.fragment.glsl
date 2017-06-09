@@ -3,7 +3,6 @@
 precision mediump float;
 
 uniform sampler2D sVram;
-uniform sampler2D sPalette;
 
 uniform ivec2 uTextureOffset;
 uniform ivec2 uClutOffset;
@@ -42,7 +41,7 @@ void main(void) {
 			texpos = uClutOffset + ivec2(word & 0xF, 0);
 		} else if (uClutMode == 1) {
 			texpos = ivec2(vTex.x / 2.0, vTex.y) + uTextureOffset;
-			
+
 			int word = pack(texelFetch(sVram, texpos, 0));
 
 			texpos = uClutOffset + ivec2(bool(int(vTex.x) & 1) ? (word >> 8) : (word & 0xFF), 0);
