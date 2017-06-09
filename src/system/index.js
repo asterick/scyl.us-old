@@ -18,12 +18,10 @@ export default class extends MIPS {
 	start () {
 		this._adjust_clock = +new Date();
 		this._requestFrame = () => this.tick();
-		this._animationFrame = window.requestAnimationFrame(this._requestFrame);
 		this.running = true;
 	}
 
 	stop () {
-		window.cancelAnimationFrame(this._animationFrame);
 		this._animationFrame = null;
 		this.running = false;
 	}
@@ -32,11 +30,8 @@ export default class extends MIPS {
 		const newClock = +new Date();
 		const ticks = Math.min(20, newClock - this._adjust_clock);
 		this._adjust_clock = newClock;
-		this._animationFrame = window.requestAnimationFrame(this._requestFrame);
 
 		//this._tick(ticks);
-
-		this._gpu.repaint();
 	}
 
 	attach (canvas) {

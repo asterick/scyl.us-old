@@ -24,9 +24,16 @@ export default class {
 		this._clutY = 220;
 		this._clutMode = 2;
 		this._dither = true;
+
+		this._requestFrame = () => this._repaint();
 	}
 
 	attach (canvas) {
+		if (!canvas) {
+			window.cancelAnimationFrame(this._animationFrame);
+			return ;
+		}
+
 		// Create our context
 		const gl = canvas.getContext("webgl2", {
 			alpha: false,
@@ -83,16 +90,18 @@ export default class {
 		// Set context to render by default
 		this._enterRender(true);
 		this._test();
+
+		this._requestRepaint();
 	}
 
 	_test () {
 		const gl = this._gl;
 
         this._render(new Int16Array([
-            0,   0, 0, 0, 0b0000000000000001,
-            0, 240, 0, 0, 0b0000011111000001,
-          256, 240, 0, 0, 0b1111111111000001,
-          256,   0, 0, 0, 0b1111100000000001,
+            0,   0, 0b0000000000000001,
+            0, 240, 0b0000011111000001,
+          256, 240, 0b1111111111000001,
+          256,   0, 0b1111100000000001,
         ]), gl.TRIANGLE_FAN, false, false);
 
         const palette = new Uint16Array(16);
@@ -108,13 +117,24 @@ export default class {
     	this.setData(0, 0,  1, 4, px);
 
         this._render(new Int16Array([
-            64,  64, 0, 0, 0b1111111111111111,
-            64, 192, 0, 4, 0b1111111111111111,
-           192, 192, 4, 4, 0b1111111111111111,
-           192,  64, 4, 0, 0b1111111111111111,
-        ]), gl.TRIANGLE_FAN, false,  true);
+            64,  64, 0, 0,
+            64, 192, 0, 4,
+           192, 192, 4, 4,
+           192,  64, 4, 0,
+        ]), gl.TRIANGLE_FAN, false,  true, 0b1111111111111111);
 
 		this._enterRender();
+	}
+
+	setTexture(x, y) {
+		this._textureX = x;
+		this._textureY = y;
+	}
+
+	setClut(mode, x, y) {
+		this._clutMode = mode;
+		this._clutX = x;
+		this._clutY = y;
 	}
 
 	setDraw(x, y, width, height) {
@@ -131,6 +151,11 @@ export default class {
 		this._viewY = y;
 		this._viewWidth = width;
 		this._viewHeight = height;
+	}
+
+	setDither (dither) {
+		this._leaveRender();
+		this._dither = dither;
 	}
 
 	// NOTE: DATA WILL BE 32-BIT WORD ALIGNED ON THE LINE BOUNDARY
@@ -164,9 +189,19 @@ export default class {
 		this._canvas.height = this._viewportHeight;
 
 		this._aspectRatio = (this._viewportHeight / this._viewportWidth) * (4 / 3);
+
+		this._requestRepaint();
 	}
 
-	repaint () {
+	_requestRepaint() {
+		if (this._animationFrame) {
+			return ;
+		}
+
+		this._animationFrame = window.requestAnimationFrame(this._requestFrame);
+	}
+
+	_repaint () {
 		const gl = this._gl;
 
 		if (!gl) return ;
@@ -196,20 +231,27 @@ export default class {
 		gl.vertexAttribPointer(this._copyShader.attributes.aTexture, 2, gl.FLOAT, false, 0, 0);
 
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+
+		this._animationFrame = 0;
 	}
 
-	_render (vertexes, type, masked, textured) {
-		const gl = this._gl;
-
-		this._enterRender();
-
+	_setBlend () {
     	// TODO: ACTUAL BLEND VALUES HERE
-		if (textured) {
+		/*
 			gl.enable(gl.BLEND);
 			gl.blendColor(0.5, 0.5, 0.5, 0.25);
 			gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
 			gl.blendFuncSeparate(gl.CONSTANT_COLOR, gl.CONSTANT_COLOR, gl.ONE, gl.ZERO);
-		}
+		*/
+	}
+
+	_render (vertexes, type, masked, textured, color = -1) {
+		const gl = this._gl;
+		const flat = color >= 0;
+		const size = 4 + (textured ? 4 : 0) + (flat ? 0 : 2);
+
+		this._enterRender();
+		this._requestRepaint();
 
 		// Render our shit
 	   	gl.uniform1i(this._drawShader.uniforms.uTextured, textured);
@@ -220,11 +262,27 @@ export default class {
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._drawBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.DYNAMIC_DRAW);
-		gl.vertexAttribIPointer( this._drawShader.attributes.aVertex, 2,          gl.SHORT, 10, 0);
-		gl.vertexAttribIPointer(this._drawShader.attributes.aTexture, 2,          gl.SHORT, 10, 4);
-		gl.vertexAttribIPointer(  this._drawShader.attributes.aColor, 1, gl.UNSIGNED_SHORT, 10, 8);
 
-		gl.drawArrays(type, 0, vertexes.buffer.byteLength / 10);
+		console.log(size);
+		gl.vertexAttribIPointer( this._drawShader.attributes.aVertex, 2, gl.SHORT, size, 0);
+
+		if (textured) {
+			gl.vertexAttribIPointer(this._drawShader.attributes.aTexture, 2, gl.SHORT, size, 4);
+			gl.enableVertexAttribArray(this._drawShader.attributes.aTexture);
+		} else {
+			gl.vertexAttribI4i(this._drawShader.attributes.aTexture, 0, 0, 0, 0);
+			gl.disableVertexAttribArray(this._drawShader.attributes.aTexture);
+		}
+
+		if (flat) {
+			gl.vertexAttribI4ui(this._drawShader.attributes.aColor, color, color, color, color);
+			gl.disableVertexAttribArray(this._drawShader.attributes.aColor);
+		} else {
+			gl.vertexAttribIPointer(this._drawShader.attributes.aColor, 1, gl.UNSIGNED_SHORT, size, textured ? 8 : 4);
+			gl.enableVertexAttribArray(this._drawShader.attributes.aColor);
+		}
+
+		gl.drawArrays(type, 0, vertexes.buffer.byteLength / size);
 	}
 
 	_enterRender (force) {
@@ -239,8 +297,6 @@ export default class {
 		gl.disableVertexAttribArray(this._copyShader.attributes.aTexture);
 
 		gl.enableVertexAttribArray(this._drawShader.attributes.aVertex);
-		gl.enableVertexAttribArray(this._drawShader.attributes.aTexture);
-		gl.enableVertexAttribArray(this._drawShader.attributes.aColor);
 
 		// Setup our shadow frame
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._shadowFrame);
@@ -248,6 +304,7 @@ export default class {
 
 		// Setup our program
 		gl.useProgram(this._drawShader.program);
+		this._setBlend();
 
     	gl.uniform1i(this._drawShader.uniforms.sVram, 0);
     	gl.activeTexture(gl.TEXTURE0);
