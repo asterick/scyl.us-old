@@ -15,5 +15,8 @@ fetch("system0.rom").then((data) => {
 		if (module && module.hot) {
 		  module.hot.accept("./ui/index.jsx", rerender);
 		}
+
+		// We are all setup we can now do shit
+		runtime.start();
 	});
 });

@@ -36,7 +36,6 @@ export default class extends MIPS {
 
 	attach (canvas) {
 		this._gpu.attach(canvas);
-		this.start();
 	}
 
 	resize () {
