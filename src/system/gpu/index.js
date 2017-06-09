@@ -103,12 +103,14 @@ export default class {
 	_test () {
 		const gl = this._gl;
 
+        /*
         this.render(gl.TRIANGLE_FAN, false, -1, new Int16Array([
             0,   0, 0b0000000000000001,
             0, 240, 0b0000011111000001,
           256, 240, 0b1111111111000001,
           256,   0, 0b1111100000000001,
         ]));
+        */
 
         const palette = new Uint16Array(16);
         for (var i = 0; i < palette.length; i++) palette[i] = ((i * 2) * 0x42) | (((i >> 2) ^ i) & 1);
@@ -122,14 +124,16 @@ export default class {
     	]);
     	this.setData(0, 0,  1, 4, px);
 
+        /*
         this.render(gl.TRIANGLE_STRIP,  true, 0b1111111111111111, new Int16Array([
             64,  64, 0, 0,
             64, 192, 0, 4,
            192,  64, 4, 0,
            192, 192, 4, 4,
         ]));
+        */
 
-        this.render(gl.LINE_STRIP, false, 0b0111101111011110, new Int16Array([
+        this.render(gl.POINTS, false, 0b1111111111111111, new Int16Array([
             96,  96,
             96, 160,
            160,  96,

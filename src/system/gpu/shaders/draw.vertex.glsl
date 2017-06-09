@@ -26,5 +26,6 @@ void main(void) {
 	vTexture  = vec2(aTexture);
 	vAbsolute = vec2(aVertex);
 
+    gl_PointSize = 1.0;
     gl_Position = vec4(vAbsolute / vec2(uDrawSize) * 2.0 - 1.0 - vec2(uDrawPos), 1.0, 1.0);
 }
