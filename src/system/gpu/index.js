@@ -33,6 +33,43 @@ export default class {
 		this._resize = () => this._onresize();
 	}
 
+	setTexture(x, y) {
+		this._textureX = x;
+		this._textureY = y;
+	}
+
+	setClut(mode, x, y) {
+		this._clutMode = mode;
+		this._clutX = x;
+		this._clutY = y;
+	}
+
+	setDraw(x, y, width, height) {
+		this._leaveRender();
+
+		this._drawX = x;
+		this._drawY = y;
+		this._drawWidth = width;
+		this._drawHeight = height;
+	}
+
+	setViewport (x, y, width, height) {
+		this._viewX = x;
+		this._viewY = y;
+		this._viewWidth = width;
+		this._viewHeight = height;
+	}
+
+	setDither (dither) {
+		this._leaveRender();
+		this._dither = dither;
+	}
+
+	setMask (masked, setMask) {
+		this._masked = masked;
+		this._setMask = setMask;
+	}
+
 	attach (canvas) {
 		if (!canvas) {
 			window.removeEventListener("resize", this._resize);
@@ -107,80 +144,6 @@ export default class {
 		this._test();
 
 		this._requestRepaint();
-	}
-
-	_test () {
-		const gl = this._gl;
-
-        this.render(gl.TRIANGLE_FAN, false, -1, new Int16Array([
-            0,   0, 0b0000000000000001,
-            0, 240, 0b0000011111000001,
-          256, 240, 0b1111111111000001,
-          256,   0, 0b1111100000000001,
-        ]));
-
-        const palette = new Uint16Array(16);
-        for (var i = 0; i < palette.length; i++) palette[i] = ((i * 2) * 0x42) | (((i >> 2) ^ i) & 1);
-        this.setData(this._clutX, this._clutY, 16, 1, palette);
-
-        const px = new Uint16Array([
-        	0x3210, 0x3210,
-        	0x7654, 0x7654,
-        	0xBA98, 0xBA98,
-        	0xFEDC, 0xFEDC,
-    	]);
-    	this.setData(0, 0,  1, 4, px);
-
-        this.render(gl.TRIANGLE_STRIP,  true, 0b1111111111111111, new Int16Array([
-            64,  64, 0, 0,
-            64, 192, 0, 4,
-           192,  64, 4, 0,
-           192, 192, 4, 4,
-        ]));
-
-        this.render(gl.POINTS, false, 0b1111111111111111, new Int16Array([
-            96,  96,
-            96, 160,
-           160,  96,
-           160, 160,
-        ]))
-	}
-
-	setTexture(x, y) {
-		this._textureX = x;
-		this._textureY = y;
-	}
-
-	setClut(mode, x, y) {
-		this._clutMode = mode;
-		this._clutX = x;
-		this._clutY = y;
-	}
-
-	setDraw(x, y, width, height) {
-		this._leaveRender();
-
-		this._drawX = x;
-		this._drawY = y;
-		this._drawWidth = width;
-		this._drawHeight = height;
-	}
-
-	setViewport (x, y, width, height) {
-		this._viewX = x;
-		this._viewY = y;
-		this._viewWidth = width;
-		this._viewHeight = height;
-	}
-
-	setDither (dither) {
-		this._leaveRender();
-		this._dither = dither;
-	}
-
-	setMask (masked, setMask) {
-		this._masked = masked;
-		this._setMask = setMask;
 	}
 
 	render (type, textured, color, vertexes) {
@@ -290,13 +253,14 @@ export default class {
 	}
 
 	_setupBlend () {
+		const gl = this._gl;
     	// TODO: ACTUAL BLEND VALUES HERE
 		/*
 			gl.enable(gl.BLEND);
 			gl.blendColor(0.5, 0.5, 0.5, 0.25);
 			gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
 			gl.blendFuncSeparate(gl.CONSTANT_COLOR, gl.CONSTANT_COLOR, gl.ONE, gl.ZERO);
-		*/
+		//*/
 	}
 
 	_enterRender () {
@@ -305,10 +269,10 @@ export default class {
 
 		const gl = this._gl;
 
-		this._shadowCopy(this._shadowFrame, this._vram, false);
-
 		gl.disableVertexAttribArray(this._copyShader.attributes.aVertex);
 		gl.disableVertexAttribArray(this._copyShader.attributes.aTexture);
+
+		this._shadowCopy(this._shadowFrame, this._vram, false);
 
 		gl.enableVertexAttribArray(this._drawShader.attributes.aVertex);
 
@@ -318,7 +282,6 @@ export default class {
 
 		// Setup our program
 		gl.useProgram(this._drawShader.program);
-		this._setupBlend();
 
     	gl.uniform1i(this._drawShader.uniforms.sVram, 0);
     	gl.activeTexture(gl.TEXTURE0);
@@ -326,6 +289,8 @@ export default class {
 
 	   	gl.uniform2f(this._drawShader.uniforms.uDrawPos, this._drawX, this._drawY);
 	   	gl.uniform2f(this._drawShader.uniforms.uDrawSize, this._drawWidth, this._drawHeight);
+
+		this._setupBlend();
 	}
 
 	_leaveRender () {
@@ -334,14 +299,13 @@ export default class {
 
 		const gl = this._gl;
 
-		this._shadowCopy(this._vramFrame, this._shadow, this._dither);
-
 		gl.disableVertexAttribArray(this._drawShader.attributes.aVertex);
 		gl.disableVertexAttribArray(this._drawShader.attributes.aTexture);
 		gl.disableVertexAttribArray(this._drawShader.attributes.aColor);
 
+		this._shadowCopy(this._vramFrame, this._shadow, this._dither);
+
 		gl.enableVertexAttribArray(this._copyShader.attributes.aVertex);
-		gl.enableVertexAttribArray(this._copyShader.attributes.aTexture);
 
 		// ==== Setup program
 		gl.useProgram(this._displayShader.program);
@@ -359,12 +323,7 @@ export default class {
 	_shadowCopy(target, source, dither) {
 		const gl = this._gl;
 
-		gl.disableVertexAttribArray(this._drawShader.attributes.aVertex);
-		gl.disableVertexAttribArray(this._drawShader.attributes.aTexture);
-		gl.disableVertexAttribArray(this._drawShader.attributes.aColor);
-
-		gl.enableVertexAttribArray(this._copyShader.attributes.aVertex);
-		gl.enableVertexAttribArray(this._copyShader.attributes.aTexture);
+		gl.enableVertexAttribArray(this._displayShader.attributes.aVertex);
 
 		gl.useProgram(this._copyShader.program);
 		gl.disable(gl.BLEND);
@@ -386,6 +345,8 @@ export default class {
 		gl.vertexAttribPointer(this._copyShader.attributes.aVertex, 2, gl.FLOAT, false, 8, 0);
 
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+
+		gl.disableVertexAttribArray(this._displayShader.attributes.aVertex);
 	}
 
 	_createShader (vertex, fragment) {
@@ -441,5 +402,43 @@ export default class {
 			uniforms: uniforms,
 			program: shaderProgram
 		}
+	}
+
+	// THIS IS MY GROSS TEST BENCH
+	_test () {
+		const gl = this._gl;
+
+        this.render(gl.TRIANGLE_FAN, false, -1, new Int16Array([
+            0,   0, 0b0000000000000001,
+            0, 240, 0b0000011111000001,
+          256, 240, 0b1111111111000001,
+          256,   0, 0b1111100000000001,
+        ]));
+
+        const palette = new Uint16Array(16);
+        for (var i = 0; i < palette.length; i++) palette[i] = ((i * 2) * 0x42) | (((i >> 2) ^ i) & 1);
+        this.setData(this._clutX, this._clutY, 16, 1, palette);
+
+        const px = new Uint16Array([
+        	0x3210, 0x3210,
+        	0x7654, 0x7654,
+        	0xBA98, 0xBA98,
+        	0xFEDC, 0xFEDC,
+    	]);
+    	this.setData(0, 0,  1, 4, px);
+
+        this.render(gl.TRIANGLE_STRIP,  true, 0b1111111111111111, new Int16Array([
+            64,  64, 0, 0,
+            64, 192, 0, 4,
+           192,  64, 4, 0,
+           192, 192, 4, 4,
+        ]));
+
+        this.render(gl.POINTS, false, 0b1111111111111111, new Int16Array([
+            96,  96,
+            96, 160,
+           160,  96,
+           160, 160,
+        ]))
 	}
 }
