@@ -1,7 +1,9 @@
 /***
  TODO
  ====
- * Blend / Mask modes (HOW?!)
+ * Blend / Mask modes
+ 	* Shadow buffer will have to use floats
+ 	* Will have to have convert -> blend -> convert loop (which is less than ideal)
  * Rendering primitives
  ***/
 
