@@ -4,6 +4,8 @@
  * Blend modes
  ***/
 
+import DisplayFragmentShader from "raw-loader!./shaders/display.fragment.glsl";
+import DisplayVertexShader from "raw-loader!./shaders/display.vertex.glsl";
 import CopyFragmentShader from "raw-loader!./shaders/copy.fragment.glsl";
 import CopyVertexShader from "raw-loader!./shaders/copy.vertex.glsl";
 import DrawFragmentShader from "raw-loader!./shaders/draw.fragment.glsl";
@@ -62,10 +64,11 @@ export default class {
 		// Setup or rendering programs
 		this._copyShader = this._createShader (CopyVertexShader, CopyFragmentShader);
 		this._drawShader = this._createShader (DrawVertexShader, DrawFragmentShader);
+		this._displayShader = this._createShader (DisplayVertexShader, DisplayFragmentShader);
 
 		// Setup our vertex buffers
 		this._copyXY = gl.createBuffer();
-		this._copyUV = gl.createBuffer();
+		this._copyBuffer = gl.createBuffer();
 		this._drawBuffer = gl.createBuffer();
 
 		// Video memory
@@ -103,14 +106,12 @@ export default class {
 	_test () {
 		const gl = this._gl;
 
-        /*
         this.render(gl.TRIANGLE_FAN, false, -1, new Int16Array([
             0,   0, 0b0000000000000001,
             0, 240, 0b0000011111000001,
           256, 240, 0b1111111111000001,
           256,   0, 0b1111100000000001,
         ]));
-        */
 
         const palette = new Uint16Array(16);
         for (var i = 0; i < palette.length; i++) palette[i] = ((i * 2) * 0x42) | (((i >> 2) ^ i) & 1);
@@ -124,14 +125,12 @@ export default class {
     	]);
     	this.setData(0, 0,  1, 4, px);
 
-        /*
         this.render(gl.TRIANGLE_STRIP,  true, 0b1111111111111111, new Int16Array([
             64,  64, 0, 0,
             64, 192, 0, 4,
            192,  64, 4, 0,
            192, 192, 4, 4,
         ]));
-        */
 
         this.render(gl.POINTS, false, 0b1111111111111111, new Int16Array([
             96,  96,
@@ -272,23 +271,18 @@ export default class {
 		gl.viewport(0, 0, this._viewportWidth, this._viewportHeight);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyXY);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-			-1*this._aspectRatio,  1,
-			-1*this._aspectRatio, -1,
-			 1*this._aspectRatio, -1,
-			 1*this._aspectRatio,  1,
-		]), gl.STATIC_DRAW);
-		gl.vertexAttribPointer(this._copyShader.attributes.aVertex, 2, gl.FLOAT, false, 0, 0);
+	   	gl.uniform1f(this._displayShader.uniforms.uAspectRatio, this._aspectRatio);
+	   	gl.uniform2f(this._displayShader.uniforms.uViewportSize, this._viewWidth, this._viewHeight);
+	   	gl.uniform2f(this._displayShader.uniforms.uViewportPosition, this._viewX, this._viewY);
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyUV);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-			this._viewX, this._viewY,
-			this._viewX, this._viewY + this._viewHeight,
-			this._viewX + this._viewWidth, this._viewY + this._viewHeight,
-			this._viewX + this._viewWidth, this._viewY,
+			-1,  1,
+			-1, -1,
+			 1, -1,
+			 1,  1,
 		]), gl.STATIC_DRAW);
-		gl.vertexAttribPointer(this._copyShader.attributes.aTexture, 2, gl.FLOAT, false, 0, 0);
+		gl.vertexAttribPointer(this._displayShader.attributes.aVertex, 2, gl.FLOAT, false, 0, 0);
 
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
 
@@ -350,7 +344,7 @@ export default class {
 		gl.enableVertexAttribArray(this._copyShader.attributes.aTexture);
 
 		// ==== Setup program
-		gl.useProgram(this._copyShader.program);
+		gl.useProgram(this._displayShader.program);
 		gl.disable(gl.BLEND);
 
 		// Setup for frame copy
@@ -359,7 +353,7 @@ export default class {
     	// Select vram as our source texture
     	gl.activeTexture(gl.TEXTURE0);
     	gl.bindTexture(gl.TEXTURE_2D, this._vram);
-    	gl.uniform1i(this._copyShader.uniforms.sVram, 0);
+    	gl.uniform1i(this._displayShader.uniforms.sVram, 0);
 	}
 
 	_shadowCopy(target, source, dither) {
@@ -385,23 +379,16 @@ export default class {
     	gl.uniform1i(this._copyShader.uniforms.sVram, 0);
 	   	gl.uniform1i(this._copyShader.uniforms.uDither, dither);
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyXY);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-			-1, -1,
-			-1,  1,
-			 1,  1,
-			 1, -1,
+			-1, -1, this._drawX, this._drawY,
+			-1,  1, this._drawX, this._drawY + this._drawHeight,
+			 1,  1, this._drawX + this._drawWidth, this._drawY + this._drawHeight,
+			 1, -1, this._drawX + this._drawWidth, this._drawY,
 		]), gl.STATIC_DRAW);
-		gl.vertexAttribPointer(this._copyShader.attributes.aVertex, 2, gl.FLOAT, false, 0, 0);
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyUV);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-			this._drawX, this._drawY,
-			this._drawX, this._drawY + this._drawHeight,
-			this._drawX + this._drawWidth, this._drawY + this._drawHeight,
-			this._drawX + this._drawWidth, this._drawY,
-		]), gl.STATIC_DRAW);
-		gl.vertexAttribPointer(this._copyShader.attributes.aTexture, 2, gl.FLOAT, false, 0, 0);
+		gl.vertexAttribPointer(this._copyShader.attributes.aVertex, 2, gl.FLOAT, false, 16, 0);
+		gl.vertexAttribPointer(this._copyShader.attributes.aTexture, 2, gl.FLOAT, false, 16, 8);
 
 		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
 	}
