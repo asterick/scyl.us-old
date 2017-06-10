@@ -46,9 +46,9 @@ void main(void) {
 
 		uvec4 texel = texelFetch(sVram, texpos, 0);
 
-		//if (texel.a < 128u) discard ;
+		if (texel.a < 128u) discard ;
 
-		fragColor.rgb = texel.rgb;//(fragColor.rgb * texel.rgb) >> 8;
+		fragColor.rgb = (fragColor.rgb * texel.rgb) >> 8;
 		fragColor.a = uSetMask ? 0xFFu : texel.a;
 	}
 
