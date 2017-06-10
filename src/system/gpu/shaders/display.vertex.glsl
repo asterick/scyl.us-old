@@ -10,6 +10,6 @@ out vec2 vTexture;
 const vec2 vram_size = vec2(1024.0, 512.0);
 
 void main(void) {
-    vTexture = (aVertex * vec2(1.0, -1.0) + 1.0) * uViewportSize / vram_size / 2.0 + uViewportPosition;
+    vTexture = ((aVertex * vec2(1.0, -1.0) + 1.0) / 2.0 * uViewportSize + uViewportPosition) / vram_size;
     gl_Position = vec4(aVertex.x * uAspectRatio, aVertex.y, 1.0, 1.0);
 }

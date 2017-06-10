@@ -1,7 +1,8 @@
 #version 300 es
 precision mediump float;
 
-uniform vec2 uDrawSize;
+uniform vec2 uClipSize;
+uniform vec2 uClipPos;
 uniform vec2 uDrawPos;
 
 in uint aColor;
@@ -24,8 +25,8 @@ vec4 unpack(uint color) {
 void main(void) {
 	vColor    = unpack(aColor);
 	vTexture  = vec2(aTexture);
-	vAbsolute = vec2(aVertex);
+	vAbsolute = vec2(aVertex) + uDrawPos;
 
     gl_PointSize = 1.0;
-    gl_Position = vec4(vAbsolute / vec2(uDrawSize) * 2.0 - 1.0 - vec2(uDrawPos), 1.0, 1.0);
+    gl_Position = vec4((vAbsolute - uClipPos) / vec2(uClipSize) * 2.0 - 1.0, 1.0, 1.0);
 }

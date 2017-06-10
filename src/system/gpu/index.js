@@ -18,6 +18,8 @@ const CLUT_8BPP  = 1;
 const CLUT_4BPP  = 2;
 
 const PALETTE = new Uint32Array(0x10000);
+const VRAM_WORDS = new Uint32Array(VRAM_WIDTH * VRAM_HEIGHT);
+const VRAM_BYTES = new Uint8Array(VRAM_WORDS.buffer);
 
 for (var i = 0; i < 0x10000; i++) {
 	var r = (i >> 8) & 0xF8,
@@ -31,8 +33,9 @@ for (var i = 0; i < 0x10000; i++) {
 export default class {
 	constructor () {
 		// SETUP DEFAULT REGIONS
-		this.setViewport(0, 0, 256, 240);
-		this.setDraw(0, 0, 256, 240);
+		this.setViewport(64, 64, 256, 240);
+		this.setClip(0, 0, 256, 240);
+		this.setDraw(32, 32);
 		this._textureX = 0;
 		this._textureY = 0;
 		this._clutX = 0;
@@ -58,13 +61,18 @@ export default class {
 		this._clutY = y;
 	}
 
-	setDraw(x, y, width, height) {
+	setDraw(x, y) {
+		this._drawX = x;
+		this._drawY = x;
+	}
+
+	setClip(x, y, width, height) {
 		this._leaveRender();
 
-		this._drawX = x;
-		this._drawY = y;
-		this._drawWidth = width;
-		this._drawHeight = height;
+		this._clipX = x;
+		this._clipY = y;
+		this._clipWidth = width;
+		this._clipHeight = height;
 	}
 
 	setViewport (x, y, width, height) {
@@ -124,17 +132,15 @@ export default class {
 		this._drawBuffer = gl.createBuffer();
 
 		// Video memory
-		const vram = new Uint8Array(VRAM_WIDTH*VRAM_HEIGHT*4);
-
 		this._vram = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, this._vram);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, vram);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
 		this._shadow = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, this._shadow);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, vram);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
@@ -192,27 +198,26 @@ export default class {
 			gl.enableVertexAttribArray(this._drawShader.attributes.aColor);
 		}
 
-		gl.drawArrays(type, 0, vertexes.buffer.byteLength / size);
+		gl.drawArrays(type, 0, vertexes.buffer.byteLength / size);		
+		gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, this._clipX, this._clipY, this._clipX, this._clipY, this._clipWidth, this._clipHeight);
 	}
 
 	getData (x, y, width, height, target) {
-		this._leaveRender();
-
 		const gl = this._gl;
 
-		var temp = new Uint32Array(width*height);
-		var pixels = new Uint8Array(temp.buffer);
-
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._vramFrame);
-		gl.readPixels(x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, pixels);
-		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		gl.readPixels(x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+
+		if (!this._isRendering) {
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		}
 
 		var t = 0;
-		for (var i = 0; i < temp.length; i++) {
-			var r = (temp[i]  <<  8) & 0xF800;
-			var g = (temp[i]  >>  5) & 0x07C0;
-			var b = (temp[i]  >> 18) & 0x003E;
-			var a = (temp[i] >>> 31) & 1;
+		for (var i = 0; i < VRAM_WORDS.length; i++) {
+			var r = (VRAM_WORDS[i]  <<  8) & 0xF800;
+			var g = (VRAM_WORDS[i]  >>  5) & 0x07C0;
+			var b = (VRAM_WORDS[i]  >> 18) & 0x003E;
+			var a = (VRAM_WORDS[i] >>> 31) & 1;
 
 			target[i] = r | g | b | a;
 		}
@@ -221,18 +226,17 @@ export default class {
 	setData (x, y, width, height, target) {
 		const gl = this._gl;
 
-		var temp = new Uint32Array(width*height);
-		var pixels = new Uint8Array(temp.buffer);
-		
-		for (var i = 0; i < temp.length; i++) {
-			temp[i] = PALETTE[target[i]];
+		for (var i = 0; i < VRAM_WORDS.length; i++) {
+			VRAM_WORDS[i] = PALETTE[target[i]];
 		}
 
 		gl.bindTexture(gl.TEXTURE_2D, this._vram);
-		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, pixels);
+		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
 
 		gl.bindTexture(gl.TEXTURE_2D, this._shadow);
-		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, pixels);
+		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+
+		gl.bindTexture(gl.TEXTURE_2D, this._isRendering ? this._shadow : this._vram);
 	}
 
 	_onresize () {
@@ -280,17 +284,6 @@ export default class {
 		this._animationFrame = 0;
 	}
 
-	_setupBlend () {
-		const gl = this._gl;
-    	// TODO: ACTUAL BLEND VALUES HERE
-		/*
-			gl.enable(gl.BLEND);
-			gl.blendColor(0.5, 0.5, 0.5, 0.25);
-			gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
-			gl.blendFuncSeparate(gl.CONSTANT_COLOR, gl.CONSTANT_COLOR, gl.ONE, gl.ZERO);
-		//*/
-	}
-
 	_enterRender () {
 		if (this._isRendering) return ;
 		this._isRendering = true;
@@ -301,7 +294,7 @@ export default class {
 
 		// Setup our shadow frame
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._vramFrame);
-		gl.viewport(this._drawX, this._drawY, this._drawWidth, this._drawHeight);
+		gl.viewport(this._clipX, this._clipY, this._clipWidth, this._clipHeight);
 
 		// Setup our program
 		gl.useProgram(this._drawShader.program);
@@ -311,9 +304,8 @@ export default class {
     	gl.bindTexture(gl.TEXTURE_2D, this._shadow);
 
 	   	gl.uniform2f(this._drawShader.uniforms.uDrawPos, this._drawX, this._drawY);
-	   	gl.uniform2f(this._drawShader.uniforms.uDrawSize, this._drawWidth, this._drawHeight);
-
-		this._setupBlend();
+	   	gl.uniform2f(this._drawShader.uniforms.uClipPos, this._clipX, this._clipY);
+	   	gl.uniform2f(this._drawShader.uniforms.uClipSize, this._clipWidth, this._clipHeight);
 	}
 
 	_leaveRender () {
@@ -326,9 +318,6 @@ export default class {
 		gl.disableVertexAttribArray(this._drawShader.attributes.aTexture);
 		gl.disableVertexAttribArray(this._drawShader.attributes.aColor);
 
-    	gl.bindTexture(gl.TEXTURE_2D, this._shadow);
-		gl.copyTexImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, 0, 0, VRAM_WIDTH, VRAM_HEIGHT, 0);
-
 		gl.enableVertexAttribArray(this._displayShader.attributes.aVertex);
 
 		// ==== Setup program
@@ -340,7 +329,7 @@ export default class {
 
     	// Select vram as our source texture
     	gl.activeTexture(gl.TEXTURE0);
-    	gl.bindTexture(gl.TEXTURE_2D, this._shadow);
+    	gl.bindTexture(gl.TEXTURE_2D, this._vram);
     	gl.uniform1i(this._displayShader.uniforms.sVram, 0);
 	}
 
