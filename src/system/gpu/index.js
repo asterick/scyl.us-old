@@ -3,7 +3,6 @@
  ====
  * Blend modes
  * Optimize vram -> shadow copy
- * fix getData
  ***/
 
 import DisplayFragmentShader from "raw-loader!./shaders/display.fragment.glsl";
@@ -14,9 +13,9 @@ import DrawVertexShader from "raw-loader!./shaders/draw.vertex.glsl";
 const VRAM_WIDTH = 1024;
 const VRAM_HEIGHT = 512;
 
-const CLUT_16BPP = 1;
-const CLUT_8BPP  = 2;
-const CLUT_4BPP  = 4;
+const CLUT_16BPP = 0;
+const CLUT_8BPP  = 1;
+const CLUT_4BPP  = 2;
 
 const PALETTE = new Uint32Array(0x10000);
 
@@ -130,8 +129,8 @@ export default class {
 		this._vram = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, this._vram);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, vram);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
 		this._shadow = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, this._shadow);
@@ -196,33 +195,41 @@ export default class {
 		gl.drawArrays(type, 0, vertexes.buffer.byteLength / size);
 	}
 
-	// NOTE: DATA WILL BE 32-BIT WORD ALIGNED ON THE LINE BOUNDARY
 	getData (x, y, width, height, target) {
 		this._leaveRender();
 
 		const gl = this._gl;
 
-		/*
+		var temp = new Uint32Array(width*height);
+		var pixels = new Uint8Array(temp.buffer);
+
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._vramFrame);
-		gl.readPixels(x, y, width, height, gl.RGBA, gl.UNSIGNED_SHORT_5_5_5_1, target);
+		gl.readPixels(x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, pixels);
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-		*/
+
+		var t = 0;
+		for (var i = 0; i < temp.length; i++) {
+			var r = (temp[i]  <<  8) & 0xF800;
+			var g = (temp[i]  >>  5) & 0x07C0;
+			var b = (temp[i]  >> 18) & 0x003E;
+			var a = (temp[i] >>> 31) & 1;
+
+			target[i] = r | g | b | a;
+		}
 	}
 
-	// NOTE: DATA WILL BE 32-BIT WORD ALIGNED ON THE LINE BOUNDARY
 	setData (x, y, width, height, target) {
 		const gl = this._gl;
 
-		var temp = new Uint32Array(target.length);
+		var temp = new Uint32Array(width*height);
 		var pixels = new Uint8Array(temp.buffer);
 		
-		for (var i = 0; i < target.length; i++) {
+		for (var i = 0; i < temp.length; i++) {
 			temp[i] = PALETTE[target[i]];
 		}
 
 		gl.bindTexture(gl.TEXTURE_2D, this._vram);
 		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, pixels);
-
 
 		gl.bindTexture(gl.TEXTURE_2D, this._shadow);
 		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, pixels);
@@ -348,7 +355,6 @@ export default class {
 
 		if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
 			console.error(gl.getShaderInfoLog(vertexShader));
-			debugger ;
 			return null;
 		}
 
@@ -357,7 +363,6 @@ export default class {
 
 		if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
 			console.error(gl.getShaderInfoLog(fragmentShader));
-			debugger ;
 			return null;
 		}
 
@@ -415,7 +420,8 @@ export default class {
         	0xBA98,
         	0xFEDC,
     	]);
-    	this.setData(0, 0,  1, 4, px);
+    	this.setData(0, 0, 1, 4, px);
+    	this.getData(0, 0, 1, 4, px);
 
         this.render(gl.TRIANGLE_STRIP,  true, 0b1111111111111111, new Int16Array([
             64,  64, 0, 0,
