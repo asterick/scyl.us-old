@@ -34,19 +34,20 @@ void main(void) {
 
 	// Load our texture
 	if (uTextured) {
-		ivec2 texpos = (ivec2(vTexture.x / float(uClutMode), vTexture.y) & 0xFF) + uTextureOffset;
+		ivec2 iVec = ivec2(vTexture);
+		ivec2 texpos = (ivec2(iVec.x / uClutMode, iVec.y) & 0xFF) + uTextureOffset;
 
 		if (uClutMode == 4) {
-			uint word = pack(texelFetch(sVram, texpos, 0)) >> ((texpos.x & 3) << 2);
-			texpos = uClutOffset + ivec2(word & 0xFu, 0);
+			uint word = pack(texelFetch(sVram, texpos, 0)) >> ((iVec.x & 3) << 2);
+			iVec = uClutOffset + ivec2(word & 0xFu, 0);
 		} else if (uClutMode == 2) {
 			uint word = pack(texelFetch(sVram, texpos, 0));
-			texpos = uClutOffset + ivec2(bool(texpos.x & 1) ? (word >> 8u) : (word & 0xFFu), 0);
+			iVec = uClutOffset + ivec2(bool(texpos.x & 1) ? (word >> 8u) : (word & 0xFFu), 0);
 		}
 
-		uvec4 texel = texelFetch(sVram, texpos, 0);
+		uvec4 texel = texelFetch(sVram, iVec, 0);
 
-		if (texel.a < 128u) discard ;
+		//if (texel.a < 128u) discard ;
 
 		fragColor.rgb = (fragColor.rgb * texel.rgb) >> 8;
 		fragColor.a = uSetMask ? 0xFFu : texel.a;

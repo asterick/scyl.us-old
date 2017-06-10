@@ -3,6 +3,7 @@
  ====
  * Blend modes
  * Optimize vram -> shadow copy
+ * fix getData
  ***/
 
 import DisplayFragmentShader from "raw-loader!./shaders/display.fragment.glsl";
@@ -37,7 +38,7 @@ export default class {
 		this._textureY = 0;
 		this._clutX = 0;
 		this._clutY = 220;
-		this._clutMode = CLUT_16BPP;
+		this._clutMode = CLUT_4BPP;
 		this._dither = true;
 		this._masked = true;
 		this._setMask = false;
@@ -409,10 +410,10 @@ export default class {
         this.setData(this._clutX, this._clutY, 16, 1, palette);
 
         const px = new Uint16Array([
-        	0x3210, 0x3210,
-        	0x7654, 0x7654,
-        	0xBA98, 0xBA98,
-        	0xFEDC, 0xFEDC,
+        	0x3210,
+        	0x7654,
+        	0xBA98,
+        	0xFEDC,
     	]);
     	this.setData(0, 0,  1, 4, px);
 
