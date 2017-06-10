@@ -2,7 +2,7 @@
 
 precision mediump float;
 
-uniform sampler2D sVram;
+uniform mediump usampler2D sVram;
 
 uniform ivec2 uTextureOffset;
 uniform ivec2 uClutOffset;
@@ -11,50 +11,52 @@ uniform int uClutMode;
 uniform bool uTextured;
 uniform bool uMasked;
 uniform bool uSetMask;
+uniform bool uDither;
 
 in vec2 vTexture;
 in vec2 vAbsolute;
 in vec4 vColor;
 
-out vec4 fragColor;
+out uvec4 fragColor;
 
-int adjust(float a) {
-	return min(31, int(a * 32.0));
+const uint ordered_dither[] = uint[](15u, 7u, 13u, 5u, 3u, 11u, 1u, 9u, 12u, 4u, 14u, 6u, 0u, 8u, 2u, 10u);
+
+uint adjust(uint a) {
+	return a >> 3;
 }
 
-int pack(vec4 color) {
-	return (adjust(color.r) << 11) + (adjust(color.g) << 6) + (adjust(color.b) << 1) + int(color.a);
+uint pack(uvec4 color) {
+	return (adjust(color.r) << 11) + (adjust(color.g) << 6) + (adjust(color.b) << 1) + (color.a >= 128u ? 1u : 0u);
 }
 
 void main(void) {
-	fragColor = vColor;
+	fragColor = uvec4(vColor * 255.0);
 
 	// Load our texture
 	if (uTextured) {
-		ivec2 texpos;
-		vec2 vTex = mod(vTexture, 256.0);
+		ivec2 texpos = (ivec2(vTexture.x / float(uClutMode), vTexture.y) & 0xFF) + uTextureOffset;
 
-		if (uClutMode == 2) {
-			texpos = ivec2(vTex.x / 4.0, vTex.y) + uTextureOffset;
-
-			int word = pack(texelFetch(sVram, texpos, 0)) >> ((int(vTexture.x) & 3) << 2);
-
-			texpos = uClutOffset + ivec2(word & 0xF, 0);
-		} else if (uClutMode == 1) {
-			texpos = ivec2(vTex.x / 2.0, vTex.y) + uTextureOffset;
-
-			int word = pack(texelFetch(sVram, texpos, 0));
-
-			texpos = uClutOffset + ivec2(bool(int(vTex.x) & 1) ? (word >> 8) : (word & 0xFF), 0);
-		} else {
-			texpos = ivec2(vTex) + uTextureOffset;
+		if (uClutMode == 4) {
+			uint word = pack(texelFetch(sVram, texpos, 0)) >> ((texpos.x & 3) << 2);
+			texpos = uClutOffset + ivec2(word & 0xFu, 0);
+		} else if (uClutMode == 2) {
+			uint word = pack(texelFetch(sVram, texpos, 0));
+			texpos = uClutOffset + ivec2(bool(texpos.x & 1) ? (word >> 8u) : (word & 0xFFu), 0);
 		}
 
-		vec4 texel = texelFetch(sVram, texpos, 0);
+		uvec4 texel = texelFetch(sVram, texpos, 0);
 
-		if (texel.a < 0.5) discard ;
+		//if (texel.a < 128u) discard ;
 
-		fragColor.rgb *= texel.rgb;
-		fragColor.a = uSetMask ? 1.0 : texel.a;
+		fragColor.rgb = texel.rgb;//(fragColor.rgb * texel.rgb) >> 8;
+		fragColor.a = uSetMask ? 0xFFu : texel.a;
 	}
+
+	// We use a custom dithering engine
+	if (uDither) {
+		ivec2 ditherCoord = ivec2(vAbsolute) % 4;
+		fragColor.rgb = fragColor.rgb + ordered_dither[ditherCoord.g * 4 + ditherCoord.r];
+	}
+
+	fragColor.rgb &= 0x1F8u;
 }
