@@ -8,5 +8,8 @@ in vec2 vTexture;
 out vec4 fragColor;
 
 void main(void) {
-	fragColor = vec4(texture(sVram, vTexture)) / vec4(239.0, 239.0, 239.0, 255.0);
+	uvec3 color = texture(sVram, vTexture).rgb & 0xF8u;
+
+	fragColor.rgb = vec3(color) / vec3(239.0);
+	fragColor.a = 1.0;
 }

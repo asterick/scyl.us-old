@@ -46,18 +46,15 @@ void main(void) {
 
 		if (uMasked && texel.a < 128u) discard ;
 
-		fragColor = uvec4(vColor.rgb * vec3(texel.rgb), uSetMask ? 0xFFu : texel.a);
+		fragColor.rgb = uvec3(vColor.rgb * vec3(texel.rgb & 0xF8u));
+		fragColor.a   = uSetMask ? 0xFFu : (texel.a >= 0x80u ? 0xFFu : 0u);
 	} else {
-		fragColor = uvec4(vColor.rgb * 255.0, vColor.a > 0.5 ? 0xFFu : 0u);
+		fragColor = uvec4(vColor * 255.0);
 	}
 
 	// We use a custom dithering engine
 	if (uDither) {
 		ivec2 ditherCoord = ivec2(vAbsolute) % 4;
 		fragColor.rgb = ((fragColor.rgb << 1) + ordered_dither[ditherCoord.g * 4 + ditherCoord.r]) >> 1;
-		fragColor.rgb = min(fragColor.rgb, 0xF8u);
 	}
-
-	// Trim off MSBs
-	fragColor.rgb &= 0xF8u;
 }
