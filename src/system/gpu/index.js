@@ -2,7 +2,6 @@
  TODO
  ====
  * Blend modes
- * Optimize vram -> shadow copy
  ***/
 
 import DisplayFragmentShader from "raw-loader!./shaders/display.fragment.glsl";
