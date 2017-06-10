@@ -20,29 +20,38 @@ const PALETTE = new Uint32Array(0x10000);
 const VRAM_WORDS = new Uint32Array(VRAM_WIDTH * VRAM_HEIGHT);
 const VRAM_BYTES = new Uint8Array(VRAM_WORDS.buffer);
 
-for (var i = 0; i < 0x10000; i++) {
-	var r = (i >> 8) & 0xF8,
-		g = (i >> 3) & 0xF8,
-		b = (i << 2) & 0xF8,
-		a = (i  & 1) ? 0xFF : 0;
+function pack(i) {
+	var r = (i  >>  3) & 0x001F;
+	var g = (i  >>  6) & 0x03E0;
+	var b = (i  >>  9) & 0x7C00;
+	var a = (i >>> 16) & 0x8000;
 
-	PALETTE[i] = (a << 24) | (b << 16) | (g << 8) | r;
+	return r | g | b | a;
+}
+
+function unpack(i) {
+	var r = (i << 3) & 0xF8,
+		g = (i << 6) & 0xF800,
+		b = (i << 9) & 0xF80000,
+		a = (i & 0x8000) ? 0xFF000000 : 0;
+
+	return (a | b | g | r) >>> 0;
+}
+
+for (var i = 0; i < 0x10000; i++) {
+	PALETTE[i] = unpack(i);
 }
 
 export default class {
 	constructor () {
 		// SETUP DEFAULT REGIONS
-		this.setViewport(64, 64, 256, 240);
+		this.setViewport(0, 0, 256, 240);
 		this.setClip(0, 0, 256, 240);
-		this.setDraw(32, 32);
-		this._textureX = 0;
-		this._textureY = 0;
-		this._clutX = 0;
-		this._clutY = 220;
-		this._clutMode = CLUT_4BPP;
-		this._dither = true;
-		this._masked = true;
-		this._setMask = false;
+		this.setDraw(0, 0);
+		this.setTexture(0, 0);
+		this.setClut(CLUT_4BPP, 0, 220);
+		this.setMask(true, false);
+		this.setDither(true);
 
 		// Bind our function
 		this._requestFrame = () => this._repaint();
@@ -66,8 +75,6 @@ export default class {
 	}
 
 	setClip(x, y, width, height) {
-		this._leaveRender();
-
 		this._clipX = x;
 		this._clipY = y;
 		this._clipWidth = width;
@@ -82,7 +89,6 @@ export default class {
 	}
 
 	setDither (dither) {
-		this._leaveRender();
 		this._dither = dither;
 	}
 
@@ -148,10 +154,6 @@ export default class {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._vramFrame);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._vram, 0);
 
-		this._shadowFrame = gl.createFramebuffer();
-		gl.bindFramebuffer(gl.FRAMEBUFFER, this._shadowFrame);
-		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._shadow, 0);
-
 		// Set context to render by default
 		this._enterRender();
 		this._test();
@@ -175,6 +177,9 @@ export default class {
 	   	gl.uniform2i(this._drawShader.uniforms.uTextureOffset, this._textureX, this._textureY);
 	   	gl.uniform1i(this._drawShader.uniforms.uClutMode, this._clutMode);
 	   	gl.uniform2i(this._drawShader.uniforms.uClutOffset, this._clutX, this._clutY);
+	   	gl.uniform2f(this._drawShader.uniforms.uDrawPos, this._drawX, this._drawY);
+	   	gl.uniform2f(this._drawShader.uniforms.uClipPos, this._clipX, this._clipY);
+	   	gl.uniform2f(this._drawShader.uniforms.uClipSize, this._clipWidth, this._clipHeight);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._drawBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.DYNAMIC_DRAW);
@@ -213,12 +218,7 @@ export default class {
 
 		var t = 0;
 		for (var i = 0; i < VRAM_WORDS.length; i++) {
-			var r = (VRAM_WORDS[i]  <<  8) & 0xF800;
-			var g = (VRAM_WORDS[i]  >>  5) & 0x07C0;
-			var b = (VRAM_WORDS[i]  >> 18) & 0x003E;
-			var a = (VRAM_WORDS[i] >>> 31) & 1;
-
-			target[i] = r | g | b | a;
+			target[i] = pack(VRAM_WORDS[i]);
 		}
 	}
 
@@ -301,10 +301,6 @@ export default class {
     	gl.uniform1i(this._drawShader.uniforms.sVram, 0);
     	gl.activeTexture(gl.TEXTURE0);
     	gl.bindTexture(gl.TEXTURE_2D, this._shadow);
-
-	   	gl.uniform2f(this._drawShader.uniforms.uDrawPos, this._drawX, this._drawY);
-	   	gl.uniform2f(this._drawShader.uniforms.uClipPos, this._clipX, this._clipY);
-	   	gl.uniform2f(this._drawShader.uniforms.uClipSize, this._clipWidth, this._clipHeight);
 	}
 
 	_leaveRender () {
@@ -399,7 +395,7 @@ export default class {
         ]));
 
         const palette = new Uint16Array(16);
-        for (var i = 0; i < palette.length; i++) palette[i] = ((i * 2) * 0x42) | (((i >> 2) ^ i) & 1);
+        for (var i = 0; i < palette.length; i++) palette[i] = ((i * 2) * 0x21) | (((i >> 2) ^ i) & 1 ? 0x8000 : 0);
         this.setData(this._clutX, this._clutY, 16, 1, palette);
 
         const px = new Uint16Array([
@@ -410,6 +406,7 @@ export default class {
     	]);
     	this.setData(0, 0, 1, 4, px);
     	this.getData(0, 0, 1, 4, px);
+    	for (var i = 0; i < px.length; i++) console.log(px[i].toString(16))
 
         this.render(gl.TRIANGLE_STRIP,  true, 0b1111111111111111, new Int16Array([
             64,  64, 0, 0,

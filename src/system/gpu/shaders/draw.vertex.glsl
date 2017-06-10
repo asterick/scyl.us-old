@@ -15,10 +15,10 @@ out vec2 vTexture;
 
 vec4 unpack(uint color) {
 	return vec4(
-			float((color >> 11) & 0x1Fu) / 31.0,
-			float((color >>  6) & 0x1Fu) / 31.0,
-			float((color >>  1) & 0x1Fu) / 31.0,
-			float(color & 1u)
+			float(color & 0x1Fu) / 31.0,
+			float((color >>  5) & 0x1Fu) / 31.0,
+			float((color >> 10) & 0x1Fu) / 31.0,
+			float(color >> 15)
 		);
 }
 

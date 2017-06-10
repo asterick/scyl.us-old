@@ -22,7 +22,7 @@ out uvec4 fragColor;
 const uint ordered_dither[] = uint[](15u, 7u, 13u, 5u, 3u, 11u, 1u, 9u, 12u, 4u, 14u, 6u, 0u, 8u, 2u, 10u);
 
 uint pack(uvec4 color) {
-	return ((color.r >> 3) << 11) + ((color.g >> 3) << 6) + ((color.b >> 3) << 1) + (color.a >= 128u ? 1u : 0u);
+	return (color.r >> 3) | ((color.g >> 3) << 5) | ((color.b >> 3) << 10) | (color.a >= 128u ? 0x8000u : 0u);
 }
 
 void main(void) {
