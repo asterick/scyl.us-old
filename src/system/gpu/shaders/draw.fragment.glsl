@@ -26,10 +26,6 @@ out uvec4 fragColor;
 
 const uint ordered_dither[] = uint[](0u, 4u, 1u, 5u, 6u, 2u, 7u, 3u, 1u, 5u, 0u, 4u, 7u, 3u, 6u, 2u);
 
-uint pack(uvec4 color) {
-	return (color.r >> 3) | ((color.g >> 3) << 5) | ((color.b >> 3) << 10) | (color.a >= 128u ? 0x8000u : 0u);
-}
-
 void main(void) {
 	ivec2 vramTarget = ivec2(vAbsolute);
 
@@ -40,7 +36,8 @@ void main(void) {
 
 		// Paletted mode
 		if (uClutMode > 0) {
-			uint word = pack(texelFetch(sVram, ivec2(iVec.x >> uClutMode, iVec.y) + uTextureOffset, 0));
+			uvec4 color = texelFetch(sVram, ivec2(iVec.x >> uClutMode, iVec.y) + uTextureOffset, 0);
+			uint word = (color.r >> 3) | ((color.g >> 3) << 5) | ((color.b >> 3) << 10) | (color.a >= 128u ? 0x8000u : 0u);
 			int index = (iVec.x & ((1 << uClutMode) - 1)) << (4 - uClutMode);
 			uint mask = uint((1 << (1 << uClutMode)) - 1);
 		
