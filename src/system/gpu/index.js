@@ -189,7 +189,13 @@ export default class {
 	   	if (textured) {
 		   	gl.uniform2i(this._drawShader.uniforms.uTextureOffset, this._textureX, this._textureY);
 		   	gl.uniform1i(this._drawShader.uniforms.uClutMode, this._clutMode);
-		   	gl.uniform2i(this._drawShader.uniforms.uClutOffset, this._clutX, this._clutY);
+		   	if (this._clutMode > 0) {
+		   		gl.uniform1i(this._drawShader.uniforms.uClutIndexMask, (1 << this._clutMode) - 1);
+		   		gl.uniform1i(this._drawShader.uniforms.uClutIndexShift, 4 - this._clutMode);
+		   		gl.uniform1ui(this._drawShader.uniforms.uClutColorMask, (1 << (1 << this._clutMode)) - 1);
+
+		   		gl.uniform2i(this._drawShader.uniforms.uClutOffset, this._clutX, this._clutY);
+		   	}
 	   	}
 
 	   	// Blending flags

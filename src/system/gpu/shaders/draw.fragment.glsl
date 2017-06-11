@@ -7,7 +7,11 @@ uniform mediump usampler2D sVram;
 uniform bool uTextured;
 uniform ivec2 uTextureOffset;
 uniform ivec2 uClutOffset;
+
 uniform int uClutMode;
+uniform int uClutIndexMask;
+uniform int uClutIndexShift;
+uniform uint uClutColorMask;
 
 uniform bool uSemiTransparent;
 uniform vec2 uSetCoff;
@@ -38,10 +42,8 @@ void main(void) {
 		if (uClutMode > 0) {
 			uvec4 color = texelFetch(sVram, ivec2(iVec.x >> uClutMode, iVec.y) + uTextureOffset, 0);
 			uint word = (color.r >> 3) | ((color.g >> 3) << 5) | ((color.b >> 3) << 10) | (color.a >= 128u ? 0x8000u : 0u);
-			int index = (iVec.x & ((1 << uClutMode) - 1)) << (4 - uClutMode);
-			uint mask = uint((1 << (1 << uClutMode)) - 1);
 		
-			texpos = ivec2((word >> index) & mask, 0) + uClutOffset;
+			texpos = ivec2((word >> ((iVec.x & uClutIndexMask) << uClutIndexShift)) & uClutColorMask, 0) + uClutOffset;
 		} else {
 			texpos = iVec + uTextureOffset;
 		}
