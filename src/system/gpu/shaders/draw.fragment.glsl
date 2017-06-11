@@ -10,6 +10,8 @@ uniform ivec2 uClutOffset;
 uniform int uClutMode;
 
 uniform bool uSemiTransparent;
+uniform vec2 uSetCoff;
+uniform vec2 uResetCoff;
 
 uniform bool uMasked;
 uniform bool uSetMask;
@@ -29,6 +31,8 @@ uint pack(uvec4 color) {
 }
 
 void main(void) {
+	ivec2 vramTarget = ivec2(vAbsolute);
+
 	// Load our texture
 	if (uTextured) {
 		ivec2 iVec = ivec2(vTexture) & 0xFF;
@@ -55,9 +59,17 @@ void main(void) {
 		fragColor = uvec4(vColor * 255.0, vMask);
 	}
 
+	// Blending work
+	if (uSemiTransparent) {
+		uvec3 prev = texelFetch(sVram, vramTarget, 0).rgb;
+		vec2 coffs = (fragColor.a >= 0x80u) ? uSetCoff : uResetCoff;
+
+		fragColor.rgb = uvec3(vec3(fragColor.rgb) * coffs.xxx + vec3(prev.rgb) * coffs.yyy);
+	}
+
 	// We use a custom dithering engine
 	if (uDither) {
-		ivec2 ditherCoord = ivec2(vAbsolute) % 4;
+		ivec2 ditherCoord = vramTarget % 4;
 		fragColor.rgb = ((fragColor.rgb << 1) + ordered_dither[ditherCoord.g * 4 + ditherCoord.r]) >> 1;
 	}
 }

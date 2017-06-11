@@ -52,12 +52,21 @@ export default class {
 		this.setClut(CLUT_4BPP, 0, 220);
 		this.setMask(true, false);
 		this.setDither(true);
+		this.setBlend(false);
 
 		this._dirty = false;
 
 		// Bind our function
 		this._requestFrame = () => this._repaint();
 		this._resize = () => this._onresize();
+	}
+
+	setBlend(blend, setSrcCoff, setDstCoff, resetSrcCoff ,resetDstCoff) {
+		this._blend = blend;
+		this._setSrcCoff = setSrcCoff;
+		this._setDstCoff = setDstCoff;
+		this._resetSrcCoff = resetSrcCoff;
+		this._resetDstCoff = resetDstCoff;
 	}
 
 	setTexture(x, y) {
@@ -178,6 +187,10 @@ export default class {
 		this._enterRender();
 		this._requestRepaint();
 
+		if (this._blend) {
+			this._parityCopy();
+		}
+
 		// Drawing region
 	   	gl.uniform2f(this._drawShader.uniforms.uDrawPos, this._drawX, this._drawY);
 
@@ -191,6 +204,11 @@ export default class {
 	   	gl.uniform1i(this._drawShader.uniforms.uMasked, this._masked);
 	   	gl.uniform1i(this._drawShader.uniforms.uSetMask, this._setMask);
 	   	gl.uniform1i(this._drawShader.uniforms.uDither, this._dither);
+
+	   	// Blending flags
+		gl.uniform1i(this._drawShader.uniforms.uSemiTransparent, this._blend);
+		gl.uniform2f(this._drawShader.uniforms.uSetCoff, this._setSrcCoff, this._setDstCoff);
+		gl.uniform2f(this._drawShader.uniforms.uResetCoff, this._resetSrcCoff, this._resetDstCoff);
 
 		// Buffer draw parameters
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._drawBuffer);
@@ -440,6 +458,9 @@ export default class {
     	this.setData(0, 0, 1, 4, px);
     	this.getData(0, 0, 1, 4, px);
     	for (var i = 0; i < px.length; i++) console.log(px[i].toString(16))
+
+		this.setMask(false, true);
+		this.setBlend(true, 0.5, 0.5, 0.25, 0.75);
 
         this.render(gl.TRIANGLE_STRIP,  true, 0b1111111111111111, new Int16Array([
             64,  64, 0, 0,
