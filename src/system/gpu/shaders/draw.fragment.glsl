@@ -49,11 +49,12 @@ void main(void) {
 		}
 
 		uvec4 texel = texelFetch(sVram, texpos, 0);
+		bool maskClear = texel.a < 128u;
 
-		if (uMasked && texel.a < 128u) discard ;
+		if (uMasked && maskClear) discard ;
 
 		fragColor.rgb = uvec3(vColor * vec3(texel.rgb & 0xF8u));
-		fragColor.a   = uSetMask ? vMask : (texel.a >= 0x80u ? 0xFFu : 0u);
+		fragColor.a   = uSetMask ? vMask : (maskClear ? 0u : 0xFFu);
 	} else {
 		fragColor = uvec4(vColor * 255.0, vMask);
 	}
