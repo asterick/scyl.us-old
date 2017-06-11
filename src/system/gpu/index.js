@@ -80,7 +80,7 @@ export default class {
 	}
 
 	setClip(x, y, width, height) {
-		// This forces a copy back
+		// This forces a copy back, and reconfigure the shader
 		this._leaveRender();
 
 		this._clipX = x;
@@ -162,10 +162,6 @@ export default class {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._framebuffer);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._shadow, 0);
 
-		this._shadowbuffer = gl.createFramebuffer();
-		gl.bindFramebuffer(gl.FRAMEBUFFER, this._shadowbuffer);
-		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._vram, 0);
-
 		// Set context to render by default
 		this._enterRender();
 		this._test();
@@ -190,19 +186,23 @@ export default class {
 
 	   	// Texture settings
 	   	gl.uniform1i(this._drawShader.uniforms.uTextured, textured);
-	   	gl.uniform2i(this._drawShader.uniforms.uTextureOffset, this._textureX, this._textureY);
-	   	gl.uniform1i(this._drawShader.uniforms.uClutMode, this._clutMode);
-	   	gl.uniform2i(this._drawShader.uniforms.uClutOffset, this._clutX, this._clutY);
+	   	if (textured) {
+		   	gl.uniform2i(this._drawShader.uniforms.uTextureOffset, this._textureX, this._textureY);
+		   	gl.uniform1i(this._drawShader.uniforms.uClutMode, this._clutMode);
+		   	gl.uniform2i(this._drawShader.uniforms.uClutOffset, this._clutX, this._clutY);
+	   	}
+
+	   	// Blending flags
+		gl.uniform1i(this._drawShader.uniforms.uSemiTransparent, this._blend);
+		if (this._blend) {
+			gl.uniform2f(this._drawShader.uniforms.uSetCoff, this._setSrcCoff, this._setDstCoff);
+			gl.uniform2f(this._drawShader.uniforms.uResetCoff, this._resetSrcCoff, this._resetDstCoff);
+		}
 
 	   	// Render flags
 	   	gl.uniform1i(this._drawShader.uniforms.uMasked, this._masked);
 	   	gl.uniform1i(this._drawShader.uniforms.uSetMask, this._setMask);
 	   	gl.uniform1i(this._drawShader.uniforms.uDither, this._dither);
-
-	   	// Blending flags
-		gl.uniform1i(this._drawShader.uniforms.uSemiTransparent, this._blend);
-		gl.uniform2f(this._drawShader.uniforms.uSetCoff, this._setSrcCoff, this._setDstCoff);
-		gl.uniform2f(this._drawShader.uniforms.uResetCoff, this._resetSrcCoff, this._resetDstCoff);
 
 		// Buffer draw parameters
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._drawBuffer);
