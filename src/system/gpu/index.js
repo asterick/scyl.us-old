@@ -53,6 +53,8 @@ export default class {
 		this.setMask(true, false);
 		this.setDither(true);
 
+		this._dirty = false;
+
 		// Bind our function
 		this._requestFrame = () => this._repaint();
 		this._resize = () => this._onresize();
@@ -75,6 +77,9 @@ export default class {
 	}
 
 	setClip(x, y, width, height) {
+		// This forces a copy back
+		this._leaveRender();
+
 		this._clipX = x;
 		this._clipY = y;
 		this._clipWidth = width;
@@ -150,8 +155,12 @@ export default class {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
 		// Setup the draw targets
-		this._vramFrame = gl.createFramebuffer();
-		gl.bindFramebuffer(gl.FRAMEBUFFER, this._vramFrame);
+		this._framebuffer = gl.createFramebuffer();
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this._framebuffer);
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._shadow, 0);
+
+		this._shadowbuffer = gl.createFramebuffer();
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this._shadowbuffer);
 		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._vram, 0);
 
 		// Set context to render by default
@@ -169,21 +178,25 @@ export default class {
 		this._enterRender();
 		this._requestRepaint();
 
-		// Render our shit
+		// Drawing region
+	   	gl.uniform2f(this._drawShader.uniforms.uDrawPos, this._drawX, this._drawY);
+
+	   	// Texture settings
 	   	gl.uniform1i(this._drawShader.uniforms.uTextured, textured);
-	   	gl.uniform1i(this._drawShader.uniforms.uMasked, this._masked);
-	   	gl.uniform1i(this._drawShader.uniforms.uSetMask, this._setMask);
-	   	gl.uniform1i(this._drawShader.uniforms.uDither, this._dither);
 	   	gl.uniform2i(this._drawShader.uniforms.uTextureOffset, this._textureX, this._textureY);
 	   	gl.uniform1i(this._drawShader.uniforms.uClutMode, this._clutMode);
 	   	gl.uniform2i(this._drawShader.uniforms.uClutOffset, this._clutX, this._clutY);
-	   	gl.uniform2f(this._drawShader.uniforms.uDrawPos, this._drawX, this._drawY);
-	   	gl.uniform2f(this._drawShader.uniforms.uClipPos, this._clipX, this._clipY);
-	   	gl.uniform2f(this._drawShader.uniforms.uClipSize, this._clipWidth, this._clipHeight);
 
+	   	// Render flags
+	   	gl.uniform1i(this._drawShader.uniforms.uMasked, this._masked);
+	   	gl.uniform1i(this._drawShader.uniforms.uSetMask, this._setMask);
+	   	gl.uniform1i(this._drawShader.uniforms.uDither, this._dither);
+
+		// Buffer draw parameters
 		gl.bindBuffer(gl.ARRAY_BUFFER, this._drawBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.DYNAMIC_DRAW);
 
+		// Setup our vertex pointers
 		gl.vertexAttribIPointer( this._drawShader.attributes.aVertex, 2, gl.SHORT, size, 0);
 
 		if (textured) {
@@ -202,21 +215,32 @@ export default class {
 			gl.enableVertexAttribArray(this._drawShader.attributes.aColor);
 		}
 
-		gl.drawArrays(type, 0, vertexes.buffer.byteLength / size);		
+		// Draw array
+		gl.drawArrays(type, 0, vertexes.buffer.byteLength / size);
+
+		// Set our dirty flag so we know to copy the shadow frame over
+		this._dirty = true;
+	}
+
+	_parityCopy() {
+		if (!this._dirty) return ;
+
+		const gl = this._gl;
 		gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, this._clipX, this._clipY, this._clipX, this._clipY, this._clipWidth, this._clipHeight);
+
+		this._dirty = false;
 	}
 
 	getData (x, y, width, height, target) {
 		const gl = this._gl;
 
-		gl.bindFramebuffer(gl.FRAMEBUFFER, this._vramFrame);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this._framebuffer);
 		gl.readPixels(x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
 
 		if (!this._isRendering) {
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		}
 
-		var t = 0;
 		for (var i = 0; i < VRAM_WORDS.length; i++) {
 			target[i] = pack(VRAM_WORDS[i]);
 		}
@@ -229,13 +253,11 @@ export default class {
 			VRAM_WORDS[i] = PALETTE[target[i]];
 		}
 
-		gl.bindTexture(gl.TEXTURE_2D, this._vram);
-		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
-
 		gl.bindTexture(gl.TEXTURE_2D, this._shadow);
 		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
 
-		gl.bindTexture(gl.TEXTURE_2D, this._isRendering ? this._shadow : this._vram);
+		gl.bindTexture(gl.TEXTURE_2D, this._vram);
+		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
 	}
 
 	_onresize () {
@@ -263,8 +285,6 @@ export default class {
 	_repaint () {
 		const gl = this._gl;
 
-		if (!gl) return ;
-
 		this._leaveRender();
 
 		// Copy our viewport to the screen
@@ -289,18 +309,29 @@ export default class {
 
 		const gl = this._gl;
 
+		gl.disableVertexAttribArray(this._displayShader.attributes.aVertex);
 		gl.enableVertexAttribArray(this._drawShader.attributes.aVertex);
 
 		// Setup our shadow frame
-		gl.bindFramebuffer(gl.FRAMEBUFFER, this._vramFrame);
-		gl.viewport(this._clipX, this._clipY, this._clipWidth, this._clipHeight);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this._framebuffer);
 
 		// Setup our program
 		gl.useProgram(this._drawShader.program);
 
+    	// Select vram as TEXTURE0
     	gl.uniform1i(this._drawShader.uniforms.sVram, 0);
+
+    	// Setup clipping rectangle
+		gl.viewport(this._clipX, this._clipY, this._clipWidth, this._clipHeight);
+	   	gl.uniform2f(this._drawShader.uniforms.uClipPos, this._clipX, this._clipY);
+	   	gl.uniform2f(this._drawShader.uniforms.uClipSize, this._clipWidth, this._clipHeight);
+
+		// Select the new frame buffer / vram
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this._framebuffer);
+    	
     	gl.activeTexture(gl.TEXTURE0);
-    	gl.bindTexture(gl.TEXTURE_2D, this._shadow);
+    	gl.bindTexture(gl.TEXTURE_2D, this._vram);
+    	gl.uniform1i(this._drawShader.uniforms.sVram, 0);
 	}
 
 	_leaveRender () {
@@ -309,23 +340,25 @@ export default class {
 
 		const gl = this._gl;
 
+		// Copy render buffer to target
+		this._parityCopy();
+
+		// Change our attributes
 		gl.disableVertexAttribArray(this._drawShader.attributes.aVertex);
 		gl.disableVertexAttribArray(this._drawShader.attributes.aTexture);
 		gl.disableVertexAttribArray(this._drawShader.attributes.aColor);
-
 		gl.enableVertexAttribArray(this._displayShader.attributes.aVertex);
 
 		// ==== Setup program
 		gl.useProgram(this._displayShader.program);
-		gl.disable(gl.BLEND);
-
-		// Setup for frame copy
-		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     	// Select vram as our source texture
     	gl.activeTexture(gl.TEXTURE0);
     	gl.bindTexture(gl.TEXTURE_2D, this._vram);
     	gl.uniform1i(this._displayShader.uniforms.sVram, 0);
+
+		// Set to render to display
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	}
 
 	_createShader (vertex, fragment) {

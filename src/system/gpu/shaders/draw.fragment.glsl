@@ -4,18 +4,21 @@ precision mediump float;
 
 uniform mediump usampler2D sVram;
 
+uniform bool uTextured;
 uniform ivec2 uTextureOffset;
 uniform ivec2 uClutOffset;
 uniform int uClutMode;
 
-uniform bool uTextured;
+uniform bool uSemiTransparent;
+
 uniform bool uMasked;
 uniform bool uSetMask;
 uniform bool uDither;
 
 in vec2 vTexture;
 in vec2 vAbsolute;
-in vec4 vColor;
+in vec3 vColor;
+flat in lowp uint vMask;
 
 out uvec4 fragColor;
 
@@ -46,10 +49,10 @@ void main(void) {
 
 		if (uMasked && texel.a < 128u) discard ;
 
-		fragColor.rgb = uvec3(vColor.rgb * vec3(texel.rgb & 0xF8u));
-		fragColor.a   = uSetMask ? 0xFFu : (texel.a >= 0x80u ? 0xFFu : 0u);
+		fragColor.rgb = uvec3(vColor * vec3(texel.rgb & 0xF8u));
+		fragColor.a   = uSetMask ? vMask : (texel.a >= 0x80u ? 0xFFu : 0u);
 	} else {
-		fragColor = uvec4(vColor * 255.0);
+		fragColor = uvec4(vColor * 255.0, vMask);
 	}
 
 	// We use a custom dithering engine

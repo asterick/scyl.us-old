@@ -9,21 +9,22 @@ in uint aColor;
 in ivec2 aVertex;
 in ivec2 aTexture;
 
-out vec4 vColor;
 out vec2 vAbsolute;
 out vec2 vTexture;
+out vec3 vColor;
+flat out lowp uint vMask;
 
-vec4 unpack(uint color) {
-	return vec4(
+vec3 unpack(uint color) {
+	return vec3(
 			float(color & 0x1Fu) / 31.0,
 			float((color >>  5) & 0x1Fu) / 31.0,
-			float((color >> 10) & 0x1Fu) / 31.0,
-			float(color >> 15)
+			float((color >> 10) & 0x1Fu) / 31.0
 		);
 }
 
 void main(void) {
 	vColor    = unpack(aColor);
+	vMask	  = bool(aColor & 0x8000u) ? 0xFFu : 0u;
 	vTexture  = vec2(aTexture);
 	vAbsolute = vec2(aVertex) + uDrawPos;
 
