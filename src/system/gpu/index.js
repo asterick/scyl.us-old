@@ -72,6 +72,11 @@ export default class {
 		this._clutMode = mode;
 		this._clutX = x;
 		this._clutY = y;
+
+		// Precompute some constants
+		this._clutIndexMask = (1 << this._clutMode) - 1;
+		this._clutIndexShift = 4 - this._clutMode;
+		this._clutColorMask = (1 << (1 << this._clutMode)) - 1;
 	}
 
 	setDraw(x, y) {
@@ -189,12 +194,12 @@ export default class {
 	   	if (textured) {
 		   	gl.uniform2i(this._drawShader.uniforms.uTextureOffset, this._textureX, this._textureY);
 		   	gl.uniform1i(this._drawShader.uniforms.uClutMode, this._clutMode);
-		   	if (this._clutMode > 0) {
-		   		gl.uniform1i(this._drawShader.uniforms.uClutIndexMask, (1 << this._clutMode) - 1);
-		   		gl.uniform1i(this._drawShader.uniforms.uClutIndexShift, 4 - this._clutMode);
-		   		gl.uniform1ui(this._drawShader.uniforms.uClutColorMask, (1 << (1 << this._clutMode)) - 1);
 
+		   	if (this._clutMode > 0) {
 		   		gl.uniform2i(this._drawShader.uniforms.uClutOffset, this._clutX, this._clutY);
+		   		gl.uniform1i(this._drawShader.uniforms.uClutIndexMask, this._clutIndexMask);
+		   		gl.uniform1i(this._drawShader.uniforms.uClutIndexShift, this._clutIndexShift);
+		   		gl.uniform1ui(this._drawShader.uniforms.uClutColorMask, this._clutColorMask);
 		   	}
 	   	}
 
