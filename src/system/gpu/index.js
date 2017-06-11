@@ -464,6 +464,7 @@ export default class {
         ]));
 
 		this.setBlend(false, 2.0, 1.0, 0.25, 0.75);
+		this.setDither(false);
 
         this.render(gl.POINTS, false, 0b1111111111111111, new Int16Array([
             96,  96,
