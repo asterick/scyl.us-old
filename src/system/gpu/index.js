@@ -1,9 +1,3 @@
-/***
- TODO
- ====
- * Blend modes
- ***/
-
 import DisplayFragmentShader from "raw-loader!./shaders/display.fragment.glsl";
 import DisplayVertexShader from "raw-loader!./shaders/display.vertex.glsl";
 import DrawFragmentShader from "raw-loader!./shaders/draw.fragment.glsl";
@@ -460,7 +454,7 @@ export default class {
     	for (var i = 0; i < px.length; i++) console.log(px[i].toString(16))
 
 		this.setMask(false, true);
-		this.setBlend(true, 0.5, 0.5, 0.25, 0.75);
+		this.setBlend(true, 1.0, 0.25, 0.25, 0.75);
 
         this.render(gl.TRIANGLE_STRIP,  true, 0b1111111111111111, new Int16Array([
             64,  64, 0, 0,
@@ -468,6 +462,8 @@ export default class {
            192,  64, 4, 0,
            192, 192, 4, 4,
         ]));
+
+		this.setBlend(false, 2.0, 1.0, 0.25, 0.75);
 
         this.render(gl.POINTS, false, 0b1111111111111111, new Int16Array([
             96,  96,
