@@ -317,9 +317,9 @@ const DECODE_TYPES = {
 	[PAYLOAD_TYPES.FUNCTION]: function_section,
 	[PAYLOAD_TYPES.TABLE]: table_section,
 	[PAYLOAD_TYPES.MEMORY]: memory_section,
-	[PAYLOAD_TYPES.GLOBAL]: global_section,
+	[PAYLOAD_TYPES.GLOBAL]: global_section, // ***
 	[PAYLOAD_TYPES.EXPORT]: export_section,
-	[PAYLOAD_TYPES.START]: start_section,
+	[PAYLOAD_TYPES.START]: start_section,   // ***
 	[PAYLOAD_TYPES.ELEMENT]: element_section,
 	[PAYLOAD_TYPES.CODE]: code_section,
 	[PAYLOAD_TYPES.DATA]: data_section

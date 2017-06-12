@@ -4,11 +4,12 @@
   (type $FUNCSIG$v (func))
   (import "env" "fib" (func $fib (param i32) (result i32)))
   (import "env" "remote" (global $remote i32))
-  (table 5 5 anyfunc)
-  (elem (i32.const 0) $__wasm_nullptr $add $sub $mul $div)
+  (import "env" "crazy" (func $crazy (param i32 i32) (result i32)))
+  (table 6 6 anyfunc)
+  (elem (i32.const 0) $__wasm_nullptr $add $sub $mul $div $__importThunk_crazy)
   (memory $0 1)
   (data (i32.const 12) "\00\00\00\00")
-  (data (i32.const 16) "\01\00\00\00\02\00\00\00\03\00\00\00\04\00\00\00")
+  (data (i32.const 16) "\01\00\00\00\02\00\00\00\03\00\00\00\04\00\00\00\05\00\00\00")
   (export "memory" (memory $0))
   (export "fac" (func $fac))
   (export "weird" (func $weird))
@@ -18,7 +19,7 @@
   (export "mul" (func $mul))
   (export "div" (func $div))
   (export "exec" (func $exec))
-  (export "_GLOBAL__sub_I_36975624e4a10c77caf0a88212692ca7.cpp" (func $_GLOBAL__sub_I_36975624e4a10c77caf0a88212692ca7.cpp))
+  (export "_GLOBAL__sub_I_10f23c89cb5f8f9a063c4f753d0443cd.cpp" (func $_GLOBAL__sub_I_10f23c89cb5f8f9a063c4f753d0443cd.cpp))
   (func $fac (param $0 i32) (result i32)
     (local $1 i32)
     (local $2 i32)
@@ -490,7 +491,7 @@
       )
     )
   )
-  (func $_GLOBAL__sub_I_36975624e4a10c77caf0a88212692ca7.cpp
+  (func $_GLOBAL__sub_I_10f23c89cb5f8f9a063c4f753d0443cd.cpp
     (i32.store offset=12
       (i32.const 0)
       (i32.shl
@@ -503,5 +504,11 @@
   )
   (func $__wasm_nullptr (type $FUNCSIG$v)
     (unreachable)
+  )
+  (func $__importThunk_crazy (type $FUNCSIG$iii) (param $0 i32) (param $1 i32) (result i32)
+    (call $crazy
+      (get_local $0)
+      (get_local $1)
+    )
   )
 )
