@@ -141,7 +141,7 @@ function type_section(payload) {
 		definitions.push({ type: "func_type", parameters, returns });
 	}
 
-	return { type: "type_section", definitions };
+	return { type: "type_section", body: definitions };
 }
 
 function import_section(payload) {
@@ -172,7 +172,7 @@ function import_section(payload) {
 		}
 	}
 
-	return { type: "import_section", imports };
+	return { type: "import_section", body: imports };
 }
 
 function function_section(payload) {
@@ -183,7 +183,7 @@ function function_section(payload) {
 		functions.push(payload.varuint());
 	}
 
-	return { type: "function_section", functions };
+	return { type: "function_section", body: functions };
 }
 
 function table_section(payload) {
@@ -194,7 +194,7 @@ function table_section(payload) {
 		tables.push(table_type(payload));
 	}
 
-	return { type: "table_section", tables };
+	return { type: "table_section", body: tables };
 }
 
 function memory_section(payload) {
@@ -205,7 +205,7 @@ function memory_section(payload) {
 		memories.push(memory_type(payload));
 	}
 
-	return { type: "memory_section", memories };
+	return { type: "memory_section", body: memories };
 }
 
 function global_section(payload) {
@@ -219,7 +219,7 @@ function global_section(payload) {
 		globals.push({ type, init });
 	}
 
-	return { type: "global_section", globals };
+	return { type: "global_section", body: globals };
 }
 
 function export_section(payload) {
@@ -250,11 +250,11 @@ function export_section(payload) {
 		exports.push({ field, kind, index: payload.varuint() });
 	}
 
-	return { type: "export_section", exports };
+	return { type: "export_section", body: exports };
 }
 
 function start_section(payload) {
-	return { type: "start_section", index: payload.varuint() };
+	return { type: "start_section", body: payload.varuint() };
 }
 
 function element_section(payload) {
@@ -274,7 +274,8 @@ function element_section(payload) {
 		segments.push({ type: "element_segment", index, offset, elements });
 	}
 
-	return { type: "element_section", segments };}
+	return { type: "element_section", body: segments }
+}
 
 function code_section(payload) {
 	const count = payload.varuint();
@@ -298,7 +299,7 @@ function code_section(payload) {
 		bodies.push({ locals, code });
 	}
 
-	return { type: "code_section", bodies };
+	return { type: "code_section", body: bodies };
 }
 
 function data_section(payload) {
@@ -314,7 +315,7 @@ function data_section(payload) {
 		segments.push({ type: "data_segment", index, offset, data });
 	}
 
-	return { type: "data_section", segments };
+	return { type: "data_section", body: segments };
 }
 
 const DECODE_TYPES = {
@@ -336,7 +337,7 @@ export default function (array) {
 	const result = {
 		magicNumber: stream.uint32(),
 		version: stream.uint32(),
-		payload: []
+		custom: []
 	};
 
 	if (result.magicNumber != MAGIC_NUMBER) {
@@ -348,15 +349,19 @@ export default function (array) {
 	}
 
 	while (!stream.eof()) {
-		var id = stream.varuint();
-		var payloadLength = stream.varuint();
-		var payload = new ReadStream(stream.buffer(payloadLength));
-		var name = id == PAYLOAD_TYPES.CUSTOM ? payload.string() : null;
+		const id = stream.varuint();
+		const payloadLength = stream.varuint();
+		const payload = new ReadStream(stream.buffer(payloadLength));
+		const name = id == PAYLOAD_TYPES.CUSTOM ? payload.string() : null;
 
-		result.payload.push({
-			id: id || name,
-			data: DECODE_TYPES[id] ? DECODE_TYPES[id](payload) : payload.buffer()
-		});
+		if (DECODE_TYPES[id]) {
+			const decoded = DECODE_TYPES[id](payload);
+			result[decoded.type] = decoded.body;
+		} else if (id != PAYLOAD_TYPES.CUSTOM) {
+			throw new Error(`unsupported section type ${id}`);
+		} else {
+			result.custom.push({ name, data: payload.buffer() });
+		}
 
 		console.log(payload.remaining())
 	}
