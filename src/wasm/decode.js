@@ -1,12 +1,5 @@
 import { ReadStream, WriteStream } from "./stream";
-import { MAGIC_NUMBER, Instructions } from "./const";
-
-function assert(test, type) {
-	if (!test) {
-		alert(type);
-		throw new Error(type);
-	}
-}
+import { MAGIC_NUMBER, ByteCode } from "./const";
 
 const PAYLOAD_TYPES = {
 	"CUSTOM": 0,
@@ -112,7 +105,7 @@ function code_expr(payload) {
 	var byte;
 	do {
 		bytes.push(byte = payload.uint8());
-	} while (byte != Instructions.end);
+	} while (byte != ByteCode.end);
 	return bytes;
 }
 
@@ -291,7 +284,7 @@ function code_section(payload) {
 			const count = body.varuint();
 			const type = value_type(body);
 
-			locals.push({ count, type });
+			for (var i = 0; i < count; i++) locals.push(type);
 		}
 
 		const code = code_expr(body);
