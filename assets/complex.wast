@@ -8,10 +8,11 @@
   (table 6 6 anyfunc)
   (elem (i32.const 0) $__wasm_nullptr $add $sub $mul $div $__importThunk_crazy)
   (memory $0 1)
-  (data (i32.const 12) "\00\00\00\00")
-  (data (i32.const 16) "\01\00\00\00\02\00\00\00\03\00\00\00\04\00\00\00\05\00\00\00")
+  (data (i32.const 16) "\00\00\00\00")
+  (data (i32.const 32) "\01\00\00\00\02\00\00\00\03\00\00\00\04\00\00\00\05\00\00\00")
   (export "memory" (memory $0))
   (export "fac" (func $fac))
+  (export "getCount" (func $getCount))
   (export "weird" (func $weird))
   (export "execute" (func $execute))
   (export "add" (func $add))
@@ -19,7 +20,7 @@
   (export "mul" (func $mul))
   (export "div" (func $div))
   (export "exec" (func $exec))
-  (export "_GLOBAL__sub_I_10f23c89cb5f8f9a063c4f753d0443cd.cpp" (func $_GLOBAL__sub_I_10f23c89cb5f8f9a063c4f753d0443cd.cpp))
+  (export "_GLOBAL__sub_I_63bc2593fccc7587a54c0793508f8443.cpp" (func $_GLOBAL__sub_I_63bc2593fccc7587a54c0793508f8443.cpp))
   (func $fac (param $0 i32) (result i32)
     (local $1 i32)
     (local $2 i32)
@@ -61,6 +62,36 @@
       )
     )
     (get_local $2)
+  )
+  (func $getCount (result i32)
+    (local $0 i32)
+    (i32.store offset=12
+      (i32.const 0)
+      (i32.add
+        (tee_local $0
+          (i32.xor
+            (select
+              (i32.const 132)
+              (i32.const 0)
+              (i32.and
+                (tee_local $0
+                  (i32.load offset=12
+                    (i32.const 0)
+                  )
+                )
+                (i32.const 1)
+              )
+            )
+            (i32.shr_s
+              (get_local $0)
+              (i32.const 1)
+            )
+          )
+        )
+        (i32.const -1)
+      )
+    )
+    (get_local $0)
   )
   (func $weird (param $0 i32) (param $1 i32) (result i32)
     (local $2 i32)
@@ -158,10 +189,10 @@
             (set_local $5
               (i32.const 1)
             )
-            (i32.store offset=12
+            (i32.store offset=16
               (i32.const 0)
               (i32.add
-                (i32.load offset=12
+                (i32.load offset=16
                   (i32.const 0)
                 )
                 (i32.const 1)
@@ -231,10 +262,10 @@
           (set_local $5
             (i32.const 1)
           )
-          (i32.store offset=12
+          (i32.store offset=16
             (i32.const 0)
             (i32.add
-              (i32.load offset=12
+              (i32.load offset=16
                 (i32.const 0)
               )
               (i32.const 1)
@@ -304,10 +335,10 @@
         (set_local $5
           (i32.const 1)
         )
-        (i32.store offset=12
+        (i32.store offset=16
           (i32.const 0)
           (i32.add
-            (i32.load offset=12
+            (i32.load offset=16
               (i32.const 0)
             )
             (i32.const 1)
@@ -377,10 +408,10 @@
       (set_local $5
         (i32.const 1)
       )
-      (i32.store offset=12
+      (i32.store offset=16
         (i32.const 0)
         (i32.add
-          (i32.load offset=12
+          (i32.load offset=16
             (i32.const 0)
           )
           (i32.const 1)
@@ -447,9 +478,38 @@
         )
       )
     )
+    (i32.store offset=12
+      (i32.const 0)
+      (i32.add
+        (tee_local $0
+          (i32.xor
+            (select
+              (i32.const 132)
+              (i32.const 0)
+              (i32.and
+                (tee_local $0
+                  (i32.load offset=12
+                    (i32.const 0)
+                  )
+                )
+                (i32.const 1)
+              )
+            )
+            (i32.shr_s
+              (get_local $0)
+              (i32.const 1)
+            )
+          )
+        )
+        (i32.const -1)
+      )
+    )
     (i32.add
-      (get_local $2)
-      (get_local $1)
+      (i32.add
+        (get_local $2)
+        (get_local $1)
+      )
+      (get_local $0)
     )
   )
   (func $add (type $FUNCSIG$iii) (param $0 i32) (param $1 i32) (result i32)
@@ -486,13 +546,17 @@
             (get_local $0)
             (i32.const 2)
           )
-          (i32.const 16)
+          (i32.const 32)
         )
       )
     )
   )
-  (func $_GLOBAL__sub_I_10f23c89cb5f8f9a063c4f753d0443cd.cpp
+  (func $_GLOBAL__sub_I_63bc2593fccc7587a54c0793508f8443.cpp
     (i32.store offset=12
+      (i32.const 0)
+      (i32.const 255)
+    )
+    (i32.store offset=16
       (i32.const 0)
       (i32.shl
         (i32.load
