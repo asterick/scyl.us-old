@@ -1,5 +1,5 @@
 import { ReadStream, WriteStream } from "./stream";
-import { MAGIC_NUMBER } from "./const";
+import { MAGIC_NUMBER, Instructions } from "./const";
 
 function assert(test, type) {
 	if (!test) {
@@ -9,18 +9,18 @@ function assert(test, type) {
 }
 
 const PAYLOAD_TYPES = {
-	"CUSTON": 0,
+	"CUSTOM": 0,
 	"TYPE": 1,
 	"IMPORT": 2,
 	"FUNCTION": 3,
-	"TABLE": 4,		// ***
-	"MEMORY": 5,	// ***
-	"GLOBAL": 6,	// ***
-	"EXPORT": 7,	// ***
-	"START": 8,		// ***
-	"ELEMENT": 9,	// ***
-	"CODE": 10,		// ***
-	"DATA": 11		// ***
+	"TABLE": 4,
+	"MEMORY": 5,
+	"GLOBAL": 6,
+	"EXPORT": 7,
+	"START": 8,
+	"ELEMENT": 9,
+	"CODE": 10,
+	"DATA": 11
 }
 
 const VALUE_TYPES = {
@@ -52,27 +52,6 @@ function value_type(payload) {
 	throw new Error(`Illegal value_type ${type}`);
 }
 
-function external_kind(payload) {
-	const type = payload.varuint();
-	swit
-}
-
-function func_type(payload) {
-	const form = payload.varint();
-	
-	const param_count = payload.varuint();
-	const parameters = [];
-
-	for (var i = 0; i < param_count; i++) parameters.push(value_type(payload));
-
-	const return_count = payload.varuint();
-	const returns = [];
-
-	for (var i = 0; i < return_count; i++) returns.push(value_type(payload));
-
-	return { type: "func_type", parameters, returns }
-}
-
 function elem_type(payload) {
 	const type = payload.varint();
 	switch (type) {
@@ -84,28 +63,28 @@ function elem_type(payload) {
 
 function resizable_limits(payload) {
 	const FLAG_PRESENT = 1;
-	
+
 	const flags = payload.varuint();
 	const initial = payload.varuint();
 	const maximum = (flags & FLAG_PRESENT) ? payload.varuint() : null;
-	
+
 	return {
 		type: "resizable_limits",
-		initial, maximum 
+		initial, maximum
 	};
 }
 
 function table_type(payload) {
-	return { 
-		type: "table_type", 
-		element_type: elem_type(payload), 
+	return {
+		type: "table_type",
+		element_type: elem_type(payload),
 		limits: resizable_limits(payload)
 	};
 }
 
 function memory_type(payload) {
-	return { 
-		type: "memory_type", 
+	return {
+		type: "memory_type",
 		limits: resizable_limits(payload)
 	};
 }
@@ -123,85 +102,43 @@ function global_type(payload) {
 	}
 }
 
-function import_entry(payload) {
-	var module = payload.string();
-	var field = payload.string();
-	var kind = payload.uint8();
-	
-	switch (kind) {
-		case KIND_TYPES.FUNCTION:
-			return { module, field, type: { type: "func", index: payload.varuint() } };
-		case KIND_TYPES.TABLE:
-			return { module, field, type: table_type(payload) };
-		case KIND_TYPES.MEMORY:
-			return { module, field, type: memory_type(payload) };
-		case KIND_TYPES.GLOBAL:
-			return { module, field, type: global_type(payload) };
-	}
+/*********
+ ** Byte-Code
+ *************/
 
-	throw new Error("illegal external_kind ${kind}");
+function code_expr(payload) {
+	// TODO: THIS SHOULD DECOMPOSE CODE
+	var bytes = [];
+	var byte;
+	do {
+		bytes.push(byte = payload.uint8());
+	} while (byte != Instructions.end);
+	return bytes;
 }
 
-function export_type(payload) {
-	var field = payload.string();
-	var kind = payload.varuint();
 
-	switch (kind) {
-		case KIND_TYPES.FUNCTION:
-			kind = "func";
-			break ;
-		case KIND_TYPES.TABLE:
-			kind = "table";
-			break ;
-		case KIND_TYPES.MEMORY:
-			kind = "memory";
-			break ;
-		case KIND_TYPES.GLOBAL:
-			kind = "global";
-			break ;
-		default:
-			throw new Error(`illegal external_kind ${kind}`);
-	}
+/*********
+ ** Sections
+ *************/
 
-	return { field, kind, index: payload.varuint() }
-}
-
-function local_entry(payload) {
-	const count = payload.varuint();
-	const type = value_type(payload);
-
-	return { count, type }
-}
-
-function code_body(payload) {
-	return new Uint8Array(payload.buffer());
-}
-
-function function_body(payload) {
-	const body_size = payload.varuint();
-	const body = new ReadStream(payload.buffer(body_size));
-	const local_count = body.varuint();
-	const locals = [];
-
-	for (var i = 0; i < local_count; i++) {
-		locals.push(local_entry(body));
-	}
-
-	const code = code_body(body);
-
-	return { locals, code }
-}
-
-function data_segment(payload) {
-}
-
-// Sections
 function type_section(payload) {
 	const count = payload.varuint();
 	const definitions = [];
 
-	for (var i = 0; i < count; i++) {
-		definitions.push(func_type(payload));
+	while (definitions.length < count) {
+		const form = payload.varint();
+
+		const param_count = payload.varuint();
+		const parameters = [];
+
+		while (parameters.length < param_count) parameters.push(value_type(payload));
+
+		const return_count = payload.varuint();
+		const returns = [];
+
+		while (returns.length < return_count) returns.push(value_type(payload));
+
+		definitions.push({ type: "func_type", parameters, returns });
 	}
 
 	return { type: "type_section", definitions };
@@ -211,8 +148,28 @@ function import_section(payload) {
 	const count = payload.varuint();
 	const imports = [];
 
-	for (var i = 0; i < count; i++) {
-		imports.push(import_entry(payload));
+	while (imports.length < count) {
+		const module = payload.string();
+		const field = payload.string();
+		const kind = payload.uint8();
+
+		switch (kind) {
+			case KIND_TYPES.FUNCTION:
+				imports.push({ module, field, type: { type: "func", index: payload.varuint() } });
+				break ;
+			case KIND_TYPES.TABLE:
+				imports.push({ module, field, type: table_type(payload) });
+				break ;
+			case KIND_TYPES.MEMORY:
+				imports.push({ module, field, type: memory_type(payload) });
+				break ;
+			case KIND_TYPES.GLOBAL:
+				imports.push({ module, field, type: global_type(payload) });
+				break ;
+			default:
+				throw new Error("illegal external_kind ${kind}");
+
+		}
 	}
 
 	return { type: "import_section", imports };
@@ -222,7 +179,7 @@ function function_section(payload) {
 	const count = payload.varuint();
 	const functions = [];
 
-	for (var i = 0; i < count; i++) {
+	while (functions.length < count) {
 		functions.push(payload.varuint());
 	}
 
@@ -233,7 +190,7 @@ function table_section(payload) {
 	const count = payload.varuint();
 	const tables = [];
 
-	for (var i = 0; i < count; i++) {
+	while (tables.length < count) {
 		tables.push(table_type(payload));
 	}
 
@@ -244,35 +201,101 @@ function memory_section(payload) {
 	const count = payload.varuint();
 	const memories = [];
 
-	for (var i = 0; i < count; i++) {
+	while (memories.length < count) {
 		memories.push(memory_type(payload));
 	}
 
 	return { type: "memory_section", memories };
 }
 
-// GLOBALS
+function global_section(payload) {
+	const count = payload.varuint();
+	const globals = [];
+
+	while (globals.length < count) {
+		const type = global_type(payload);
+		const init = code_expr(payload);
+
+		globals.push({ type, init });
+	}
+
+	return { type: "global_section", globals };
+}
 
 function export_section(payload) {
 	const count = payload.varuint();
 	const exports = [];
 
-	for (var i = 0; i < count; i++) {
-		exports.push(export_type(payload));
+	while (exports.length < count) {
+		var field = payload.string();
+		var kind = payload.varuint();
+
+		switch (kind) {
+			case KIND_TYPES.FUNCTION:
+				kind = "func";
+				break ;
+			case KIND_TYPES.TABLE:
+				kind = "table";
+				break ;
+			case KIND_TYPES.MEMORY:
+				kind = "memory";
+				break ;
+			case KIND_TYPES.GLOBAL:
+				kind = "global";
+				break ;
+			default:
+				throw new Error(`illegal external_kind ${kind}`);
+		}
+
+		exports.push({ field, kind, index: payload.varuint() });
 	}
 
 	return { type: "export_section", exports };
 }
 
-// START
-// ELEMENT
+function start_section(payload) {
+	return { type: "start_section", index: payload.varuint() };
+}
+
+function element_section(payload) {
+	const count = payload.varuint();
+	const segments = [];
+
+	while (segments.length < count) {
+		const index  = payload.varuint();
+		const offset = code_expr(payload);
+		const element_count = payload.varuint();
+		const elements = [];
+
+		while (elements.length < element_count) {
+			elements.push(payload.varuint());
+		}
+
+		segments.push({ type: "element_segment", index, offset, elements });
+	}
+
+	return { type: "element_section", segments };}
 
 function code_section(payload) {
 	const count = payload.varuint();
 	const bodies = [];
 
-	for (var i = 0; i < count; i++) {
-		bodies.push(function_body(payload));
+	while (bodies.length < count) {
+		const body_size = payload.varuint();
+		const body = new ReadStream(payload.buffer(body_size));
+		const local_count = body.varuint();
+		const locals = [];
+
+		while (locals.length < local_count) {
+			const count = body.varuint();
+			const type = value_type(body);
+
+			locals.push({ count, type });
+		}
+
+		const code = code_expr(body);
+
+		bodies.push({ locals, code });
 	}
 
 	return { type: "code_section", bodies };
@@ -282,8 +305,13 @@ function data_section(payload) {
 	const count = payload.varuint();
 	const segments = [];
 
-	for (var i = 0; i < count; i++) {
-		segments.push(data_segment(payload));
+	while (segments.length < count) {
+		const index  = payload.varuint();
+		const offset = code_expr(payload);
+		const data_length = payload.varuint();
+		const data = new Uint8Array(payload.buffer(data_length));
+
+		segments.push({ type: "data_segment", index, offset, data });
 	}
 
 	return { type: "data_section", segments };
@@ -291,14 +319,14 @@ function data_section(payload) {
 
 const DECODE_TYPES = {
 	[PAYLOAD_TYPES.TYPE]: type_section,
-	[PAYLOAD_TYPES.IMPORT]: import_section,			// ???
+	[PAYLOAD_TYPES.IMPORT]: import_section,
 	[PAYLOAD_TYPES.FUNCTION]: function_section,
 	[PAYLOAD_TYPES.TABLE]: table_section,
 	[PAYLOAD_TYPES.MEMORY]: memory_section,
-	[PAYLOAD_TYPES.GLOBAL]: null,					// ???
+	[PAYLOAD_TYPES.GLOBAL]: global_section,
 	[PAYLOAD_TYPES.EXPORT]: export_section,
-	[PAYLOAD_TYPES.START]: null,					// ???
-	[PAYLOAD_TYPES.ELEMENT]: null,					// ???
+	[PAYLOAD_TYPES.START]: start_section,
+	[PAYLOAD_TYPES.ELEMENT]: element_section,
 	[PAYLOAD_TYPES.CODE]: code_section,
 	[PAYLOAD_TYPES.DATA]: data_section
 };
@@ -329,6 +357,8 @@ export default function (array) {
 			id: id || name,
 			data: DECODE_TYPES[id] ? DECODE_TYPES[id](payload) : payload.buffer()
 		});
+
+		console.log(payload.remaining())
 	}
 
 	return result;

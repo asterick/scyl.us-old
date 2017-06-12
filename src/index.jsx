@@ -3,7 +3,7 @@ import System from "./system";
 
 import WASM from "./wasm";
 
-fetch("hello.wasm")
+fetch("complex.wasm")
 	.then((data) => data.arrayBuffer())
 	.then((array) => console.log(JSON.stringify(WASM(array), null, 4)));
 
