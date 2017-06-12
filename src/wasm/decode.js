@@ -1,5 +1,5 @@
 import { ReadStream, WriteStream } from "./stream";
-import { MAGIC_NUMBER, ByteCode } from "./const";
+import { MAGIC_NUMBER, ByteCode, ReverseByteCode } from "./const";
 
 const PAYLOAD_TYPES = {
 	"CUSTOM": 0,
@@ -23,7 +23,7 @@ const VALUE_TYPES = {
 	"f64": -0x04,
 	"anyfunc": -0x10,
 	"func": -0x20,
-	"block_type": -0x40,
+	"null_block": -0x40,
 };
 
 const KIND_TYPES = {
@@ -99,16 +99,129 @@ function global_type(payload) {
  ** Byte-Code
  *************/
 
-function code_expr(payload) {
-	// TODO: THIS SHOULD DECOMPOSE CODE
-	var bytes = [];
-	var byte;
-	do {
-		bytes.push(byte = payload.uint8());
-	} while (byte != ByteCode.end);
-	return bytes;
+function block_type(payload) {
+	const type = payload.varint();
+	const body = code_expr(payload);
+	var kind ;
+
+	switch (type) {
+	case VALUE_TYPES.i32:
+		kind = "i32";
+		break ;
+	case VALUE_TYPES.i64:
+		kind = "i64";
+		break ;
+	case VALUE_TYPES.f32:
+		kind = "f32";
+		break ;
+	case VALUE_TYPES.f64:
+		kind = "f64";
+		break ;
+	case VALUE_TYPES.null_block:
+		kind = "null";
+		break ;
+	default:
+		throw new Error(`illegal block return type ${type}`);
+	}
+
+	return { type: "block_type", type, body }
 }
 
+function code_expr(payload) {
+	var codes = [];
+	var byte;
+
+	do {
+		byte = payload.uint8();
+
+		if (ReverseByteCode[byte] === undefined) {
+			throw new Error(`illegal byte-code ${byte.toString(16)}`);
+		}
+
+		switch (byte) {
+		case ByteCode["block"]:
+		case ByteCode["loop"]:
+		case ByteCode["if"]:
+			codes.push({ op: ReverseByteCode[byte], block: block_type(payload) });
+			break ;
+		case ByteCode["br"]:
+		case ByteCode["br_if"]:
+			codes.push({ op: ReverseByteCode[byte], relative_depth: payload.varuint() });
+			break ;
+
+		case ByteCode["br_table"]:
+			{
+				const count = payload.varuint();
+				const target_table = [];
+
+				while (target_table.length < count) target_table.push(payload.varuint());
+				const default_target = payload.varuint();
+				codes.push({ op: ReverseByteCode[byte], target_table, default_target });
+			}
+			break ;
+
+		case ByteCode["call"]:
+			codes.push({ op: ReverseByteCode[byte], function_index: payload.varuint() });
+			break ;
+		case ByteCode["call_indirect"]:
+			codes.push({ op: ReverseByteCode[byte], type_index: payload.varuint(), reserved: payload.varuint() });
+			break ;
+
+		case ByteCode["get_local"]:
+		case ByteCode["set_local"]:
+		case ByteCode["tee_local"]:
+		case ByteCode["get_global"]:
+		case ByteCode["set_global"]:
+			codes.push({ op: ReverseByteCode[byte], index: payload.varuint() });
+			break ;
+		case ByteCode["current_memory"]:
+		case ByteCode["grow_memory"]:
+			codes.push({ op: ReverseByteCode[byte], memory: payload.varuint() });
+			break ;
+		case ByteCode["i32.const"]:
+		case ByteCode["i64.const"]:
+			codes.push({ op: ReverseByteCode[byte], value: payload.varint() });
+			break ;
+		case ByteCode["f32.const"]:
+			codes.push({ op: ReverseByteCode[byte], value: payload.float64() });
+			break ;
+		case ByteCode["f64.const"]:
+			codes.push({ op: ReverseByteCode[byte], value: payload.float64() });
+			break ;
+		case ByteCode["i32.load"]:
+		case ByteCode["i32.load8_s"]:
+		case ByteCode["i32.load8_u"]:
+		case ByteCode["i32.load16_s"]:
+		case ByteCode["i32.load16_u"]:
+		case ByteCode["i32.store"]:
+		case ByteCode["i32.store8"]:
+		case ByteCode["i32.store16"]:
+		case ByteCode["i64.load"]:
+		case ByteCode["i64.load8_s"]:
+		case ByteCode["i64.load8_u"]:
+		case ByteCode["i64.load16_s"]:
+		case ByteCode["i64.load16_u"]:
+		case ByteCode["i64.load32_s"]:
+		case ByteCode["i64.load32_u"]:
+		case ByteCode["i64.store"]:
+		case ByteCode["i64.store8"]:
+		case ByteCode["i64.store16"]:
+		case ByteCode["i64.store32"]:
+		case ByteCode["f32.load"]:
+		case ByteCode["f32.store"]:
+		case ByteCode["f64.load"]:
+		case ByteCode["f64.store"]:
+			codes.push({ op: ReverseByteCode[byte], flags: payload.varuint(), offset: payload.varuint() });
+			break ;
+		default:
+			codes.push({ op: ReverseByteCode[byte] });
+			break ;
+		}
+
+	} while (byte != ByteCode.end);
+
+	return codes;
+}
 
 /*********
  ** Sections
@@ -356,7 +469,9 @@ export default function (array) {
 			result.custom.push({ name, data: payload.buffer() });
 		}
 
-		console.log(payload.remaining())
+		if (payload.remaining() > 0) {
+			throw new Error(`section ${id} decoded with ${payload.remaining()} bytes remaining`)
+		}
 	}
 
 	return result;

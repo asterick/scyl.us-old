@@ -179,3 +179,9 @@ export const ByteCode = {
 	"f64.promote/f32": 0xbb,
 	"f64.reinterpret/i64": 0xbf,
 };
+
+export const ReverseByteCode = {};
+
+Object.keys(ByteCode).forEach((k) => {
+	ReverseByteCode[ByteCode[k]] = k;
+});
