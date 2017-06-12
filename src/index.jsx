@@ -1,8 +1,16 @@
 import Inferno from 'inferno';
 import System from "./system";
 
-fetch("system0.rom").then((data) => {
-	data.arrayBuffer().then((bios) => {
+import WASM from "./wasm";
+
+fetch("hello.wasm")
+	.then((data) => data.arrayBuffer())
+	.then((array) => console.log(JSON.stringify(WASM(array), null, 4)));
+
+/*
+fetch("system0.rom")
+	.then((data) => data.arrayBuffer())
+	.then((bios) => {
 		var runtime = new System(bios);
 
 		function rerender() {
@@ -19,4 +27,4 @@ fetch("system0.rom").then((data) => {
 		// We are all setup we can now do shit
 		runtime.start();
 	});
-});
+*/
