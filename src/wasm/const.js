@@ -1,6 +1,41 @@
 export const MAX_UINT16 = 0x20000000000000;
 export const MAGIC_NUMBER = 0x6d736100;
 
+export const PAYLOAD_TYPES = {
+	CUSTOM: 0,
+	TYPE: 1,
+	IMPORT: 2,
+	FUNCTION: 3,
+	TABLE: 4,
+	MEMORY: 5,
+	GLOBAL: 6,
+	EXPORT: 7,
+	START: 8,
+	ELEMENT: 9,
+	CODE: 10,
+	DATA: 11
+}
+
+export const VALUE_TYPES = {
+	"i32": -0x01,
+	"i64": -0x02,
+	"f32": -0x03,
+	"f64": -0x04,
+	"anyfunc": -0x10,
+	"func_type": -0x20,
+	"null_block": -0x40,
+};
+
+export const KIND_TYPES = {
+	FUNCTION: 0,
+	TABLE: 1,
+	MEMORY: 2,
+	GLOBAL: 3
+}
+
+export const FLAG_RESIZABLE_LIMIT_PRESENT = 1;
+export const FLAG_GLOBAL_MUTABLE = 1;
+
 export const ByteCode = {
 	"unreachable": 0x00,
 	"nop": 0x01,

@@ -1,8 +1,8 @@
-import { decode, encode } from "./packer";
+import decode from "./import";
+import encode from "./export";
 
 export default function (array) {
 	var ast = decode(array);
-	console.log(ast);
 	var result = encode(ast);
 
 	var a = new Uint8Array(array);
@@ -11,8 +11,8 @@ export default function (array) {
 	try {
 		a.forEach((v, i) => { if (v != b[i]) throw i; });
 	} catch (i) {
-		//console.log(a);
-		//console.log(b);
+		console.log(a);
+		console.log(b);
 		console.error(i, b.length, a.length)
 	}
 }
