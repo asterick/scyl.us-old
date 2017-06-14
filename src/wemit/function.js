@@ -13,6 +13,8 @@ export default class FunctionType {
 			return v;
 		});
 
+		this._returns = null;
+
 		// Bound functions for scope magic
 		this.local = this.local.bind(this);
 
