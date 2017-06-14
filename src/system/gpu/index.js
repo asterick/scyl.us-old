@@ -351,7 +351,7 @@ export default class {
 
 		// Select the new frame buffer / vram
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._framebuffer);
-    	
+
     	gl.activeTexture(gl.TEXTURE0);
     	gl.bindTexture(gl.TEXTURE_2D, this._vram);
     	gl.uniform1i(this._drawShader.uniforms.sVram, 0);
@@ -460,9 +460,10 @@ export default class {
         	0xBA98,
         	0xFEDC,
     	]);
+    	const px2 = new Uint16Array(4);
     	this.setData(0, 0, 1, 4, px);
-    	this.getData(0, 0, 1, 4, px);
-    	for (var i = 0; i < px.length; i++) console.log(px[i].toString(16))
+    	this.getData(0, 0, 1, 4, px2);
+    	for (var i = 0; i < px.length; i++) if (px[i] != px2[i]) throw "getData / setData mismatch";
 
 		this.setMask(false, true);
 		this.setBlend(false, 1.0, 0.25, 0.25, 0.75);
