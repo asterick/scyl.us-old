@@ -1,14 +1,20 @@
 import Binder from "./binder";
 import FunctionType from "./function";
 
+// TODO: BRANCH TABLES
+// TODO: NAMED SECTIONS
+// TODO: FUNCTION CALLS (DIRECT / INDIRECT)
+// TODO: DROP / SELECT
+
 export default class ScopeType extends Binder {
-	constructor (context, ifBlock = false) {
+	constructor (context) {
 		super();
 
 		this._context = context;
 		this.mixin(context);
 
 		this._body = [];
+		this._ifBlock = false;
 
 		if (context instanceof ScopeType) {
 			this._locals = context._locals;
@@ -23,7 +29,7 @@ export default class ScopeType extends Binder {
 
 	local (type) {
 		if (typeof type === "string") {
-			if (this._localNamed[type]) {
+			if (this._localNamed[type] === undefined) {
 				throw new Error(`No local named ${type}`);
 			}
 
@@ -52,8 +58,35 @@ export default class ScopeType extends Binder {
 		return type;
 	}
 
+	inline (call, ... args) {
+		throw new Error("TODO");
+	}
+
+	nop() {
+		this._body.push( { type: "nop" } );
+	}
+
+	unreachable() {
+		this._body.push( { type: "unreachable" } );
+	}
+
+	break (name = null, condition = null) {
+		if (typeof name !== "string") {
+			condition = name;
+			name = null;
+		}
+
+		this._body.push( { type: "break", condition: condition });
+	}
+
 	code (scope) {
 		scope.call(this, this, ... this._args);
+
+		return this;
+	}
+
+	emit (value) {
+		this._body.push(value);
 
 		return this;
 	}
@@ -83,18 +116,27 @@ export default class ScopeType extends Binder {
 
 		if (context !== null) return this.code(context);
 
-		return scope;
+		return this;
 	}
 
 	else (context = null) {
-		if (!this._ifBlock) throw new Error("else outside if block");
-		this._body.push( { type: "else" } );
-		this._ifBlock = false;
+		const previous = this._body[this._body.length - 1];
 
-		if (context !== null) return this.code(context);
+		if (previous && previous.type === 'if'){
+			const scope = new ScopeType(this);
+			previous.scope._body.push ({ type: "else", scope });
+
+			if (context !== null) return scope.code(context);
+
+			return this;
+		} else if (this._context instanceof ScopeType) {
+			return this._context.else(context);
+		} else {
+			throw new Error(`else outside of if block`);
+		}
 
 		return this;
 	}
 }
 
-ScopeType.autoBind = ["local", "code", "block", "loop", "if", "else"];
+ScopeType.autoBind = ["local", "inline", "nop", "unreachable", "break", "code", "block", "loop", "if", "else"];

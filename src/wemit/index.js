@@ -11,10 +11,10 @@ module
 		.code((scope, a, b, c) => {
 		})
 	.start()
-		.code((scope) => {
-			scope.local(i64("farts"));
-			scope.local(i32("farts"));
-			console.log(scope);
+		.if(i32(1), (scope) => {
+
+		})
+		.else((scope) => {
+			// TODO
 		})
 
-console.log(module);

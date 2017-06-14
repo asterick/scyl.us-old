@@ -1,3 +1,6 @@
+// TODO: MEMORY
+// TODO: ARITH
+
 import Binder from "./binder";
 
 export class NumberType extends Binder {
@@ -8,19 +11,13 @@ export class NumberType extends Binder {
 		this._name = null;
 		this._value = null;
 
-		// Constant number
-		if (typeof init === "number") {
-			this._value = init;
-		} else if (typeof init === "string") {
-			// This is a string literal
-			if (/^[0-9]/.test(init)) {
-				this._value = init;
-			} else {
-				this._name = init;
-			}
-		} else if (init !== null) {
-			throw new Error(`cannot initalize number type with ${init}`);
+		// Strings that do not begin with a digit are a name
+		if (typeof init === "string" && !/^[0-9]/.test(init)) {
+			this._name = init;
+			init = null;
 		}
+
+		this._value = init;
 	}
 
 	bind(context) {
