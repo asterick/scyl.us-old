@@ -9,6 +9,12 @@ module
 		.returns(i32)
 		.export("SomeCall")
 		.code((scope, a, b, c) => {
-		});
+		})
+	.start()
+		.code((scope) => {
+			scope.local(i64("farts"));
+			scope.local(i32("farts"));
+			console.log(scope);
+		})
 
 console.log(module);

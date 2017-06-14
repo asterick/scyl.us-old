@@ -1,47 +1,41 @@
-export class NumberType {
-	constructor (name = null) {
+import Binder from "./binder";
+
+export class NumberType extends Binder {
+	constructor (init = null) {
+		super();
+
+		// Inital values
+		this._name = null;
+		this._value = null;
+
 		// Constant number
-		if (typeof name === "number") {
-			return this.constructor.fromConst(name)
-		}
-
-		this._name = name;
-	}
-
-	bind(module, funct, scope) {
-		this._module = module;
-		this._function = funct;
-		this._scope = scope;
-
-		// Bind to module
-		this.function = this._module.function;
-		this.global = this._module.global;
-		this.compile = this._module.compile;
-
-		if (funct) {
-			// Bound functions for scope magic
-			this.local = this._function.local;
-		}
-
-		if (scope) {
-			// Bind to scope
-			this.if = this._scope.if;
-			this.loop = this._scope.loop;
-			this.block = this._scope.block;
-			this.code = this._scope.code;
+		if (typeof init === "number") {
+			this._value = init;
+		} else if (typeof init === "string") {
+			// This is a string literal
+			if (/^[0-9]/.test(init)) {
+				this._value = init;
+			} else {
+				this._name = init;
+			}
+		} else if (init !== null) {
+			throw new Error(`cannot initalize number type with ${init}`);
 		}
 	}
 
-	static fromConst(value) {
-		var num = new this();
-		num._value = value;
-		return num;
+	bind(context) {
+		this.mixin(context);
+	}
+
+	same(other) {
+		return this.constructor === other.constructor;
 	}
 
 	get type() {
 		return this.constructor.type;
 	}
 }
+NumberType.autoBind = [];
 
 export class Int32Type extends NumberType {
 	static get type() { return "i32"; }
@@ -60,16 +54,11 @@ export class Float64Type extends NumberType {
 }
 
 // Helper functions for short syntax
-function conv(base) {
-	var f = function (name) { return new base(name); };
-	f.const = function(value) { return base.fromConst(value); };
-	f.type = base.type;
-	return f;
-}
-
-export const i32 = conv(Int32Type);
-export const i64 = conv(Int64Type);
-export const f32 = conv(Float32Type);
-export const f64 = conv(Float64Type);
-
-console.log(i32(10).type)
+export function i32(...args) { return new Int32Type(... args); }
+i32.base = Int32Type;
+export function i64(...args) { return new Int64Type(... args); }
+i64.base = Int64Type;
+export function f32(...args) { return new Float32Type(... args); }
+f32.base = Float32Type;
+export function f64(...args) { return new Float64Type(... args); }
+f64.base = Float64Type;

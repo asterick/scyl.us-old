@@ -1,35 +1,45 @@
+import Binder from "./binder";
 import decode from "./primitive/import";
 import encode from "./primitive/export";
 
-import Func from "./function";
+import FunctionType from "./function";
+import ScopeType from "./scope";
 
-export default class ModuleType {
+export default class ModuleType extends Binder {
 	constructor(proto) {
+		super();
+
 		if (proto instanceof ArrayBuffer) {
 			return ModuleType.fromArray(proto);
 		}
 
-		this._functions = [];
 		this._globals = [];
-
-		// Scope magic functions
-		this.compile = this.compile.bind(this);
-		this.function = this.function.bind(this);
-		this.global = this.global.bind(this);
+		this._exports = {};
+		this._start = null;
 	}
 
 	compile () {
 		throw new Error("TODO");
 	}
 
+	start () {
+		if (this._start === null) {
+			this._start = new ScopeType(this);
+		}
+
+		return this._start;
+	}
+
+	data () {
+		throw new Error("TODO");
+	}
+
 	function (... rest) {
-		var f = new Func(this, ...rest);
-		this._functions.push(f);
-		return f;
+		return new FunctionType(this, ...rest);
 	}
 
 	global (type) {
-		return new type(this, null);
+		throw new Error("Todo");
 	}
 
 	// Static members
@@ -39,3 +49,5 @@ export default class ModuleType {
 		throw new Error("TODO");
 	}
 }
+
+ModuleType.autoBind = ["compile", "start", "data", "function", "global"];
