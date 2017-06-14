@@ -1,5 +1,10 @@
 export class NumberType {
 	constructor (name = null) {
+		// Constant number
+		if (typeof name === "number") {
+			return this.constructor.fromConst(name)
+		}
+
 		this._name = name;
 	}
 
@@ -28,51 +33,43 @@ export class NumberType {
 	}
 
 	static fromConst(value) {
-		this._value = value;
+		var num = new this();
+		num._value = value;
+		return num;
+	}
+
+	get type() {
+		return this.constructor.type;
 	}
 }
 
 export class Int32Type extends NumberType {
-	get type() { return "i32"; }
+	static get type() { return "i32"; }
 }
 
 export class Int64Type extends NumberType {
-	get type() { return "i64"; }
+	static get type() { return "i64"; }
 }
 
 export class Float32Type extends NumberType {
-	get type() { return "f32"; }
+	static get type() { return "f32"; }
 }
 
 export class Float64Type extends NumberType {
-	get type() { return "f64"; }
+	static get type() { return "f64"; }
 }
 
 // Helper functions for short syntax
-export function i32(name) {
-	if (typeof name === "number") return Int32Type.fromConst(value) ;
-
-	return new Int32Type(name);
+function conv(base) {
+	var f = function (name) { return new base(name); };
+	f.const = function(value) { return base.fromConst(value); };
+	f.type = base.type;
+	return f;
 }
-i32.const = function (value) { return Int32Type.fromConst(value) }
 
-export function i64(name) {
-	if (typeof name === "number") return Int32Type.fromConst(value) ;
+export const i32 = conv(Int32Type);
+export const i64 = conv(Int64Type);
+export const f32 = conv(Float32Type);
+export const f64 = conv(Float64Type);
 
-	return new Int64Type(name);
-}
-i64.const = function (value) { return Int64Type.fromConst(value) }
-
-export function f32(name) {
-	if (typeof name === "number") return Int32Type.fromConst(value) ;
-
-	return new Float32Type(name);
-}
-i64.const = function (value) { return Int64Type.fromConst(value) }
-
-export function f64(name) {
-	if (typeof name === "number") return Int32Type.fromConst(value) ;
-
-	return new Float64Type(name);
-}
-i64.const = function (value) { return Int64Type.fromConst(value) }
+console.log(i32(10).type)

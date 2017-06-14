@@ -9,8 +9,6 @@ module
 		.returns(i32)
 		.export("SomeCall")
 		.code((scope, a, b, c) => {
-debugger ;
-			console.log(a);
 		});
 
 console.log(module);
