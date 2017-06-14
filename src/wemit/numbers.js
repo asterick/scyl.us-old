@@ -1,5 +1,5 @@
 // TODO: MEMORY
-// TODO: ARITH
+// TODO: OPERATORS
 
 import Binder from "./binder";
 
@@ -9,7 +9,6 @@ export class NumberType extends Binder {
 
 		// Inital values
 		this._name = null;
-		this._value = null;
 
 		// Strings that do not begin with a digit are a name
 		if (typeof init === "string" && !/^[0-9]/.test(init)) {
@@ -53,9 +52,12 @@ export class Float64Type extends NumberType {
 // Helper functions for short syntax
 export function i32(...args) { return new Int32Type(... args); }
 i32.base = Int32Type;
+
 export function i64(...args) { return new Int64Type(... args); }
 i64.base = Int64Type;
+
 export function f32(...args) { return new Float32Type(... args); }
 f32.base = Float32Type;
+
 export function f64(...args) { return new Float64Type(... args); }
 f64.base = Float64Type;
