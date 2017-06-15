@@ -112,7 +112,7 @@ function encode_code_expr(payload, codes) {
 			break ;
 
 		case "call":
-		payload.varuint(code.function_index)
+			payload.varuint(code.function_index)
 			break ;
 		case "call_indirect":
 			payload.varuint(code.type_index)

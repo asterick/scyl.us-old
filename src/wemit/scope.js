@@ -1,11 +1,6 @@
 import Binder from "./binder";
 import FunctionType from "./function";
 
-// TODO: BRANCH TABLES
-// TODO: NAMED SECTIONS
-// TODO: FUNCTION CALLS (DIRECT / INDIRECT)
-// TODO: DROP / SELECT
-
 export default class ScopeType extends Binder {
 	constructor (context) {
 		super();
@@ -58,8 +53,35 @@ export default class ScopeType extends Binder {
 		return type;
 	}
 
+	_locateScope(name) {
+		var target = this;
+
+		while (target._name !== name) {
+			if (!(target instanceof ScopeType)) {
+				throw new Error(`could not locate scope named ${name}`)
+			}
+
+			target = target._context;
+			depth++;
+		}
+
+		return ;
+	}
+
+	name (n) {
+		if (this._name) {
+			throw new Error("cannot rename section ${this._name} to ${this._name}");
+		}
+
+		this._name = n;
+	}
+
 	inline (call, ... args) {
 		throw new Error("TODO");
+	}
+
+	drop(expression = null) {
+		this._body.push( { type: "drop", expression: expression } );
 	}
 
 	nop() {
@@ -70,13 +92,27 @@ export default class ScopeType extends Binder {
 		this._body.push( { type: "unreachable" } );
 	}
 
+	table_break (selector, def, ... elements) {
+		const targets = elements.map((v) => this._locateScope(v));
+
+		this._body.push({ type: "table_break", default: def, targets: elements })
+	}
+
 	break (name = null, condition = null) {
 		if (typeof name !== "string") {
 			condition = name;
 			name = null;
 		}
 
-		this._body.push( { type: "break", condition: condition });
+		this._body.push({
+			type: "break",
+			target: name ? this._locateScope(name) : this,
+			condition
+		});
+	}
+
+	call (target, ... args) {
+		throw new Error("TODO");
 	}
 
 	code (scope) {
@@ -98,7 +134,7 @@ export default class ScopeType extends Binder {
 
 		if (context !== null) return this.code(context);
 
-		return scope;
+		return this;
 	}
 
 	loop (context = null) {
@@ -107,7 +143,7 @@ export default class ScopeType extends Binder {
 
 		if (context !== null) return this.code(context);
 
-		return scope;
+		return this;
 	}
 
 	if (condition, context = null) {
@@ -122,7 +158,7 @@ export default class ScopeType extends Binder {
 	else (context = null) {
 		const previous = this._body[this._body.length - 1];
 
-		if (previous && previous.type === 'if'){
+		if (previous && previous.type === 'if') {
 			const scope = new ScopeType(this);
 			previous.scope._body.push ({ type: "else", scope });
 
@@ -139,4 +175,4 @@ export default class ScopeType extends Binder {
 	}
 }
 
-ScopeType.autoBind = ["local", "inline", "nop", "unreachable", "break", "code", "block", "loop", "if", "else"];
+ScopeType.autoBind = ["local", "inline", "name", "drop", "nop", "unreachable", "table_break", "break", "code", "block", "loop", "if", "else"];

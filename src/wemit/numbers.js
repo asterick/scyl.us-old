@@ -1,5 +1,6 @@
 // TODO: MEMORY
 // TODO: OPERATORS
+// TODO: i32 SELECT
 
 import Binder from "./binder";
 
