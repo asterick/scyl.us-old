@@ -12,10 +12,10 @@ module
 		})
 	.start()
 		.if(i32(1), (scope) => {
-
+			scope.return(i32(1).add(2));
 		})
 		.else((scope) => {
-			// TODO
+			// DO NOTHING
 		})
 
 console.log(module);

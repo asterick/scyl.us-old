@@ -146,7 +146,7 @@ export default class ScopeType extends Binder {
 
 		this._body.push( { type: "block", scope } );
 
-		if (context !== null) return this.code(context);
+		if (context !== null) return scope.code(context);
 
 		return this;
 	}
@@ -155,7 +155,7 @@ export default class ScopeType extends Binder {
 		const scope = new ScopeType(this);
 		this._body.push( { type: "loop", scope } )
 
-		if (context !== null) return this.code(context);
+		if (context !== null) return scope.code(context);
 
 		return this;
 	}
@@ -164,7 +164,7 @@ export default class ScopeType extends Binder {
 		const scope = new ScopeType(this, true);
 		this._body.push( { type: "if", condition, scope } )
 
-		if (context !== null) return this.code(context);
+		if (context !== null) return scope.code(context);
 
 		return this;
 	}
