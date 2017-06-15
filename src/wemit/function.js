@@ -14,6 +14,10 @@ export default class FunctionType extends ScopeType {
 			if (typeof type === "function") { type = type(); }
 			type.bind(this);
 			this._args.push(type);
+
+			if (type._name) {
+				this._localNamed[type._name] = type;
+			}
 		});
 	}
 
