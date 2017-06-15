@@ -22,10 +22,6 @@ export default class FunctionType extends ScopeType {
 		return this;
 	}
 
-	return (... values) {
-		throw new Error("TODO");
-	}
-
 	export (name) {
 		if (this._module._exports[name] !== undefined) {
 			throw new Error("Export redefinition");

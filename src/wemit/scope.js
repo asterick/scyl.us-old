@@ -76,25 +76,41 @@ export default class ScopeType extends Binder {
 		this._name = n;
 	}
 
+	// This is a cheap method of creating a target
+	label(name) {
+		const scope = new ScopeType(this);
+
+		// Cleverly create a named section that contains all the code created thus far
+		this._body.unshift( { type: "block", scope } );
+
+		scope._body = this._body;
+		scope.name(name);
+		this._body = [];
+
+		return this;
+	}
+
 	inline (call, ... args) {
 		throw new Error("TODO");
 	}
 
+	return (... values) {
+		this._body.push({ type: "return", values: values });
+	}
+
 	drop(expression = null) {
-		this._body.push( { type: "drop", expression: expression } );
+		this._body.push({ type: "drop", expression: expression });
 	}
 
 	nop() {
-		this._body.push( { type: "nop" } );
+		this._body.push({ type: "nop" });
 	}
 
 	unreachable() {
-		this._body.push( { type: "unreachable" } );
+		this._body.push({ type: "unreachable" });
 	}
 
-	table_break (selector, def, ... elements) {
-		const targets = elements.map((v) => this._locateScope(v));
-
+	table_break (selector, def, ... targets) {
 		this._body.push({ type: "table_break", default: def, targets: elements })
 	}
 
@@ -105,9 +121,7 @@ export default class ScopeType extends Binder {
 		}
 
 		this._body.push({
-			type: "break",
-			target: name ? this._locateScope(name) : this,
-			condition
+			type: "break", target: name || this, condition
 		});
 	}
 
@@ -175,4 +189,4 @@ export default class ScopeType extends Binder {
 	}
 }
 
-ScopeType.autoBind = ["local", "inline", "name", "drop", "nop", "unreachable", "table_break", "break", "code", "block", "loop", "if", "else"];
+ScopeType.autoBind = ["local", "return", "inline", "name", "drop", "nop", "unreachable", "table_break", "break", "code", "block", "loop", "if", "else"];
