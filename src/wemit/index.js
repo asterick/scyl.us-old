@@ -18,3 +18,4 @@ module
 			// TODO
 		})
 
+console.log(module);

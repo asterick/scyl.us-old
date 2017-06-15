@@ -18,7 +18,11 @@ export default class FunctionType extends ScopeType {
 	}
 
 	returns( ...types) {
-		this._returns = types;
+		this._returns = types.map((v) => {
+			if (v instanceof NumberType) return v;
+			if (typeof v === "function") return v.base;
+			throw new Error(`cannot treat ${v} as return type`)
+		});
 		return this;
 	}
 
