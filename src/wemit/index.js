@@ -1,21 +1,21 @@
 import Module from "./module";
-import { f32, f64, i32, i64 } from "./numbers";
+import { f32, f64, u32, s32, u64, s64 } from "./numbers";
 
 /*** TESTBENCH ***/
 var module = new Module();
 
 module
-	.function(i32("a"), i32("b"), i32("c"))
-		.returns(i32)
+	.function(u32("a"), u32("b"), u32("c"))
+		.returns(u32)
 		.export("SomeCall")
 		.code((scope, a, b, c) => {
 		})
 	.start()
-		.if(i32(1), (scope) => {
-			scope.return(i32(1).add(2));
+		.if(u32(1), (scope) => {
+			scope.return(s32(1).select(s32(1), 2));
 		})
 		.else((scope) => {
 			// DO NOTHING
-		})
+		});
 
-console.log(module);
+console.log(module)
