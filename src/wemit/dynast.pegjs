@@ -197,7 +197,8 @@ UnaryExpression
 	/ _ "(" value:Expression _ ")"
 		{ return value }
 	/ Number
-	/ Identifier (IndexOperation / CallOperation / PropertyOperation)*
+	/ name:Identifier set:(IndexOperation / CallOperation / PropertyOperation)*
+		{ return set.reduce((acc, op) => (op.value = acc, op), name); }
 
 CallOperation
 	= _ "(" args:ExpressionList? _ ")"
