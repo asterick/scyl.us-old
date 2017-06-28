@@ -42,8 +42,7 @@ VariableDefinition
 		{ return { type: "VariableDefinition", decls, values } }
 
 CodeBody
-	= AssignmentStatement
-	/ VariableDefinition
+	= VariableDefinition
 	/ IfStatement
 	/ LoopStatement
 	/ BlockStatement
@@ -77,10 +76,6 @@ LabelStatement
 	= _ ":" name:Identifier
 		{ return { type: "LabelStatement", name } }
 
-AssignmentStatement
-	= names:IdentifierList _ "=" values:ExpressionList
-		{ return { type:"AssignmentStatement", names, values } }
-
 CallStatement
 	= name:Identifier _ "(" args:ExpressionList? _ ")"
 		{ return { type: "CallStatement", name, args } }
@@ -109,7 +104,7 @@ SeperationStatement
  *****/
 
 InlineExpression
-	= ComparisonExpression
+	= AssignmentExpression
 
 Expression
 	= _ "if" EC condition:Expression _ "then" EC onTrue:Expression _ "else" EC onFalse:Expression
@@ -117,44 +112,66 @@ Expression
 	/ AssignmentExpression
 
 AssignmentExpression
-	= ComparisonExpression _ "=" AssignmentExpression
+	= names:IdentifierList _ "=" values:ExpressionList
+		{ return { type:"AssignmentExpression", names, values } }
+	/ ComparisonExpression
 
 ComparisonExpression
-	= ShiftExpression _ ">=" ComparisonExpression
-	/ ShiftExpression _ ">" ComparisonExpression
-	/ ShiftExpression _ "<=" ComparisonExpression
-	/ ShiftExpression _ "<" ComparisonExpression
-	/ ShiftExpression _ "==" ComparisonExpression
-	/ ShiftExpression _ "!=" ComparisonExpression
+	= left:ShiftExpression _ ">=" right:ComparisonExpression
+		{ return { type:"BinaryOperation", operator: "GreaterEqual", left, right } }
+	/ left:ShiftExpression _ ">" right:ComparisonExpression
+		{ return { type:"BinaryOperation", operator: "Greater", left, right } }
+	/ left:ShiftExpression _ "<=" right:ComparisonExpression
+		{ return { type:"BinaryOperation", operator: "LessEqual", left, right } }
+	/ left:ShiftExpression _ "<" right:ComparisonExpression
+		{ return { type:"BinaryOperation", operator: "Less", left, right } }
+	/ left:ShiftExpression _ "==" right:ComparisonExpression
+		{ return { type:"BinaryOperation", operator: "Equal", left, right } }
+	/ left:ShiftExpression _ "!=" right:ComparisonExpression
+		{ return { type:"BinaryOperation", operator: "NotEqual", left, right } }
 	/ ShiftExpression
 
 ShiftExpression
-	= BitExpression _ "<<" ShiftExpression
-	/ BitExpression _ ">>" ShiftExpression
+	= left:BitExpression _ "<<<" right:ShiftExpression
+		{ return { type:"BinaryOperation", operator: "RotateLeft", left, right } }
+	/ left:BitExpression _ ">>>" right:ShiftExpression
+		{ return { type:"BinaryOperation", operator: "RotateRight", left, right } }
+	/ left:BitExpression _ "<<" right:ShiftExpression
+		{ return { type:"BinaryOperation", operator: "ShiftLeft", left, right } }
+	/ left:BitExpression _ ">>" right:ShiftExpression
+		{ return { type:"BinaryOperation", operator: "ShiftRight", left, right } }
 	/ BitExpression
 
 BitExpression
-	= AddExpression _ "^" BitExpression
-	/ AddExpression _ "&" BitExpression
-	/ AddExpression _ "|" BitExpression
+	= left:AddExpression _ "^" right:BitExpression
+		{ return { type:"BinaryOperation", operator: "BitwiseXor", left, right } }
+	/ left:AddExpression _ "&" right:BitExpression
+		{ return { type:"BinaryOperation", operator: "BitwiseAnd", left, right } }
+	/ left:AddExpression _ "|" right:BitExpression
+		{ return { type:"BinaryOperation", operator: "BitwiseOr", left, right } }
 	/ AddExpression
 
 AddExpression
-	= MultiplyExpression _ "+" AddExpression
-	/ MultiplyExpression _ "-" AddExpression
+	= left:MultiplyExpression _ "+" right:AddExpression
+		{ return { type:"BinaryOperation", operator: "Add", left, right } }
+	/ left:MultiplyExpression _ "-" right:AddExpression
+		{ return { type:"BinaryOperation", operator: "Subtract", left, right } }
 	/ MultiplyExpression
 
 MultiplyExpression
-	= CastExpression _ "*" MultiplyExpression
-	/ CastExpression _ "/" MultiplyExpression
-	/ CastExpression
-
-CastExpression
-	= Type _ ":" Expression
+	= left:UnaryExpression _ "*" right:MultiplyExpression
+		{ return { type:"BinaryOperation", operator: "Multiply", left, right } }
+	/ left:UnaryExpression _ "/" right:MultiplyExpression
+		{ return { type:"BinaryOperation", operator: "Divide", left, right } }
+	/ left:UnaryExpression _ "%" right:MultiplyExpression
+		{ return { type:"BinaryOperation", operator: "Modulo", left, right } }
 	/ UnaryExpression
 
 UnaryExpression
-	= _ "(" Expression _ ")"
+	= type:Type _ ":" value:Expression
+		{ return { type: "CastExpression", type, value } }
+	/ _ "(" value:Expression _ ")"
+		{ return value }
 	/ Number
 	/ CallStatement
 	/ Identifier
