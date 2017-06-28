@@ -1,37 +1,66 @@
+/*
+ TODO: Memory operations
+ TODO: Tables
+ TODO: Constants
+ */
+
 Module
 	= list:Definition* _
 		{ return list }
 
 Definition
-	= Import FunctionDeclaration
-	// Import MemoryDeclaration
-	// Import TableDeclaration
-	/ Import VariableDeclaration
-	/ Export? FunctionDefinition
-	/ Export? VariableDefinition
-	// Export? MemoryDeclaration
-	// Export? TableDefinition
+	= Imports
+	/ Exports
+	/ Definitions
+
+Imports
+	= Import decl:FunctionDeclaration
+		{ return { type: "Import", decl } }
+	/ Import decl:VariableDeclaration
+		{ return { type: "Import", decl } }
+	/ Import decl:MemoryDeclaration
+		{ return { type: "Import", decl } }
+	/ Import decl:TableDeclaration
+		{ return { type: "Import", decl } }
+
+Exports
+	= Export decl:FunctionDefinition
+		{ return { type: "Export", decl } }
+	/ Export decl:VariableDefinition
+		{ return { type: "Export", decl } }
+	/ Export decl:MemoryDeclaration
+		{ return { type: "Export", decl } }
+	/ Export decl:TableDefinition
+		{ return { type: "Export", decl } }
+
+Definitions
+	= FunctionDefinition
+	/ VariableDefinition
+	/ MemoryDeclaration
+	/ TableDefinition
 	/ StartDefinition
 
-FunctionDeclaration
-	= _ "func" EC name:Identifier _ "(" args:VariableList? _ ")" returns:ReturnList?
-		{ return { type: "FunctionDeclaration", name, args, returns } }
+CallDeclaration
+	= "(" args:TypeList? _ ")" returns:ReturnList?
+		{ return { type: "CallDeclaration", args, returns } }
 
-/*
+FunctionDeclaration
+	= _ "func" EC name:Identifier _ CallDeclaration
+		{ return { type: "FunctionDeclaration", args, returns } }
+
 MemoryDeclaration
-	= .
+	= _ "memory" EC name:Identifier { throw new Error("TODO") }
 
 TableDeclaration
-	= .
-*/
+	= _ "table" EC name:Identifier { throw new Error("TODO") }
 
 VariableDeclaration
 	= _ "def" EC list:VariableList
 		{ return { type: "VariableDeclaration", list } }
 
 FunctionDefinition
-	= _ decl:FunctionDeclaration body:CodeBody* _ "end" EC
-		{ return { type: "FunctionDefinition", decl, body } }
+	= _ "func" EC name:Identifier _ "(" args:VariableList? _ ")" returns:ReturnList? body:CodeBody* _ "end" EC
+		{ return { type: "FunctionDefinition", args, returns, body } }
 
 StartDefinition
 	= _ "start" body:CodeBody* _ "end" EC
@@ -41,12 +70,15 @@ VariableDefinition
 	= decls:VariableDeclaration values:(_ "=" v:ExpressionList { return v })?
 		{ return { type: "VariableDefinition", decls, values } }
 
+TableDefinition
+	= _ name:Identifier "table" EC { throw new Error("TODO") }
+
 CodeBody
 	= VariableDefinition
 	/ IfStatement
 	/ LoopStatement
 	/ BlockStatement
-	/ LabelStatement
+	/ Label
 	/ ReturnStatement
 	/ TrapStatement
 	/ NopStatement
@@ -72,20 +104,12 @@ BlockStatement
 	= _ "begin" EC body:CodeBody* _ "end" EC
 		{ return { type: "BlockStatement", body } }
 
-LabelStatement
-	= _ ":" name:Identifier
-		{ return { type: "LabelStatement", name } }
-
-CallStatement
-	= name:Identifier _ "(" args:ExpressionList? _ ")"
-		{ return { type: "CallStatement", name, args } }
-
 ReturnStatement
 	= _ "return" EC args:ExpressionList?
 		{ return { type: "ReturnStatement", args } }
 
 BreakStatement
-	= _ "break" EC condition:Expression? labels:(_ "in" EC labels:IdentifierList { return labels })?
+	= _ "break" EC condition:Expression? labels:LabelList
 		{ return { type: "BreakStatement", condition, labels } }
 
 TrapStatement
@@ -173,8 +197,19 @@ UnaryExpression
 	/ _ "(" value:Expression _ ")"
 		{ return value }
 	/ Number
-	/ CallStatement
-	/ Identifier
+	/ Identifier (IndexOperation / CallOperation / PropertyOperation)*
+
+CallOperation
+	= _ "(" args:ExpressionList? _ ")"
+		{ return { type: "CallOperation", args } }
+
+IndexOperation
+	= _ "[" index:Expression _ "]"
+		{ return { type: "IndexOperation", index } }
+
+PropertyOperation
+	= _ "." name:Identifier
+		{ return { type: "PropertyOperation", name } }
 
 /*****
  *** Other
@@ -186,6 +221,10 @@ ReturnList
 
 ExpressionList
 	= a:Expression b:(_ "," b:Expression { return b })*
+		{ return [a].concat(b) }
+
+LabelList
+	= a:Label b:(_ "," b:Label { return b })*
 		{ return [a].concat(b) }
 
 VariableList
@@ -223,6 +262,11 @@ Type
 		{ return { format: "decimal", size: 32 } }
 	/ _ "f64"
 		{ return { format: "decimal", size: 64 } }
+	/ CallDeclaration
+
+Label
+	= _ "@" name:Identifier
+		{ return { type: "Label", name } }
 
 Number
 	= _ v:$([0-9]+ ("." [0-9]+)?)
