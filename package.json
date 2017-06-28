@@ -20,6 +20,8 @@
     "gl-matrix": "^2.3.2",
     "inferno": "^3.3.1",
     "inferno-component": "^3.3.1",
+    "pegjs": "^0.10.0",
+    "pegjs-loader": "^0.5.1",
     "postcss-loader": "^2.0.5",
     "postcss-smart-import": "^0.7.4",
     "precss": "^1.4.0",

@@ -27,8 +27,12 @@ module.exports = {
                   'css-loader?importLoaders=1&modules=true&localIdentName=[path]___[name]__[local]___[hash:base64:5]',
                   'postcss-loader'
                 ]
+            },
+            {
+                test: /\.pegjs$/,
+                loader: 'pegjs-loader?cache=true'
             }
-        ]
+      ]
     },
     resolve: {
         extensions: ['.js', '.jsx', '.css'],
