@@ -3,10 +3,10 @@
  */
 
 Module
-	= list:DefinitionBody* _
+	= list:ModuleBody* _
 		{ return list }
 
-DefinitionBody
+ModuleBody
 	= Imports
 	/ Exports
 	/ Definition
