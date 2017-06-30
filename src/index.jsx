@@ -1,7 +1,7 @@
 import Inferno from 'inferno';
 import System from "./system";
 
-import WEmit from "./wemit";
+import Dynast from "./dynast";
 
 fetch("system0.rom")
 	.then((data) => data.arrayBuffer())

@@ -1,16 +1,15 @@
 /*
  TODO: Memory
- TODO: Arrays
  */
 
 Module
-	= list:Definition* _
+	= list:DefinitionBody* _
 		{ return list }
 
-Definition
+DefinitionBody
 	= Imports
 	/ Exports
-	/ Definitions
+	/ Definition
 
 Imports
 	= Import decl:FunctionDeclaration
@@ -28,11 +27,17 @@ Exports
 	/ Export decl:MemoryDeclaration
 		{ return { type: "Export", decl } }
 
-Definitions
-	= FunctionDefinition
+Definition
+	= Label
+	/ FunctionDefinition
 	/ VariableDefinition
-	/ MemoryDeclaration
-	/ StartDefinition
+	/ LoopStatement
+	/ ReturnStatement
+	/ TrapStatement
+	/ NopStatement
+	/ SeperationStatement
+	/ BreakStatement
+	/ Expression
 
 CallDeclaration
 	= _ "(" args:TypeList? _ ")" returns:ReturnList?
@@ -46,53 +51,29 @@ MemoryDeclaration
 	= _ "memory" { throw new Error("TODO") }
 
 VariableDeclaration
-	= _ "def" EC list:Variable
+	= StaticFlag? _ "def" EC list:Variable
 		{ return { type: "VariableDeclaration", list } }
-	/ _ "const" EC list:Variable
+	/ StaticFlag? _ "const" EC list:Variable
 		{ return { type: "VariableDeclaration", list } }
 
 FunctionDefinition
-	= _ "func" EC name:Identifier _ "(" args:VariableList? _ ")" returns:ReturnList? body:CodeBody* _ "end" EC
+	= _ "func" EC name:Identifier _ "(" args:VariableList? _ ")" returns:ReturnList? body:Definition
 		{ return { type: "FunctionDefinition", args, returns, body } }
-
-StartDefinition
-	= _ "start" body:CodeBody* _ "end" EC
-		{ return { type: "StartDefinition", body } }
 
 VariableDefinition
 	= decls:VariableDeclaration value:(_ "=" v:Expression { return v })?
 		{ return { type: "VariableDefinition", decls, value } }
 
-CodeBody
-	= VariableDefinition
-	/ IfStatement
-	/ LoopStatement
-	/ BlockStatement
-	/ Label
-	/ ReturnStatement
-	/ TrapStatement
-	/ NopStatement
-	/ SeperationStatement
-	/ BreakStatement
-	/ InlineExpression
+StaticFlag
+	= _ "static" EC
 
 /*****
  *** Statements
  *****/
 
-IfStatement
-	= _ "if" EC condition:Expression _ "then" EC body:CodeBody* _ "else" EC otherwise:CodeBody* _ "end" EC
-		{ return { type: "IfStatement", condition, body, otherwise } }
-	/ _ "if" EC condition:Expression _ "then" EC body:CodeBody* _ "end" EC
-		{ return { type: "IfStatement", condition, body } }
-
 LoopStatement
-	= _ "loop" EC body:CodeBody* _ "end" EC
+	= _ "loop" EC body:Definition
 		{ return { type: "LoopStatement", body } }
-
-BlockStatement
-	= _ "begin" EC body:CodeBody* _ "end" EC
-		{ return { type: "BlockStatement", body } }
 
 ReturnStatement
 	= _ "return" EC args:ExpressionList?
@@ -109,6 +90,7 @@ TrapStatement
 NopStatement
 	= _ "nop" EC
 		{ return { type: "NopStatement" } }
+
 SeperationStatement
 	= _ ";"
 		{ return { type: "SeperatorStatement" } }
@@ -117,12 +99,14 @@ SeperationStatement
  *** Expressions
  *****/
 
-InlineExpression
-	= AssignmentExpression
-
 Expression
-	= _ "if" EC condition:Expression _ "then" EC onTrue:Expression _ "else" EC onFalse:Expression
-		{ return { type: "IfStatement", condition, onTrue, onFalse } }
+	= IfExpression
+
+IfExpression
+	= _ "if" EC condition:Expression _ "then" EC body:Expression _ "else" EC otherwise:Expression
+		{ return { type: "IfExpression", condition, body, otherwise } }
+	/ _ "if" EC condition:Expression _ "then" EC body:Expression
+		{ return { type: "IfExpression", condition, body } }
 	/ AssignmentExpression
 
 AssignmentExpression
@@ -184,12 +168,16 @@ MultiplyExpression
 UnaryExpression
 	= type:Type _ ":" value:Expression
 		{ return { type: "CastExpression", type, value } }
+	/ _ "{" body:Definition* _ "}"
+		{ return { type: "BlockExpression", body } }
 	/ _ "(" value:Expression _ ")"
 		{ return value }
 	/ _ "&" entity:Expression
 		{ return { type: "Reference", entity } }
 	/ _ "*" entity:Expression
 		{ return { type: "Dereference", entity } }
+	/ _ "-" entity:Expression
+		{ return { type: "UnaryNegate", entity } }
 	/ Number
 	/ name:Identifier set:(IndexOperation / CallOperation / PropertyOperation)*
 		{ return set.reduce((acc, op) => (op.value = acc, op), name); }
@@ -259,6 +247,8 @@ Type
 		{ return { format: "decimal", size: 64 } }
 	/ _ "*" type:Type
 		{ return { format: "pointer", type } }
+	/ _ "[" size:Expression _ "]" type:Type
+		{ return { format: "array", size, type } }
 	/ CallDeclaration
 
 Label
@@ -266,13 +256,13 @@ Label
 		{ return { type: "Label", name } }
 
 Number
-	= _ v:$([0-9]+ ("." [0-9]+)?)
+	= _ v:$("-"? [0-9]+ ("." [0-9]+)?)
 		{ return { type: "Number", value: Number(v) || 0 } }
-	/ _ v:("0x" [0-9a-f]i+)
+	/ _ v:("-"? "0x"i [0-9a-f]i+)
 		{ return { type: "Number", value: Number(v) || 0 } }
-	/ _ v:("0b" [01]i+)
+	/ _ v:("-"? "0b"i [01]i+)
 		{ return { type: "Number", value: Number(v) || 0 } }
-	/ _ v:("0" [0-7]i+)
+	/ _ v:("-"? "0" [0-7]i+)
 		{ return { type: "Number", value: Number(v) || 0 } }
 
 String
@@ -298,8 +288,8 @@ Import
 Reserved
 	= "import" / "export"
 	/ "struct" / "union"
-    / "memory" / "func" / "def" / "const"
-    / "begin" / "if" / "then" / "else" / "loop" / "end"
+    / "memory" / "func" / "def" / "const" / "static"
+    / "if" / "then" / "else" / "loop"
     / "break" / "trap" / "nop" / "return"
     / "u32" / "u64" / "s32" / "s64" / "f32" / "f64"
 
