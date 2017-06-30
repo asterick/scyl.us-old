@@ -29,6 +29,8 @@ Exports
 
 Definition
 	= Label
+	/ StructDeclaration
+	/ UnionDeclaration
 	/ FunctionDefinition
 	/ VariableDefinition
 	/ LoopStatement
@@ -39,6 +41,14 @@ Definition
 	/ BreakStatement
 	/ Expression
 
+StructDeclaration
+	= _ "struct" EC name:Identifier? _ "{" body:Variable* _ "}"
+		{ return { type: "StructDeclaration", name, body } }
+
+UnionDeclaration
+	= _ "union" EC name:Identifier? _ "{" body:Variable* _ "}"
+		{ return { type: "UnionDeclaration", name, body } }
+
 CallDeclaration
 	= _ "(" args:TypeList? _ ")" returns:ReturnList?
 		{ return { type: "CallDeclaration", args, returns } }
@@ -48,13 +58,14 @@ FunctionDeclaration
 		{ return { type: "FunctionDeclaration", args, returns } }
 
 MemoryDeclaration
-	= _ "memory" { throw new Error("TODO") }
+	= _ "memory" EC name:Identifier
+		{ return { type: "MemoryDeclaration", name } }
 
 VariableDeclaration
-	= StaticFlag? _ "def" EC list:Variable
-		{ return { type: "VariableDeclaration", list } }
-	/ StaticFlag? _ "const" EC list:Variable
-		{ return { type: "VariableDeclaration", list } }
+	= _ "def" EC decl:Variable
+		{ return { type: "VariableDeclaration", decl } }
+	/ _ "const" EC decl:Variable
+		{ return { type: "VariableDeclaration", decl } }
 
 FunctionDefinition
 	= _ "func" EC name:Identifier _ "(" args:VariableList? _ ")" returns:ReturnList? body:Definition
@@ -63,9 +74,6 @@ FunctionDefinition
 VariableDefinition
 	= decls:VariableDeclaration value:(_ "=" v:Expression { return v })?
 		{ return { type: "VariableDefinition", decls, value } }
-
-StaticFlag
-	= _ "static" EC
 
 /*****
  *** Statements
@@ -76,7 +84,7 @@ LoopStatement
 		{ return { type: "LoopStatement", body } }
 
 ReturnStatement
-	= _ "return" EC args:ExpressionList?
+	= _ "return" EC args:Expression?
 		{ return { type: "ReturnStatement", args } }
 
 BreakStatement
@@ -157,17 +165,22 @@ AddExpression
 	/ MultiplyExpression
 
 MultiplyExpression
-	= left:UnaryExpression _ "*" right:MultiplyExpression
+	= left:CastExpression _ "*" right:MultiplyExpression
 		{ return { type:"BinaryOperation", operator: "Multiply", left, right } }
-	/ left:UnaryExpression _ "/" right:MultiplyExpression
+	/ left:CastExpression _ "/" right:MultiplyExpression
 		{ return { type:"BinaryOperation", operator: "Divide", left, right } }
-	/ left:UnaryExpression _ "%" right:MultiplyExpression
+	/ left:CastExpression _ "%" right:MultiplyExpression
 		{ return { type:"BinaryOperation", operator: "Modulo", left, right } }
+	/ CastExpression
+
+CastExpression
+	= value:UnaryExpression _ ":" type:Type
+		{ return { type: "CastExpression", type, value } }
 	/ UnaryExpression
 
 UnaryExpression
-	= type:Type _ ":" value:Expression
-		{ return { type: "CastExpression", type, value } }
+	= Number
+	/ FieldInitializer
 	/ _ "{" body:Definition* _ "}"
 		{ return { type: "BlockExpression", body } }
 	/ _ "(" value:Expression _ ")"
@@ -178,9 +191,12 @@ UnaryExpression
 		{ return { type: "Dereference", entity } }
 	/ _ "-" entity:Expression
 		{ return { type: "UnaryNegate", entity } }
-	/ Number
 	/ name:Identifier set:(IndexOperation / CallOperation / PropertyOperation)*
 		{ return set.reduce((acc, op) => (op.value = acc, op), name); }
+
+FieldInitializer
+	= _ "." name:Identifier _ "=" value:Expression
+		{ return { type:"FieldInitializer", name, value } }
 
 CallOperation
 	= _ "(" args:ExpressionList? _ ")"
@@ -204,7 +220,7 @@ ReturnList
 
 ExpressionList
 	= a:Expression b:(_ "," b:Expression { return b })*
-		{ return [a].concat(b) }
+		{ return { type: "ExpressionSet", values:[a].concat(b) } }
 
 LabelList
 	= a:Label b:(_ "," b:Label { return b })*
@@ -245,6 +261,10 @@ Type
 		{ return { format: "decimal", size: 32 } }
 	/ _ "f64"
 		{ return { format: "decimal", size: 64 } }
+	/ StructDeclaration
+	/ UnionDeclaration
+	/ name:Identifier
+		{ return { type: "DefinedType", name } }
 	/ _ "*" type:Type
 		{ return { format: "pointer", type } }
 	/ _ "[" size:Expression _ "]" type:Type
@@ -288,7 +308,7 @@ Import
 Reserved
 	= "import" / "export"
 	/ "struct" / "union"
-    / "memory" / "func" / "def" / "const" / "static"
+    / "memory" / "func" / "def" / "const"
     / "if" / "then" / "else" / "loop"
     / "break" / "trap" / "nop" / "return"
     / "u32" / "u64" / "s32" / "s64" / "f32" / "f64"
