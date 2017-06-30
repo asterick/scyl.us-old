@@ -1,7 +1,6 @@
 /*
- TODO: Memory operations
- TODO: Tables
- TODO: Constants
+ TODO: Memory
+ TODO: Arrays
  */
 
 Module
@@ -20,8 +19,6 @@ Imports
 		{ return { type: "Import", decl } }
 	/ Import decl:MemoryDeclaration
 		{ return { type: "Import", decl } }
-	/ Import decl:TableDeclaration
-		{ return { type: "Import", decl } }
 
 Exports
 	= Export decl:FunctionDefinition
@@ -30,32 +27,28 @@ Exports
 		{ return { type: "Export", decl } }
 	/ Export decl:MemoryDeclaration
 		{ return { type: "Export", decl } }
-	/ Export decl:TableDefinition
-		{ return { type: "Export", decl } }
 
 Definitions
 	= FunctionDefinition
 	/ VariableDefinition
 	/ MemoryDeclaration
-	/ TableDefinition
 	/ StartDefinition
 
 CallDeclaration
-	= "(" args:TypeList? _ ")" returns:ReturnList?
+	= _ "(" args:TypeList? _ ")" returns:ReturnList?
 		{ return { type: "CallDeclaration", args, returns } }
 
 FunctionDeclaration
-	= _ "func" EC name:Identifier _ CallDeclaration
+	= _ "func" EC name:Identifier CallDeclaration
 		{ return { type: "FunctionDeclaration", args, returns } }
 
 MemoryDeclaration
-	= _ "memory" EC name:Identifier { throw new Error("TODO") }
-
-TableDeclaration
-	= _ "table" EC name:Identifier { throw new Error("TODO") }
+	= _ "memory" { throw new Error("TODO") }
 
 VariableDeclaration
-	= _ "def" EC list:VariableList
+	= _ "def" EC list:Variable
+		{ return { type: "VariableDeclaration", list } }
+	/ _ "const" EC list:Variable
 		{ return { type: "VariableDeclaration", list } }
 
 FunctionDefinition
@@ -67,11 +60,8 @@ StartDefinition
 		{ return { type: "StartDefinition", body } }
 
 VariableDefinition
-	= decls:VariableDeclaration values:(_ "=" v:ExpressionList { return v })?
-		{ return { type: "VariableDefinition", decls, values } }
-
-TableDefinition
-	= _ name:Identifier "table" EC { throw new Error("TODO") }
+	= decls:VariableDeclaration value:(_ "=" v:Expression { return v })?
+		{ return { type: "VariableDefinition", decls, value } }
 
 CodeBody
 	= VariableDefinition
@@ -196,6 +186,10 @@ UnaryExpression
 		{ return { type: "CastExpression", type, value } }
 	/ _ "(" value:Expression _ ")"
 		{ return value }
+	/ _ "&" entity:Expression
+		{ return { type: "Reference", entity } }
+	/ _ "*" entity:Expression
+		{ return { type: "Dereference", entity } }
 	/ Number
 	/ name:Identifier set:(IndexOperation / CallOperation / PropertyOperation)*
 		{ return set.reduce((acc, op) => (op.value = acc, op), name); }
@@ -263,6 +257,8 @@ Type
 		{ return { format: "decimal", size: 32 } }
 	/ _ "f64"
 		{ return { format: "decimal", size: 64 } }
+	/ _ "*" type:Type
+		{ return { format: "pointer", type } }
 	/ CallDeclaration
 
 Label
@@ -301,7 +297,8 @@ Import
 
 Reserved
 	= "import" / "export"
-    / "memory" / "func" / "def"
+	/ "struct" / "union"
+    / "memory" / "func" / "def" / "const"
     / "begin" / "if" / "then" / "else" / "loop" / "end"
     / "break" / "trap" / "nop" / "return"
     / "u32" / "u64" / "s32" / "s64" / "f32" / "f64"
