@@ -1,7 +1,3 @@
-/*
- TODO: Memory
- */
-
 Module
 	= list:ModuleBody* _
 		{ return list }
@@ -118,17 +114,17 @@ IfExpression
 	/ AssignmentExpression
 
 AssignmentExpression
-	= names:IdentifierList _ "=" values:ExpressionList
+	= names:ReferenceList _ "=" values:ExpressionList
 		{ return { type:"AssignmentExpression", names, values } }
 	/ ComparisonExpression
 
 ComparisonExpression
 	= left:ShiftExpression _ ">=" right:ComparisonExpression
 		{ return { type:"BinaryOperation", operator: "GreaterEqual", left, right } }
-	/ left:ShiftExpression _ ">" right:ComparisonExpression
-		{ return { type:"BinaryOperation", operator: "Greater", left, right } }
 	/ left:ShiftExpression _ "<=" right:ComparisonExpression
 		{ return { type:"BinaryOperation", operator: "LessEqual", left, right } }
+	/ left:ShiftExpression _ ">" right:ComparisonExpression
+		{ return { type:"BinaryOperation", operator: "Greater", left, right } }
 	/ left:ShiftExpression _ "<" right:ComparisonExpression
 		{ return { type:"BinaryOperation", operator: "Less", left, right } }
 	/ left:ShiftExpression _ "==" right:ComparisonExpression
@@ -176,23 +172,24 @@ MultiplyExpression
 CastExpression
 	= value:UnaryExpression _ ":" type:Type
 		{ return { type: "CastExpression", type, value } }
+	/ value:UnaryExpression _ "~" type:Type
+		{ return { type: "ReinterpretExpression", type, value } }
 	/ UnaryExpression
 
 UnaryExpression
 	= Number
 	/ FieldInitializer
+	/ Reference
+	/ _ "sizeof" value:Type
+		{ return { type: "SizeOf", value } }
 	/ _ "{" body:Definition* _ "}"
 		{ return { type: "BlockExpression", body } }
 	/ _ "(" value:Expression _ ")"
 		{ return value }
 	/ _ "&" entity:Expression
 		{ return { type: "Reference", entity } }
-	/ _ "*" entity:Expression
-		{ return { type: "Dereference", entity } }
 	/ _ "-" entity:Expression
 		{ return { type: "UnaryNegate", entity } }
-	/ name:Identifier set:(IndexOperation / CallOperation / PropertyOperation)*
-		{ return set.reduce((acc, op) => (op.value = acc, op), name); }
 
 FieldInitializer
 	= _ "." name:Identifier _ "=" value:Expression
@@ -230,13 +227,19 @@ VariableList
 	= a:Variable b:(_ "," b:Variable { return b })*
 		{ return [a].concat(b) }
 
-IdentifierList
-	= a:Identifier b:(_ "," b:Identifier { return b })*
+ReferenceList
+	= a:Reference b:(_ "," b:Reference { return b })*
 		{ return [a].concat(b) }
 
 TypeList
 	= a:Type b:(_ "," b:Type { return b })*
 		{ return [a].concat(b) }
+
+Reference
+	= _ "*" entity:Expression
+		{ return { type: "Dereference", entity } }
+	/ name:Identifier set:(IndexOperation / CallOperation / PropertyOperation)*
+		{ return set.reduce((acc, op) => (op.value = acc, op), name); }
 
 Variable
 	= name:Identifier _ ":" type: Type
@@ -249,6 +252,18 @@ Identifier
 		{ return { type: "Identifier", name } }
 
 Type
+	= AtomicType
+	/ StructDeclaration
+	/ UnionDeclaration
+	/ name:Identifier
+		{ return { type: "DefinedType", name } }
+	/ _ "*" type:Type
+		{ return { format: "pointer", type } }
+	/ _ "[" size:Expression _ "]" type:Type
+		{ return { format: "array", size, type } }
+	/ CallDeclaration
+
+AtomicType
 	= _ "u32"
 		{ return { signed: false, format: "integer", size: 32 } }
 	/ _ "u64"
@@ -261,15 +276,6 @@ Type
 		{ return { format: "decimal", size: 32 } }
 	/ _ "f64"
 		{ return { format: "decimal", size: 64 } }
-	/ StructDeclaration
-	/ UnionDeclaration
-	/ name:Identifier
-		{ return { type: "DefinedType", name } }
-	/ _ "*" type:Type
-		{ return { format: "pointer", type } }
-	/ _ "[" size:Expression _ "]" type:Type
-		{ return { format: "array", size, type } }
-	/ CallDeclaration
 
 Label
 	= _ "@" name:Identifier

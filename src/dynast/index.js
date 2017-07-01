@@ -13,8 +13,15 @@ struct SomeStruct {
 	c:u32
 }
 
+def color:struct { r:u32 g:u32 b:u32 } = { 0 1 2 }
+def otherThing:SomeStruct
+
 export func a(b:u32, c:u32):s32 {
-	def x:[5][5]*struct { a:u32 b:u32 c:u32 } = { 1 2 .c = 9 }
+    otherThing.color = {
+    	.r = color.r
+    	.g = color.g
+    	.b = color.b
+    }
 
   	return x + -(c:s32)
 }
