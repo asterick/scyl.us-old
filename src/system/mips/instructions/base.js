@@ -610,13 +610,25 @@ BGEZAL.assembly = (pc, rs, simm16) => `bgezal\t${Consts.Registers[rs]}, $${((pc 
 function SYSCALL(pc, delayed) {
 	throw new Exception(Consts.Exceptions.SysCall, pc, delayed);
 }
-SYSCALL.wasm = function (pc, delayed) { throw new Error("TODO"); }
+SYSCALL.wasm = function (pc, delayed) { 
+	return WAST.call(WAST.CALL_EXCEPTION, 
+		WAST.const32(Consts.Exceptions.SysCall),
+		WAST.const32(pc),
+		WAST.const32(delayed),
+		WAST.const32(0));
+}
 SYSCALL.assembly = (imm20) => `syscall\t$${imm20.toString(16)}`;
 
 function BREAK(pc, delayed) {
 	throw new Exception(Consts.Exceptions.Breakpoint, pc, delayed);
 }
-BREAK.wasm = function (pc, delayed) { throw new Error("TODO"); }
+BREAK.wasm = function (pc, delayed) {
+	return WAST.call(WAST.CALL_EXCEPTION, 
+		WAST.const32(Consts.Exceptions.Breakpoint),
+		WAST.const32(pc),
+		WAST.const32(delayed),
+		WAST.const32(0));
+}
 BREAK.assembly = (imm20) => `break\t$${imm20.toString(16)}`;
 
 export default {

@@ -35,6 +35,13 @@ export function write(index, value) {
 	]) : []
 }
 
+export function dropWrite(index, value) {
+	return value.concat(index ? [
+		const32(index*4),
+		{ "op": "i32.store", "flags": 2, "offset": 0 } 
+	] : { op: "drop" })
+}
+
 export function call(func, ... args) {
 	return args.concat(func, {
         "op": "call",
