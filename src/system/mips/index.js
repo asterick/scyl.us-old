@@ -1,5 +1,6 @@
 import Exception from "./exception";
 import locate from "./instructions";
+import * as WAST from "./instructions/wast";
 
 import { params } from "../../util";
 import { MAX_COMPILE_SIZE, CLOCK_BLOCK, MIN_COMPILE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
@@ -44,12 +45,11 @@ export default class MIPS {
 	constructor() {
 		// Base functionality
 		this.clock = 0;
-		this.hi = 0;
-		this.lo = 0;
-		this.pc = 0xBFC00000;
 
-		this.registers = new Uint32Array(32);
-		this.signed_registers = new Int32Array(this.registers.buffer);
+		this._wasmmem = new WebAssembly.Memory({initial:1, maximum:1});
+		this.registers = new Uint32Array(this._wasmmem.buffer);
+		this.signed_registers = new Int32Array(this._wasmmem.buffer);
+		this.reset();
 
 		// Status values
 		this._status = STATUS_KUc | STATUS_BEV;
@@ -69,6 +69,32 @@ export default class MIPS {
 
 		// Compiler cache
 		this._cache = [];
+	}
+
+	// Helper values for the magic registers
+
+	get pc() {
+		return this.registers[WAST.REG_PC];
+	}
+
+	set pc(v) {
+		this.registers[WAST.REG_PC] = v;
+	}
+
+	get lo() {
+		return this.registers[WAST.REG_LO];
+	}
+
+	set lo(v) {
+		this.registers[WAST.REG_LO] = v;
+	}
+
+	get hi() {
+		return this.registers[WAST.REG_HI];
+	}
+
+	set hi(v) {
+		this.registers[WAST.REG_HI] = v;
 	}
 
 	reset() {

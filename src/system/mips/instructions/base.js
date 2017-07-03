@@ -1,4 +1,5 @@
 import COP0 from "./process!./cop0";
+import * as WAST from "./wast";
 
 // For the preprocessor to work, the name has to be pinned
 const Exception = require("../exception").default;
@@ -11,11 +12,13 @@ const Consts = require("../consts");
 function ReservedInstruction(pc, delayed) {
 	throw new Exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
 }
+ReservedInstruction.wasm = function (pc, delayed) { throw new Error("TODO"); }
 ReservedInstruction.assembly = () => `---`;
 
 function CopUnusable(pc, delayed, cop) {
 	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, cop);
 }
+CopUnusable.wasm = function (pc, delayed, cop) { throw new Error("TODO"); }
 CopUnusable.assembly = (cop) => `COP${cop}\tunusable`;
 
 /******
@@ -31,6 +34,8 @@ function LB(rt, rs, imm16, pc, delayed) {
 		this.registers[rt] = v << (24 - 8 * (address & 3)) >> 24;
 	}
 }
+LB.wasm = function (rt, rs, imm16, pc, delayed) { throw new Error("TODO"); }
+LB.assembly = (rs, rt, imm16) => `lb\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
 function LBU(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
@@ -41,6 +46,8 @@ function LBU(rt, rs, imm16, pc, delayed) {
 		this.registers[rt] = (v >> bit) & 0xFF;
 	}
 }
+LBU.wasm = function (rt, rs, imm16, pc, delayed) { throw new Error("TODO"); }
+LBU.assembly = (rs, rt, imm16) => `lbu\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
 function LH(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
@@ -52,6 +59,8 @@ function LH(rt, rs, imm16, pc, delayed) {
 		this.registers[rt] = (address & 2) ? (v >> 16) : (v << 16 >> 16);
 	}
 }
+LH.wasm = function (rt, rs, imm16, pc, delayed) { throw new Error("TODO"); }
+LH.assembly = (rs, rt, imm16) => `lh\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
 function LHU(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
@@ -63,6 +72,8 @@ function LHU(rt, rs, imm16, pc, delayed) {
 		this.registers[rt] = (address & 2) ? (v >>> 16) : (v & 0xFFFF);
 	}
 }
+LHU.wasm = function (rt, rs, imm16, pc, delayed) { throw new Error("TODO"); }
+LHU.assembly = (rs, rt, imm16) => `lhu\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
 function LW(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
@@ -74,12 +85,16 @@ function LW(rt, rs, imm16, pc, delayed) {
 		this.registers[rt] = v;
 	}
 }
+LW.wasm = function (rt, rs, imm16, pc, delayed) { throw new Error("TODO"); }
+LW.assembly = (rs, rt, imm16) => `lw\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
 function SB(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
 
 	this.store(address, rt ? this.registers[rt] << (address & 3) : 0, 0xFF << (8 * (address & 3)), pc, delayed);
 }
+SB.wasm = function (rt, rs, imm16, pc, delayed) { throw new Error("TODO"); }
+SB.assembly = (rs, rt, imm16) => `sb\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
 function SH(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
@@ -88,6 +103,8 @@ function SH(rt, rs, imm16, pc, delayed) {
 
 	this.store(address, rt ? this.registers[rt] << (address & 2) : 0, 0xFFFF << (8 * (address & 3)), pc, delayed);
 }
+SH.wasm = function (rt, rs, imm16, pc, delayed) { throw new Error("TODO"); }
+SH.assembly = (rs, rt, imm16) => `sh\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
 function SW(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
@@ -96,6 +113,8 @@ function SW(rt, rs, imm16, pc, delayed) {
 
 	this.store(address, rt ? this.registers[rt] : 0, ~0, pc, delayed);
 }
+SW.wasm = function (rt, rs, imm16, pc, delayed) { throw new Error("TODO"); }
+SW.assembly = (rs, rt, imm16) => `sw\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
 function LWR(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
@@ -107,6 +126,8 @@ function LWR(rt, rs, imm16, pc, delayed) {
 		this.registers[rt] = (this.registers[rt] & ~(~0 >>> bit)) | (data >>> bit);
 	}
 }
+LWR.wasm = function (rt, rs, imm16, pc, delayed) { throw new Error("TODO"); }
+LWR.assembly = (rs, rt, imm16) => `lwr\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
 function LWL(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
@@ -119,6 +140,8 @@ function LWL(rt, rs, imm16, pc, delayed) {
 		this.registers[rt] = (this.registers[rt] & mask) | (data << (32 - bit));
 	}
 }
+LWL.wasm = function (rt, rs, imm16, pc, delayed) { throw new Error("TODO"); }
+LWL.assembly = (rs, rt, imm16) => `lwl\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
 function SWR(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
@@ -126,6 +149,8 @@ function SWR(rt, rs, imm16, pc, delayed) {
 
 	this.store(address, rt ? this.registers[rt] << bit : 0, ~0 << bit, pc, delayed);
 }
+SWR.wasm = function (rt, rs, imm16, pc, delayed) { throw new Error("TODO"); }
+SWR.assembly = (rs, rt, imm16) => `swr\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
 function SWL(rt, rs, imm16, pc, delayed) {
 	var address = (rs ? this.registers[rs] : 0) + imm16;
@@ -135,6 +160,8 @@ function SWL(rt, rs, imm16, pc, delayed) {
 		this.store(address, rt ? this.registers[rt] >>> (32 - bit) : 0, ~(~0 << bit) >>> 0, pc, delayed);
 	}
 }
+SWL.wasm = function (rt, rs, imm16, pc, delayed) { throw new Error("TODO"); }
+SWL.assembly = (rs, rt, imm16) => `swl\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
 /******
  ** Arithmatic instructions
@@ -151,12 +178,16 @@ function ADD(rd, rs, rt, pc, delayed) {
 		this.registers[rd] = value;
 	}
 }
+ADD.wasm = function (rd, rs, rt, pc, delayed) { throw new Error("TODO"); }
+ADD.assembly = (rd, rs, rt) => rd ? `add\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
 
 function ADDU(rd, rs, rt) {
 	if (rd) {
 		this.registers[rd] = (rs ? this.signed_registers[rs] : 0) + (rt ? this.signed_registers[rt] : 0);
 	}
 }
+ADDU.wasm = function (rd, rs, rt) { throw new Error("TODO"); }
+ADDU.assembly = (rd, rs, rt) => rd ? `addu\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
 
 function SUB(rd, rs, rt, pc, delayed) {
 	let value = (rs ? this.signed_registers[rs] : 0) - (rt ? this.signed_registers[rt] : 0);
@@ -169,12 +200,16 @@ function SUB(rd, rs, rt, pc, delayed) {
 		this.registers[rd] = value;
 	}
 }
+SUB.wasm = function (rd, rs, rt, pc, delayed) { throw new Error("TODO"); }
+SUB.assembly = (rd, rs, rt) => rd ? `sub\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
 
 function SUBU(rd, rs, rt) {
 	if (rd) {
 		this.registers[rd] = (rs ? this.signed_registers[rs] : 0) - (rt ? this.signed_registers[rt] : 0);
 	}
 }
+SUBU.wasm = function (rd, rs, rt) { throw new Error("TODO"); }
+SUBU.assembly = (rd, rs, rt) => rd ? `subu\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
 
 function ADDI(rt, rs, simm16, pc, delayed) {
 	let value = rs ? this.signed_registers[rs] + simm16 : simm16;
@@ -187,12 +222,16 @@ function ADDI(rt, rs, simm16, pc, delayed) {
 		this.registers[rt] = value;
 	}
 }
+ADDI.wasm = function (rt, rs, simm16, pc, delayed) { throw new Error("TODO"); }
+ADDI.assembly = (rt, rs, simm16) => rt ? `addi\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}` : "nop";
 
 function ADDIU(rt, rs, simm16) {
 	if (rt) {
 		this.registers[rt] = rs ? this.signed_registers[rs] + simm16 : simm16;
 	}
 }
+ADDIU.wasm = function (rt, rs, simm16) { throw new Error("TODO"); }
+ADDIU.assembly = (rt, rs, simm16) => rt ? `addiu\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}` : "nop";
 
 /******
  ** Comparison instructions
@@ -202,24 +241,32 @@ function SLT(rd, rs, rt) {
 		this.registers[rd] = (rs ? this.signed_registers[rs] : 0) < (rt ? this.signed_registers[rt] : 0) ? 1 : 0;
 	}
 }
+SLT.wasm = function (rd, rs, rt) { throw new Error("TODO"); }
+SLT.assembly = (rd, rs, rt) => `slt\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
 
 function SLTU(rd, rs, rt) {
 	if (rd != 0) {
 		this.registers[rd] = (rs ? this.registers[rs] : 0) < (rt ? this.registers[rt] : 0) ? 1 : 0;
 	}
 }
+SLTU.wasm = function (rd, rs, rt) { throw new Error("TODO"); }
+SLTU.assembly = (rd, rs, rt) => `sltu\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
 
 function SLTI(rt, rs, simm16) {
 	if (rt != 0) {
 		this.registers[rt] = (rs ? this.signed_registers[rs] : 0) < simm16 ? 1 : 0;
 	}
 }
+SLTI.wasm = function (rt, rs, simm16) { throw new Error("TODO"); }
+SLTI.assembly = (rt, rs, simm16) => `slti\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}`;
 
 function SLTIU(rt, rs, simm16) {
 	if (rt != 0) {
 		this.registers[rt] = (rs ? this.registers[rs] : 0) < (simm16 >>> 0) ? 1 : 0;
 	}
 }
+SLTIU.wasm = function (rt, rs, simm16) { throw new Error("TODO"); }
+SLTIU.assembly = (rt, rs, simm16) => `sltiu\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, $${(simm16 >>> 0).toString(16)}`;
 
 /******
  ** Logical instructions
@@ -230,12 +277,16 @@ function AND(rd, rs, rt) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) & (rs ? (this.registers[rs]) : 0);
 	}
 }
+AND.wasm = function (rd, rs, rt) { throw new Error("TODO"); }
+AND.assembly = (rd, rs, rt) => rd ? `and\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
 
 function OR(rd, rs, rt) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) | (rs ? (this.registers[rs]) : 0);
 	}
 }
+OR.wasm = function (rd, rs, rt) { throw new Error("TODO"); }
+OR.assembly = (rd, rs, rt) => rd ? `or\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
 
 
 function XOR(rd, rs, rt) {
@@ -243,30 +294,40 @@ function XOR(rd, rs, rt) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) ^ (rs ? (this.registers[rs]) : 0);
 	}
 }
+XOR.wasm = function (rd, rs, rt) { throw new Error("TODO"); }
+XOR.assembly = (rd, rs, rt) => rd ? `xor\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
 
 function NOR(rd, rs, rt) {
 	if (rd) {
 		this.registers[rd] = ~((rt ? this.registers[rt] : 0) | (rs ? (this.registers[rs]) : 0));
 	}
 }
+NOR.wasm = function (rd, rs, rt) { throw new Error("TODO"); }
+NOR.assembly = (rd, rs, rt) => rd ? `nor\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
 
 function ANDI(rt, rs, imm16) {
 	if (rt) {
 		this.registers[rt] = (rs ? (this.registers[rs]) : 0) & imm16;
 	}
 }
+ANDI.wasm = function (rt, rs, imm16) { throw new Error("TODO"); }
+ANDI.assembly = (rt, rs, imm16) => rt ? `andi\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, $${imm16.toString(16)}` : "nop";
 
 function ORI(rt, rs, imm16) {
 	if (rt) {
 		this.registers[rt] = (rs ? (this.registers[rs]) : 0) | imm16;
 	}
 }
+ORI.wasm = function (rt, rs, imm16) { throw new Error("TODO"); }
+ORI.assembly = (rt, rs, imm16) => rt ? `ori\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, $${imm16.toString(16)}` : "nop";
 
 function XORI(rt, rs, imm16) {
 	if (rt) {
 		this.registers[rt] = (rs ? (this.registers[rs]) : 0) ^ imm16;
 	}
 }
+XORI.wasm = function (rt, rs, imm16) { throw new Error("TODO"); }
+XORI.assembly = (rt, rs, imm16) => rt ? `xori\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, $${imm16.toString(16)}` : "nop";
 
 /******
  ** Shift instructions
@@ -277,42 +338,56 @@ function SLLV(rd, rt, rs) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) << (rs ? (this.registers[rs] & 0x1F) : 0);
 	}
 }
+SLLV.wasm = function (rd, rt, rs) { throw new Error("TODO"); }
+SLLV.assembly = (rd, rt, rs) => rd ? `sllv\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
 
 function SRLV(rd, rt, rs) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) >>> (rs ? (this.registers[rs] & 0x1F) : 0);
 	}
 }
+SRLV.wasm = function (rd, rt, rs) { throw new Error("TODO"); }
+SRLV.assembly = (rd, rt, rs) => rd ? `srlv\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
 
 function SRAV(rd, rt, rs) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) >> (rs ? (this.registers[rs] & 0x1F) : 0);
 	}
 }
+SRAV.wasm = function (rd, rt, rs) { throw new Error("TODO"); }
+SRAV.assembly = (rd, rt, rs) => rd ? `srav\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
 
 function SLL(rd, rt, shamt) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) << shamt;
 	}
 }
+SLL.wasm = function (rd, rt, shamt) { throw new Error("TODO"); }
+SLL.assembly = (rd, rt, shamt) => rd ? `sll\t${Consts.Registers[rd]}, ${Consts.Registers[rt]}, ${shamt}` : "nop";
 
 function SRL(rd, rt, shamt) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) >>> shamt;
 	}
 }
+SRL.wasm = function (rd, rt, shamt) { throw new Error("TODO"); }
+SRL.assembly = (rd, rt, shamt) => rd ? `srl\t${Consts.Registers[rd]}, ${Consts.Registers[rt]}, ${shamt}` : "nop";
 
 function SRA(rd, rt, shamt) {
 	if (rd) {
 		this.registers[rd] = (rt ? this.registers[rt] : 0) >> shamt;
 	}
 }
+SRA.wasm = function (rd, rt, shamt) { throw new Error("TODO"); }
+SRA.assembly = (rd, rt, shamt) => rd ? `sra\t${Consts.Registers[rd]}, ${Consts.Registers[rt]}, ${shamt}` : "nop";
 
 function LUI(rt, imm16) {
 	if (rt) {
 		this.registers[rt] = imm16 << 16;
 	}
 }
+LUI.wasm = function (rt, imm16) { throw new Error("TODO"); }
+LUI.assembly = (rt, imm16) => `lui\t${Consts.Registers[rt]}, $${imm16.toString(16)}`;
 
 /******
  ** Multiply/Divide instructions
@@ -340,6 +415,8 @@ function MULT(rs, rt) {
 		}
 	}
 }
+MULT.wasm = function (rs, rt) { throw new Error("TODO"); }
+MULT.assembly = (rs, rt) => `mult\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
 
 function MULTU(rs, rt) {
 	let x = rs ? this.registers[rs] : 0;
@@ -351,6 +428,8 @@ function MULTU(rs, rt) {
 	this.hi = (x * y) / 0x100000000 >>> 0;
 	this.lo = (xl * yl) + (((x & 0xFFFF0000) >>> 0) * yl + ((y & 0xFFFF0000) >>> 0) * xl) >>> 0;
 }
+MULTU.wasm = function (rs, rt) { throw new Error("TODO"); }
+MULTU.assembly = (rs, rt) => `multu\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
 
 function DIV(rs, rt) {
 	let s = rs ? this.signed_registers[rs] : 0;
@@ -367,6 +446,8 @@ function DIV(rs, rt) {
 		this.lo = (s / t) >>> 0;
 	}
 }
+DIV.wasm = function (rs, rt) { throw new Error("TODO"); }
+DIV.assembly = (rs, rt) => `div\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
 
 function DIVU(rs, rt) {
 	let s = rs ? this.registers[rs] : 0;
@@ -380,22 +461,40 @@ function DIVU(rs, rt) {
 		this.lo = (s / t) >>> 0;
 	}
 }
+DIVU.wasm = function (rs, rt) { throw new Error("TODO"); }
+DIVU.assembly = (rs, rt) => `divu\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
 
 function MFHI(rd) {
 	if (rd) this.registers[rd] = this.hi;
 }
+MFHI.wasm = function(rd) {
+	return WAST.write(rd, WAST.read(WAST.REG_HI));
+}
+MFHI.assembly = (rd) => `mfhi\t${Consts.Registers[rd]}`;
 
 function MFLO(rd) {
 	if (rd) this.registers[rd] = this.lo;
 }
+MFLO.wasm = function(rd) {
+	return WAST.write(rd, WAST.read(WAST.REG_LO));
+}
+MFLO.assembly = (rd) => `mflo\t${Consts.Registers[rd]}`;
 
 function MTHI(rs) {
 	this.hi = rs ? this.registers[rs] : 0;
 }
+MTHI.wasm = function(rs) {
+	return WAST.write(WAST.REG_HI, WAST.read(rs));
+}
+MTHI.assembly = (rs) => `mthi\t${Consts.Registers[rs]}`;
 
 function MTLO(rs) {
 	this.lo = rs ? this.registers[rs] : 0;
 }
+MTLO.wasm = function(rs) {
+	return WAST.write(WAST.REG_LO, WAST.read(rs));
+}
+MTLO.assembly = (rs) => `mtlo\t${Consts.Registers[rs]}`;
 
 /******
  ** Branching instructions
@@ -405,17 +504,23 @@ function J (pc, imm26, delay) {
 	delay();
 	return ((pc & 0xF0000000) | (imm26 * 4)) >>> 0;
 }
+J.wasm = function (pc, imm26, delay) { throw new Error("TODO"); }
+J.assembly = (pc, imm26) => `j\t$${(((pc & 0xF0000000) | (imm26 * 4)) >>> 0).toString(16)}`;
 
 function JAL (pc, imm26, delay) {
 	delay();
 	this.registers[31] = pc + 8;
 	return ((pc & 0xF0000000) | (imm26 * 4)) >>> 0;
 }
+JAL.wasm = function (pc, imm26, delay) { throw new Error("TODO"); }
+JAL.assembly = (pc, imm26) => `jal\t$${(((pc & 0xF0000000) | (imm26 * 4)) >>> 0).toString(16)}`;
 
 function JR(rs, pc, delay) {
 	delay();
 	return (rs ? this.registers[rs] & ~3: 0) >>> 0;
 }
+JR.wasm = function (rs, pc, delay) { throw new Error("TODO"); }
+JR.assembly = (rs) => `jr\t${Consts.Registers[rs]}`;
 
 function JALR(rs, rd, pc, delay) {
 	delay();
@@ -425,6 +530,8 @@ function JALR(rs, rd, pc, delay) {
 
 	return (rs ? this.registers[rs] & ~3 : 0) >>> 0;
 }
+JALR.wasm = function (rs, rd, pc, delay) { throw new Error("TODO"); }
+JALR.assembly = (rs, rd) => `jalr\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}`;
 
 function BEQ(pc, rs, rt, simm16, delay) {
 	if ((rs ? this.signed_registers[rs] : 0) === (rt ? this.signed_registers[rt] : 0)) {
@@ -432,6 +539,8 @@ function BEQ(pc, rs, rt, simm16, delay) {
 		return (pc + 4) + (simm16 * 4);
 	}
 }
+BEQ.wasm = function (pc, rs, rt, simm16, delay) { throw new Error("TODO"); }
+BEQ.assembly = (pc, rs, rt, simm16) => `beq\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
 function BNE(pc, rs, rt, simm16, delay) {
 	if ((rs ? this.signed_registers[rs] : 0) !== (rt ? this.signed_registers[rt] : 0)) {
@@ -439,6 +548,8 @@ function BNE(pc, rs, rt, simm16, delay) {
 		return (pc + 4) + (simm16 * 4);
 	}
 }
+BNE.wasm = function (pc, rs, rt, simm16, delay) { throw new Error("TODO"); }
+BNE.assembly = (pc, rs, rt, simm16) => `bne\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
 function BLTZ(pc, rs, simm16, delay) {
 	if (((rs == 0) ? 0 : this.signed_registers[rs]) < 0) {
@@ -446,6 +557,8 @@ function BLTZ(pc, rs, simm16, delay) {
 		return (pc + 4) + (simm16 * 4);
 	}
 }
+BLTZ.wasm = function (pc, rs, simm16, delay) { throw new Error("TODO"); }
+BLTZ.assembly = (pc, rs, simm16) => `bltz\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
 function BGEZ(pc, rs, simm16, delay) {
 	if (((rs == 0) ? 0 : this.signed_registers[rs]) >= 0) {
@@ -453,6 +566,8 @@ function BGEZ(pc, rs, simm16, delay) {
 		return (pc + 4) + (simm16 * 4);
 	}
 }
+BGEZ.wasm = function (pc, rs, simm16, delay) { throw new Error("TODO"); }
+BGEZ.assembly = (pc, rs, simm16) => `bgez\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
 function BGTZ(pc, rs, simm16, delay) {
 	if ((rs ? this.signed_registers[rs] : 0) > 0) {
@@ -460,6 +575,8 @@ function BGTZ(pc, rs, simm16, delay) {
 		return (pc + 4) + (simm16 * 4);
 	}
 }
+BGTZ.wasm = function (pc, rs, simm16, delay) { throw new Error("TODO"); }
+BGTZ.assembly = (pc, rs, simm16) => `bgtz\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
 function BLEZ(pc, rs, simm16, delay) {
 	if (((rs == 0) ? 0 : this.signed_registers[rs]) <= 0) {
@@ -467,6 +584,8 @@ function BLEZ(pc, rs, simm16, delay) {
 		return (pc + 4) + (simm16 * 4);
 	}
 }
+BLEZ.wasm = function (pc, rs, simm16, delay) { throw new Error("TODO"); }
+BLEZ.assembly = (pc, rs, simm16) => `blez\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
 function BLTZAL(pc, rs, simm16, delay) {
 	if (0 > ((rs == 0) ? 0 : this.signed_registers[rs])) {
@@ -475,6 +594,8 @@ function BLTZAL(pc, rs, simm16, delay) {
 		return (pc + 4) + (simm16 * 4);
 	}
 }
+BLTZAL.wasm = function (pc, rs, simm16, delay) { throw new Error("TODO"); }
+BLTZAL.assembly = (pc, rs, simm16) => `bltzal\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
 function BGEZAL(pc, rs, simm16, delay) {
 	if (0 <= ((rs == 0) ? 0 : this.signed_registers[rs])) {
@@ -483,83 +604,19 @@ function BGEZAL(pc, rs, simm16, delay) {
 		return (pc + 4) + (simm16 * 4);
 	}
 }
+BGEZAL.wasm = function (pc, rs, simm16, delay) { throw new Error("TODO"); }
+BGEZAL.assembly = (pc, rs, simm16) => `bgezal\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
 function SYSCALL(pc, delayed) {
 	throw new Exception(Consts.Exceptions.SysCall, pc, delayed);
 }
+SYSCALL.wasm = function (pc, delayed) { throw new Error("TODO"); }
+SYSCALL.assembly = (imm20) => `syscall\t$${imm20.toString(16)}`;
 
 function BREAK(pc, delayed) {
 	throw new Exception(Consts.Exceptions.Breakpoint, pc, delayed);
 }
-
-/******
- ** Instruction disassembler templates
- ******/
-
-LB.assembly = (rs, rt, imm16) => `lb\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
-LBU.assembly = (rs, rt, imm16) => `lbu\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
-LH.assembly = (rs, rt, imm16) => `lh\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
-LHU.assembly = (rs, rt, imm16) => `lhu\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
-LW.assembly = (rs, rt, imm16) => `lw\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
-LWR.assembly = (rs, rt, imm16) => `lwr\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
-LWL.assembly = (rs, rt, imm16) => `lwl\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
-SB.assembly = (rs, rt, imm16) => `sb\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
-SH.assembly = (rs, rt, imm16) => `sh\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
-SW.assembly = (rs, rt, imm16) => `sw\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
-SWL.assembly = (rs, rt, imm16) => `swl\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
-SWR.assembly = (rs, rt, imm16) => `swr\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
-
-ADD.assembly = (rd, rs, rt) => rd ? `add\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
-ADDU.assembly = (rd, rs, rt) => rd ? `addu\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
-SUB.assembly = (rd, rs, rt) => rd ? `sub\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
-SUBU.assembly = (rd, rs, rt) => rd ? `subu\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
-ADDI.assembly = (rt, rs, simm16) => rt ? `addi\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}` : "nop";
-ADDIU.assembly = (rt, rs, simm16) => rt ? `addiu\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}` : "nop";
-
-SLT.assembly = (rd, rs, rt) => `slt\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
-SLTU.assembly = (rd, rs, rt) => `sltu\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
-SLTI.assembly = (rt, rs, simm16) => `slti\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}`;
-SLTIU.assembly = (rt, rs, simm16) => `sltiu\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, $${(simm16 >>> 0).toString(16)}`;
-
-AND.assembly = (rd, rs, rt) => rd ? `and\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
-OR.assembly = (rd, rs, rt) => rd ? `or\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
-XOR.assembly = (rd, rs, rt) => rd ? `xor\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
-NOR.assembly = (rd, rs, rt) => rd ? `nor\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
-ANDI.assembly = (rt, rs, imm16) => rt ? `andi\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, $${imm16.toString(16)}` : "nop";
-ORI.assembly = (rt, rs, imm16) => rt ? `ori\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, $${imm16.toString(16)}` : "nop";
-XORI.assembly = (rt, rs, imm16) => rt ? `xori\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, $${imm16.toString(16)}` : "nop";
-
-SLLV.assembly = (rd, rt, rs) => rd ? `sllv\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
-SRLV.assembly = (rd, rt, rs) => rd ? `srlv\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
-SRAV.assembly = (rd, rt, rs) => rd ? `srav\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
-SLL.assembly = (rd, rt, shamt) => rd ? `sll\t${Consts.Registers[rd]}, ${Consts.Registers[rt]}, ${shamt}` : "nop";
-SRL.assembly = (rd, rt, shamt) => rd ? `srl\t${Consts.Registers[rd]}, ${Consts.Registers[rt]}, ${shamt}` : "nop";
-SRA.assembly = (rd, rt, shamt) => rd ? `sra\t${Consts.Registers[rd]}, ${Consts.Registers[rt]}, ${shamt}` : "nop";
-LUI.assembly = (rt, imm16) => `lui\t${Consts.Registers[rt]}, $${imm16.toString(16)}`;
-
-MULT.assembly = (rs, rt) => `mult\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
-MULTU.assembly = (rs, rt) => `multu\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
-DIV.assembly = (rs, rt) => `div\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
-DIVU.assembly = (rs, rt) => `divu\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
-MFHI.assembly = (rd) => `mfhi\t${Consts.Registers[rd]}`;
-MFLO.assembly = (rd) => `mflo\t${Consts.Registers[rd]}`;
-MTHI.assembly = (rs) => `mthi\t${Consts.Registers[rs]}`;
-MTLO.assembly = (rs) => `mtlo\t${Consts.Registers[rs]}`;
-
-J.assembly = (pc, imm26) => `j\t$${(((pc & 0xF0000000) | (imm26 * 4)) >>> 0).toString(16)}`;
-JAL.assembly = (pc, imm26) => `jal\t$${(((pc & 0xF0000000) | (imm26 * 4)) >>> 0).toString(16)}`;
-JR.assembly = (rs) => `jr\t${Consts.Registers[rs]}`;
-JALR.assembly = (rs, rd) => `jalr\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}`;
-BEQ.assembly = (pc, rs, rt, simm16) => `beq\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
-BNE.assembly = (pc, rs, rt, simm16) => `bne\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
-BLTZ.assembly = (pc, rs, simm16) => `bltz\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
-BGEZ.assembly = (pc, rs, simm16) => `bgez\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
-BGTZ.assembly = (pc, rs, simm16) => `bgtz\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
-BLEZ.assembly = (pc, rs, simm16) => `blez\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
-BLTZAL.assembly = (pc, rs, simm16) => `bltzal\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
-BGEZAL.assembly = (pc, rs, simm16) => `bgezal\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
-
-SYSCALL.assembly = (imm20) => `syscall\t$${imm20.toString(16)}`;
+BREAK.wasm = function (pc, delayed) { throw new Error("TODO"); }
 BREAK.assembly = (imm20) => `break\t$${imm20.toString(16)}`;
 
 export default {
