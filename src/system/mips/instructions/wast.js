@@ -1,45 +1,37 @@
-export const REG_LO = 32;
-export const REG_HI = 33;
-export const REG_PC = 34;
+export const REGS = {
+	LO: 32,
+	HI: 33,
+	PC: 34
+};
 
-export const CALL_EXCEPTION = 0;
-export const CALL_LOAD		= 1;
-export const CALL_STORE		= 2;
-export const CALL_MFC0		= 3;
-export const CALL_MTC0		= 4;
-export const CALL_RFE		= 5;
-export const CALL_TLBR		= 6;
-export const CALL_TLBWI		= 7;
-export const CALL_TLBWR		= 8;
-export const CALL_TLBP		= 9;
+export const CALLS = {
+	EXECUTE: 0,
+	EXCEPTION: 1,
+	LOAD: 2,
+	STORE: 3,
+	MFC0: 4,
+	MTC0: 5,
+	RFE: 6,
+	TLBR: 7,
+	TLBWI: 8,
+	TLBWR: 9,
+	TLBP: 10,
+};
 
-export function const32(value) {
-	return [ { op: 'i32.const', value: value } ]
+export function readReg(index) {
+	return index ? [
+		{ op: 'i32.const', value: index * 4 },
+		{ "op": "i32.load", "flags": 2, "offset": 0 }
+	] : [
+		{ op: 'i32.const', value: 0 }
+	];
 }
 
-export function const64(value) {
-	return [ { op: 'i64.const', value: value } ]
-}
-
-export function read(index) {
-	return index ? [ 
-		const32(index*4),
-		{ "op": "i32.load", "flags": 2, "offset": 0 } 
-	] : const32(0);
-}
-
-export function write(index, value) {
+export function writeReg(index, value) {
 	return index ? value.concat([
-		const32(index*4),
-		{ "op": "i32.store", "flags": 2, "offset": 0 } 
-	]) : []
-}
-
-export function dropWrite(index, value) {
-	return value.concat(index ? [
-		const32(index*4),
-		{ "op": "i32.store", "flags": 2, "offset": 0 } 
-	] : { op: "drop" })
+		{ op: 'i32.const', value: index * 4 },
+		{ "op": "i32.store", "flags": 2, "offset": 0 }
+	]) : [];
 }
 
 export function call(func, ... args) {

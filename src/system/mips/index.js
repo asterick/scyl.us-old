@@ -1,6 +1,6 @@
 import Exception from "./exception";
 import locate from "./instructions";
-import * as WAST from "./instructions/wast";
+import { REGS } from "./instructions/wast";
 
 import { params } from "../../util";
 import { MAX_COMPILE_SIZE, CLOCK_BLOCK, MIN_COMPILE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
@@ -74,27 +74,27 @@ export default class MIPS {
 	// Helper values for the magic registers
 
 	get pc() {
-		return this.registers[WAST.REG_PC];
+		return this.registers[REGS.PC];
 	}
 
 	set pc(v) {
-		this.registers[WAST.REG_PC] = v;
+		this.registers[REGS.PC] = v;
 	}
 
 	get lo() {
-		return this.registers[WAST.REG_LO];
+		return this.registers[REGS.LO];
 	}
 
 	set lo(v) {
-		this.registers[WAST.REG_LO] = v;
+		this.registers[REGS.LO] = v;
 	}
 
 	get hi() {
-		return this.registers[WAST.REG_HI];
+		return this.registers[REGS.HI];
 	}
 
 	set hi(v) {
-		this.registers[WAST.REG_HI] = v;
+		this.registers[REGS.HI] = v;
 	}
 
 	reset() {
