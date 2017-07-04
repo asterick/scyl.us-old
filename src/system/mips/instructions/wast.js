@@ -33,10 +33,3 @@ export function writeReg(index, value) {
 		{ "op": "i32.store", "flags": 2, "offset": 0 }
 	]) : [];
 }
-
-export function call(func, ... args) {
-	return args.concat(func, {
-        "op": "call",
-        "function_index": func
-    } );
-}
