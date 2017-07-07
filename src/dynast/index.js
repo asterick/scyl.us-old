@@ -1,8 +1,9 @@
+import { parse } from "./dynast";
 import decode from "./import";
 import encode from "./export";
 
-fetch("./test.wasm")
-	.then(item => item.arrayBuffer())
-	.then(ab => {
-		console.log(JSON.stringify(decode(ab), null, 4));
-	});
+import raw from "raw-loader!../system/mips/instructions/instructions.dyn";
+
+const ast = parse(raw);
+
+console.log(JSON.stringify(ast, null, 4))
