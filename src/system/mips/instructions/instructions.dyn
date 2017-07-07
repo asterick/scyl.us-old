@@ -80,59 +80,59 @@ export func LW(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
 }
 
 export func SB(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16;
+	def target:u32 = reg(rs) + imm16
 
-	store(target, reg(rt) << (target & 3), 0xFF << (8 * (target & 3)), address, delayed);
+	store(target, reg(rt) << (target & 3), 0xFF << (8 * (target & 3)), address, delayed)
 }
 
 export func SH(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16;
+	def target:u32 = reg(rs) + imm16
 
-	if (target & 1) then exception(AddressStore, address, delayed);
+	if (target & 1) then exception(AddressStore, address, delayed)
 
-	store(target, reg(rt) << (target & 2), 0xFFFF << (8 * (target & 3)), address, delayed);
+	store(target, reg(rt) << (target & 2), 0xFFFF << (8 * (target & 3)), address, delayed)
 }
 
 export func SW(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16;
+	def target:u32 = reg(rs) + imm16
 
-	if (target & 3) then exception(AddressStore, address, delayed);
+	if (target & 3) then exception(AddressStore, address, delayed)
 
-	store(target, reg(rt), 0xFFFFFFFF, address, delayed);
+	store(target, reg(rt), 0xFFFFFFFF, address, delayed)
 }
 
 export func LWR(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16;
-	var value = load(target, address, delayed);
-	var bit = 8 * (target & 3);
+	def target:u32 = reg(rs) + imm16
+	var value = load(target, address, delayed)
+	var bit = 8 * (target & 3)
 
 	registers[rt] = registers[rt] & (0xFFFFFFFF << (32 - bit)) | (value >> bit)
 }
 
 export func LWL(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16;
-	def value:u32 = this.load(target, address, delayed);
+	def target:u32 = reg(rs) + imm16
+	def value:u32 = load(target, address, delayed)
 
 	if ((0xFFFFFFFF ^ target) & 3) then {
-		def bit:u32 = 8 * (target & 3) + 8;
+		def bit:u32 = 8 * (target & 3) + 8
 
 		registers[rt] = (registers[rt] & (0xFFFFFFFF >> bit)) | (value << (32 - bit))
 	}
 }
 
 export func SWR(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16;
-	def bit:u32 = 8 * (target & 3);
+	def target:u32 = reg(rs) + imm16
+	def bit:u32 = 8 * (target & 3)
 
-	this.store(target, reg(rt), 0xFFFFFFFF << bit, address, delayed);
+	store(target, reg(rt), 0xFFFFFFFF << bit, address, delayed)
 }
 
 export func SWL(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16;
+	def target:u32 = reg(rs) + imm16
 
 	if ((0xFFFFFFFF ^ target) & 3) then {
 		def bit:u32 = 8 * (target & 3) + 8
-		this.store(target, reg(rt) >> (32 - bit), 0xFFFFFFFF >> (32 - bit), address, delayed);
+		store(target, reg(rt) >> (32 - bit), 0xFFFFFFFF >> (32 - bit), address, delayed)
 	}
 }
 
@@ -141,7 +141,7 @@ export func SWL(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
 ########
 
 export func ADD(rd:u32, rs:u32, rt:u32, address:u32, delayed:u32) {
-	def value:s64 = (reg(rs):s32):s64 + (reg(rt):s32):s64;
+	def value:s64 = (reg(rs):s32):s64 + (reg(rt):s32):s64
 
 	if (value < -0x80000000) then {
 		exception(Overflow, address, delayed, 0)
@@ -157,7 +157,7 @@ export func ADDU(rd:u32, rs:u32, rt:u32) {
 }
 
 export func SUB(rd:u32, rs:u32, rt:u32, address:u32, delayed:u32) {
-	def value:s64 = (reg(rs):s32):s64 - (reg(rt):s32):s64;
+	def value:s64 = (reg(rs):s32):s64 - (reg(rt):s32):s64
 
 	if (value < -0x80000000) then {
 		exception(Overflow, address, delayed, 0)
@@ -173,7 +173,7 @@ export func SUBU(rd:u32, rs:u32, rt:u32) {
 }
 
 export func ADDI(rt:u32, rs:u32, simm16:s32, address:u32, delayed:u32) {
-	def value:s64 = (reg(rs):s32):s64 + simm16:s64;
+	def value:s64 = (reg(rs):s32):s64 + simm16:s64
 
 	if (value < -0x80000000) then {
 		exception(Overflow, address, delayed, 0)
@@ -181,11 +181,11 @@ export func ADDI(rt:u32, rs:u32, simm16:s32, address:u32, delayed:u32) {
 		exception(Overflow, address, delayed, 0)
 	}
 
-	registers[rt] = value:u32;
+	registers[rt] = value:u32
 }
 
 export func ADDIU(rt:u32, rs:u32, simm16:s32) {
-	registers[rt] = (reg(rs):s32 + simm16):u32;
+	registers[rt] = (reg(rs):s32 + simm16):u32
 }
 
 ########
@@ -213,31 +213,31 @@ export func SLTIU(rt:u32, rs:u32, simm16:s32) {
 ########
 
 export func AND(rd:u32, rs:u32, rt:u32) {
-	registers[rd] = reg(rt) & reg(rs);
+	registers[rd] = reg(rt) & reg(rs)
 }
 
 export func OR(rd:u32, rs:u32, rt:u32) {
-	registers[rd] = reg(rt) | reg(rs);
+	registers[rd] = reg(rt) | reg(rs)
 }
 
 export func XOR(rd:u32, rs:u32, rt:u32) {
-	registers[rd] = reg(rt) ^ reg(rs);
+	registers[rd] = reg(rt) ^ reg(rs)
 }
 
 export func NOR(rd:u32, rs:u32, rt:u32) {
-	registers[rd] = 0xFFFFFFFF ^ (reg(rt) | reg(rs));
+	registers[rd] = 0xFFFFFFFF ^ (reg(rt) | reg(rs))
 }
 
 export func ANDI(rt:u32, rs:u32, imm16:u32) {
-	registers[rt] = reg(rs) & imm16;
+	registers[rt] = reg(rs) & imm16
 }
 
 export func ORI(rt:u32, rs:u32, imm16:u32) {
-	registers[rt] = reg(rs) | imm16;
+	registers[rt] = reg(rs) | imm16
 }
 
 export func XORI(rt:u32, rs:u32, imm16:u32) {
-	registers[rt] = reg(rs) ^ imm16;
+	registers[rt] = reg(rs) ^ imm16
 }
 
 ########
@@ -245,31 +245,31 @@ export func XORI(rt:u32, rs:u32, imm16:u32) {
 ########
 
 export func SLLV(rd:u32, rt:u32, rs:u32) {
-	registers[rd] = reg(rt) << (reg(rs) & 0x1F);
+	registers[rd] = reg(rt) << (reg(rs) & 0x1F)
 }
 
 export func SRLV(rd:u32, rt:u32, rs:u32) {
-	registers[rd] = reg(rt) >> (reg(rs) & 0x1F);
+	registers[rd] = reg(rt) >> (reg(rs) & 0x1F)
 }
 
 export func SRAV(rd:u32, rt:u32, rs:u32) {
-	registers[rd] = reg(rt):s32 >> (reg(rs) & 0x1F);
+	registers[rd] = reg(rt):s32 >> (reg(rs) & 0x1F)
 }
 
 export func SLL(rd:u32, rt:u32, shamt:u32) {
-	registers[rd] = reg(rt) << shamt;
+	registers[rd] = reg(rt) << shamt
 }
 
 export func SRL(rd:u32, rt:u32, shamt:u32) {
-	registers[rd] = reg(rt) >> shamt;
+	registers[rd] = reg(rt) >> shamt
 }
 
 export func SRA(rd:u32, rt:u32, shamt:u32) {
-	registers[rd] = reg(rt):s32 >> shamt;
+	registers[rd] = reg(rt):s32 >> shamt
 }
 
 export func LUI(rt:u32, imm16:u32) {
-	registers[rt] = imm16 << 16;
+	registers[rt] = imm16 << 16
 }
 
 ########
@@ -320,11 +320,11 @@ export func DIVU(rs:u32, rt:u32) {
 }
 
 export func MFHI(rd:u32) {
-	registers[rd] = hi;
+	registers[rd] = hi
 }
 
 export func MFLO(rd:u32) {
-	registers[rd] = lo;
+	registers[rd] = lo
 }
 
 export func MTHI(rs:u32) {
@@ -352,13 +352,13 @@ export func JAL (address:u32, imm26:u32) {
 
 export func JR(rs:u32, address:u32) {
 	pc = reg(rs) & 0xFFFFFFFC
-	delay(address + 4);
+	delay(address + 4)
 }
 
 export func JALR(rs:u32, rd:u32, address:u32) {
-	registers[rd] = address + 8;
+	registers[rd] = address + 8
 	pc = reg(rs):s32 & 0xFFFFFFFC
-	delay(address + 4);
+	delay(address + 4)
 }
 
 export func BEQ(address:u32, rs:u32, rt:u32, simm16:s32) {
@@ -378,44 +378,44 @@ export func BNE(address:u32, rs:u32, rt:u32, simm16:s32) {
 export func BLTZ(address:u32, rs:u32, simm16:s32) {
 	if (reg(rs):s32 < 0) then  {
 		pc = (address + 4) + (simm16 * 4)
-		delay(address + 4);
+		delay(address + 4)
 	}
 }
 
 export func BGEZ(address:u32, rs:u32, simm16:s32) {
 	if (reg(rs):s32 >= 0) then {
 		pc = (address + 4) + (simm16 * 4)
-		delay(address + 4);
+		delay(address + 4)
 	}
 }
 
 export func BGTZ(address:u32, rs:u32, simm16:s32) {
 	if (reg(rs):s32 > 0) then  {
 		pc = (address + 4) + (simm16 * 4)
-		delay(address + 4);
+		delay(address + 4)
 	}
 }
 
 export func BLEZ(address:u32, rs:u32, simm16:s32) {
 	if (reg(rs):s32 <= 0) then {
 		pc = (address + 4) + (simm16 * 4)
-		delay(address + 4);
+		delay(address + 4)
 	}
 }
 
 export func BLTZAL(address:u32, rs:u32, simm16:s32) {
 	if (reg(rs):s32 < 0) then {
-		registers[31] = address + 8;
-		pc = (address + 4) + (simm16 * 4);
-		delay(address + 4);
+		registers[31] = address + 8
+		pc = (address + 4) + (simm16 * 4)
+		delay(address + 4)
 	}
 }
 
 export func BGEZAL(address:u32, rs:u32, simm16:s32) {
 	if (reg(rs):s32 >= 0) then {
-		registers[31] = address + 8;
+		registers[31] = address + 8
 		pc = (address + 4) + (simm16 * 4)
-		delay(address + 4);
+		delay(address + 4)
 	}
 }
 
