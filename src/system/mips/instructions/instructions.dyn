@@ -14,10 +14,10 @@ const ReservedInstruction:u32 = 0x0A
 const CoprocessorUnusable:u32 = 0x0B
 const Overflow:u32 = 0x0C
 
-def registers:[32]u32
-def pc:u32 = 0xBCF00000
-def lo:u32
-def hi:u32
+var registers:[32]u32
+var pc:u32 = 0xBCF00000
+var lo:u32
+var hi:u32
 
 #######
 ## Helper stuff
@@ -38,41 +38,41 @@ import func load(u32, u32, u32)
 import func store(u32, u32, u32, u32, u32)
 
 export func LB(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16
-	def value:u32 = load(target, address, delayed)
+	var target:u32 = reg(rs) + imm16
+	var value:u32 = load(target, address, delayed)
 
 	registers[rt] = value << (24 - 8 * (target & 3)) >> 24
 }
 
 export func LBU(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16
-	def value:u32 = load(target, address, delayed)
+	var target:u32 = reg(rs) + imm16
+	var value:u32 = load(target, address, delayed)
 
 	registers[rt] = (v >> (8 * (target & 3))) & 0xFF
 }
 
 export func LH(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16
+	var target:u32 = reg(rs) + imm16
 
 	if (target & 1) then exception(AddressLoad, address, delayed)
 
-	def value:u32 = load(target, address, delayed)
+	var value:u32 = load(target, address, delayed)
 
 	registers[rt] = if (target & 2) then (value:s32 >> 16) else (value:s32 << 16 >> 16):u32
 }
 
 export func LHU(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16
+	var target:u32 = reg(rs) + imm16
 
 	if (target & 1) then exception(AddressLoad, address, delayed)
 
-	def value:u32 = load(target, address, delayed)
+	var value:u32 = load(target, address, delayed)
 
 	registers[rt] = if target & 2 then (value >> 16) else (value & 0xFFFF)
 }
 
 export func LW(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16
+	var target:u32 = reg(rs) + imm16
 
 	if (target & 3) then exception(AddressLoad, address, delayed)
 
@@ -80,13 +80,13 @@ export func LW(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
 }
 
 export func SB(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16
+	var target:u32 = reg(rs) + imm16
 
 	store(target, reg(rt) << (target & 3), 0xFF << (8 * (target & 3)), address, delayed)
 }
 
 export func SH(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16
+	var target:u32 = reg(rs) + imm16
 
 	if (target & 1) then exception(AddressStore, address, delayed)
 
@@ -94,7 +94,7 @@ export func SH(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
 }
 
 export func SW(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16
+	var target:u32 = reg(rs) + imm16
 
 	if (target & 3) then exception(AddressStore, address, delayed)
 
@@ -102,36 +102,36 @@ export func SW(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
 }
 
 export func LWR(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16
-	var value = load(target, address, delayed)
-	var bit = 8 * (target & 3)
+	var target:u32 = reg(rs) + imm16
+	var value:u32 = load(target, address, delayed)
+	var bit:u32 = 8 * (target & 3)
 
 	registers[rt] = registers[rt] & (0xFFFFFFFF << (32 - bit)) | (value >> bit)
 }
 
 export func LWL(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16
-	def value:u32 = load(target, address, delayed)
+	var target:u32 = reg(rs) + imm16
+	var value:u32 = load(target, address, delayed)
 
 	if ((0xFFFFFFFF ^ target) & 3) then {
-		def bit:u32 = 8 * (target & 3) + 8
+		var bit:u32 = 8 * (target & 3) + 8
 
 		registers[rt] = (registers[rt] & (0xFFFFFFFF >> bit)) | (value << (32 - bit))
 	}
 }
 
 export func SWR(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16
-	def bit:u32 = 8 * (target & 3)
+	var target:u32 = reg(rs) + imm16
+	var bit:u32 = 8 * (target & 3)
 
 	store(target, reg(rt), 0xFFFFFFFF << bit, address, delayed)
 }
 
 export func SWL(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
-	def target:u32 = reg(rs) + imm16
+	var target:u32 = reg(rs) + imm16
 
 	if ((0xFFFFFFFF ^ target) & 3) then {
-		def bit:u32 = 8 * (target & 3) + 8
+		var bit:u32 = 8 * (target & 3) + 8
 		store(target, reg(rt) >> (32 - bit), 0xFFFFFFFF >> (32 - bit), address, delayed)
 	}
 }
@@ -141,7 +141,7 @@ export func SWL(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
 ########
 
 export func ADD(rd:u32, rs:u32, rt:u32, address:u32, delayed:u32) {
-	def value:s64 = (reg(rs):s32):s64 + (reg(rt):s32):s64
+	var value:s64 = (reg(rs):s32):s64 + (reg(rt):s32):s64
 
 	if (value < -0x80000000) then {
 		exception(Overflow, address, delayed, 0)
@@ -157,7 +157,7 @@ export func ADDU(rd:u32, rs:u32, rt:u32) {
 }
 
 export func SUB(rd:u32, rs:u32, rt:u32, address:u32, delayed:u32) {
-	def value:s64 = (reg(rs):s32):s64 - (reg(rt):s32):s64
+	var value:s64 = (reg(rs):s32):s64 - (reg(rt):s32):s64
 
 	if (value < -0x80000000) then {
 		exception(Overflow, address, delayed, 0)
@@ -173,7 +173,7 @@ export func SUBU(rd:u32, rs:u32, rt:u32) {
 }
 
 export func ADDI(rt:u32, rs:u32, simm16:s32, address:u32, delayed:u32) {
-	def value:s64 = (reg(rs):s32):s64 + simm16:s64
+	var value:s64 = (reg(rs):s32):s64 + simm16:s64
 
 	if (value < -0x80000000) then {
 		exception(Overflow, address, delayed, 0)
@@ -277,22 +277,22 @@ export func LUI(rt:u32, imm16:u32) {
 ########
 
 export func MULT(rs:u32, rt:u32) {
-	def res:s64 = reg(rs):s64 * reg(rt):s64
+	var res:s64 = reg(rs):s64 * reg(rt):s64
 
 	hi = (res >> 32):u32
 	lo = res:u32
 }
 
 export func MULTU(rs:u32, rt:u32) {
-	def res:u64 = reg(rs):u64 * reg(rt):u64
+	var res:u64 = reg(rs):u64 * reg(rt):u64
 
 	hi = (res >> 32):u32
 	lo = res:u32
 }
 
 export func DIV(rs:u32, rt:u32) {
-	def s:s32 = reg(rs):s32
-	def t:s32 = reg(rt):s32
+	var s:s32 = reg(rs):s32
+	var t:s32 = reg(rt):s32
 
 	if (s == -0x80000000 && t == -1) then {
 		hi = 0x80000000
@@ -307,8 +307,8 @@ export func DIV(rs:u32, rt:u32) {
 }
 
 export func DIVU(rs:u32, rt:u32) {
-	def s:u32 = reg(rs)
-	def t:u32 = reg(rt)
+	var s:u32 = reg(rs)
+	var t:u32 = reg(rt)
 
 	if (t == 0) then {
 		hi = s
