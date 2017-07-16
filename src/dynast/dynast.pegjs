@@ -6,9 +6,9 @@ Definition
 	= Imports
 	/ Exports
 	/ Label
-	/ StructDeclaration
 	/ FunctionDefinition
 	/ VariableDefinition
+	/ TypeDeclaration
 	/ LoopStatement
 	/ ReturnStatement
 	/ TrapStatement
@@ -25,18 +25,7 @@ Exports
 	= Export decl:(FunctionDefinition / VariableDefinition / MemoryDeclaration)
 		{ return { type: "Export", decl } }
 
-StructDeclaration
-	= type:StructType name:Identifier? "{" _ body:Variable* "}" _
-		{ return { type, name, body } }
-
-StructType
-	= "struct" EC
-		{ return "StructDeclaration" }
-	/ "union" EC
-		{ return "UnionDeclaration" }
-
 CallDeclaration
-
 	= "(" _ args:TypeList? ")" _ returns:ReturnList?
 		{ return { type: "CallDeclaration", args, returns } }
 
@@ -47,6 +36,10 @@ FunctionDeclaration
 MemoryDeclaration
 	= "memory" EC name:Identifier
 		{ return { type: "MemoryDeclaration", name } }
+
+TypeDeclaration
+	= "def" EC decl:Variable
+		{ return { type: "VariableDeclaration", decl } }
 
 VariableDeclaration
 	= "var" EC decl:Variable
@@ -272,6 +265,12 @@ AtomicType
 	/ "f64" EC
 		{ return { format: "decimal", size: 64 } }
 
+StructDeclaration
+	= "struct" EC "{" _ body:Variable* "}" _
+		{ return { type: "StructDeclaration", name, body } }
+	/ "union" EC "{" _ body:Variable* "}" _
+		{ return { type: "UnionDeclaration", name, body } }
+
 Label
 	= "@" _ name:Identifier
 		{ return { type: "Label", name } }
@@ -310,7 +309,7 @@ Reserved
 	= "import" / "export"
 	/ "sizeof"
 	/ "struct" / "union"
-    / "memory" / "func" / "var" / "const"
+    / "memory" / "func" / "def" / "var" / "const"
     / "if" / "then" / "else" / "loop"
     / "break" / "trap" / "nop" / "return"
     / "u32" / "u64" / "s32" / "s64" / "f32" / "f64"
