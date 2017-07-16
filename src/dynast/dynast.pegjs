@@ -45,15 +45,15 @@ VariableDeclaration
 	= "var" EC decl:Variable
 		{ return { type: "VariableDeclaration", decl } }
 	/ "const" EC decl:Variable
-		{ return { type: "VariableDeclaration", decl } }
+		{ return { type: "ConstantDeclaration", decl } }
 
 FunctionDefinition
 	= "func" EC name:Identifier "(" _ args:VariableList? ")" _ returns:ReturnList? body:Definition
 		{ return { type: "FunctionDefinition", args, returns, body } }
 
 VariableDefinition
-	= decls:VariableDeclaration value:("=" _ v:Expression { return v })?
-		{ return { type: "VariableDefinition", decls, value } }
+	= decl:VariableDeclaration value:("=" _ v:Expression { return v })?
+		{ return { type: "VariableDefinition", decl, value } }
 
 /*****
  *** Statements
@@ -241,29 +241,23 @@ Identifier
 		{ return { type: "Identifier", name } }
 
 Type
-	= AtomicType
-	/ StructDeclaration
-	/ name:Identifier
-		{ return { type: "DefinedType", name } }
-	/ "*" _ type:Type
+	= "*" _ type:Type
 		{ return { format: "pointer", type } }
 	/ "[" _ size:Expression "]" _ type:Type
 		{ return { format: "array", size, type } }
+	/ name:Identifier
+		{ return { type: "DefinedType", name } }
 	/ CallDeclaration
+	/ AtomicType
+	/ StructDeclaration
 
 AtomicType
-	= "u32" EC
-		{ return { signed: false, format: "integer", size: 32 } }
-	/ "u64" EC
-		{ return { signed: false, format: "integer", size: 64 } }
-	/ "s32" EC
-		{ return { signed: true, format: "integer", size: 32 } }
-	/ "s64" EC
-		{ return { signed: true, format: "integer", size: 64 } }
-	/ "f32" EC
-		{ return { format: "decimal", size: 32 } }
-	/ "f64" EC
-		{ return { format: "decimal", size: 64 } }
+	= "unsigned" EC size:Number
+		{ return { signed: false, format: "integer", size } }
+	/ "signed" EC size:Number
+		{ return { signed: true, format: "integer", size } }
+	/ "float" EC size:Number
+		{ return { format: "float", size } }
 
 StructDeclaration
 	= "struct" EC "{" _ body:Variable* "}" _
@@ -312,7 +306,7 @@ Reserved
     / "memory" / "func" / "def" / "var" / "const"
     / "if" / "then" / "else" / "loop"
     / "break" / "trap" / "nop" / "return"
-    / "u32" / "u64" / "s32" / "s64" / "f32" / "f64"
+    / "unsigned" / "signed" / "float"
 
 EC 	= ![_a-z0-9]i _
 _ 	= __*

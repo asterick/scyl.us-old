@@ -8,6 +8,11 @@ const ReservedInstruction:u32 	= 0x0A
 const CoprocessorUnusable:u32 	= 0x0B
 const Overflow:u32 			  	= 0x0C
 
+def s32:signed 32
+def s64:signed 64
+def u32:unsigned 32
+def u64:unsigned 64
+
 var registers:[32]u32
 var pc:u32 = 0xBCF00000
 var lo:u32
