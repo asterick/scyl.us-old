@@ -33,7 +33,7 @@ func reg(index:u32):u32 {
 ## Load/Store instructions
 ########
 
-import func load(u32, u32, u32)
+import func load(u32, u32, u32):u32
 import func store(u32, u32, u32, u32, u32)
 
 export func LB(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {

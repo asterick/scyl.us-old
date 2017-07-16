@@ -39,7 +39,7 @@ MemoryDeclaration
 
 TypeDeclaration
 	= "def" EC decl:Variable
-		{ return { type: "VariableDeclaration", decl } }
+		{ return { type: "TypeDeclaration", decl } }
 
 VariableDeclaration
 	= "var" EC decl:Variable
