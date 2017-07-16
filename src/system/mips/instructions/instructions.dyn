@@ -1,18 +1,12 @@
 import memory static_memory
 
-const Interrupt:u32 = 0x00
-const TLBMod:u32 = 0x01
-const TLBLoad:u32 = 0x02
-const TLBStore:u32 = 0x03
-const AddressLoad:u32 = 0x04
-const AddressStore:u32 = 0x05
-const BusErrorInstruction:u32 = 0x06
-const BusErrorData:u32 = 0x07
-const SysCall:u32 = 0x08
-const Breakpoint:u32 = 0x09
-const ReservedInstruction:u32 = 0x0A
-const CoprocessorUnusable:u32 = 0x0B
-const Overflow:u32 = 0x0C
+const AddressLoad:u32 		  	= 0x04
+const AddressStore:u32 		  	= 0x05
+const SysCall:u32 			  	= 0x08
+const Breakpoint:u32 		  	= 0x09
+const ReservedInstruction:u32 	= 0x0A
+const CoprocessorUnusable:u32 	= 0x0B
+const Overflow:u32 			  	= 0x0C
 
 def registers:[32]u32
 def pc:u32 = 0xBCF00000
