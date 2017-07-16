@@ -49,7 +49,7 @@ MemoryDeclaration
 		{ return { type: "MemoryDeclaration", name } }
 
 VariableDeclaration
-	= "def" EC decl:Variable
+	= "var" EC decl:Variable
 		{ return { type: "VariableDeclaration", decl } }
 	/ "const" EC decl:Variable
 		{ return { type: "VariableDeclaration", decl } }
@@ -310,12 +310,12 @@ Reserved
 	= "import" / "export"
 	/ "sizeof"
 	/ "struct" / "union"
-    / "memory" / "func" / "def" / "const"
+    / "memory" / "func" / "var" / "const"
     / "if" / "then" / "else" / "loop"
     / "break" / "trap" / "nop" / "return"
     / "u32" / "u64" / "s32" / "s64" / "f32" / "f64"
 
 EC 	= ![_a-z0-9]i _
 _ 	= __*
-__ 	= [ \t\n]+
+__ 	= [ \t\n\r]+
 	/ "#" (![\n\r] .)+
