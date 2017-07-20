@@ -1,4 +1,5 @@
 const path = require("path");
+const webpack = require("webpack");
 
 module.exports = {
     entry: './src/index.jsx',
@@ -12,6 +13,9 @@ module.exports = {
         hot: true,
         port: 8888
     },
+    plugins: [
+        new webpack.IgnorePlugin(/^fs$/)
+    ],
     module: {
         loaders: [
             {
@@ -27,6 +31,10 @@ module.exports = {
                   'css-loader?importLoaders=1&modules=true&localIdentName=[path]___[name]__[local]___[hash:base64:5]',
                   'postcss-loader'
                 ]
+            },
+            {
+                test: /\.jison$/,
+                loader: "jison-loader"
             },
             {
                 test: /\.pegjs$/,

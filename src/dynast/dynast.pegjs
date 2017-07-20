@@ -247,17 +247,14 @@ Type
 		{ return { format: "array", size, type } }
 	/ name:Identifier
 		{ return { type: "DefinedType", name } }
-	/ CallDeclaration
-	/ AtomicType
-	/ StructDeclaration
-
-AtomicType
-	= "unsigned" EC size:Number
+	/ "unsigned" EC size:Number
 		{ return { signed: false, format: "integer", size } }
 	/ "signed" EC size:Number
 		{ return { signed: true, format: "integer", size } }
 	/ "float" EC size:Number
 		{ return { format: "float", size } }
+	/ CallDeclaration
+	/ StructDeclaration
 
 StructDeclaration
 	= "struct" EC "{" _ body:Variable* "}" _
