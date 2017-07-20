@@ -29,25 +29,27 @@ func reg(index:u32):u32 {
 	return if index > 0 then registers[index] else 0
 }
 
+
 ########
 ## Load/Store instructions
 ########
 
 import func load(u32, u32, u32):u32
 import func store(u32, u32, u32, u32, u32)
+import func dummy()
 
 export func LB(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
 	var target:u32 = reg(rs) + imm16
 	var value:u32 = load(target, address, delayed)
 
-	registers[rt] = value << (24 - 8 * (target & 3)) >> 24
+	registers[rt] := value << (24 - 8 * (target & 3)) >> 24
 }
 
 export func LBU(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
 	var target:u32 = reg(rs) + imm16
 	var value:u32 = load(target, address, delayed)
 
-	registers[rt] = (v >> (8 * (target & 3))) & 0xFF
+	registers[rt] := (v >> (8 * (target & 3))) & 0xFF
 }
 
 export func LH(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
@@ -57,7 +59,7 @@ export func LH(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
 
 	var value:u32 = load(target, address, delayed)
 
-	registers[rt] = if (target & 2) then (value:s32 >> 16) else (value:s32 << 16 >> 16):u32
+	registers[rt] := if (target & 2) then (value:s32 >> 16) else (value:s32 << 16 >> 16):u32
 }
 
 export func LHU(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
@@ -67,7 +69,7 @@ export func LHU(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
 
 	var value:u32 = load(target, address, delayed)
 
-	registers[rt] = if target & 2 then (value >> 16) else (value & 0xFFFF)
+	registers[rt] := if target & 2 then (value >> 16) else (value & 0xFFFF)
 }
 
 export func LW(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
@@ -75,7 +77,7 @@ export func LW(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
 
 	if (target & 3) then exception(AddressLoad, address, delayed)
 
-	registers[rt] = load(target, address, delayed)
+	registers[rt] := load(target, address, delayed)
 }
 
 export func SB(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
@@ -105,7 +107,7 @@ export func LWR(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
 	var value:u32 = load(target, address, delayed)
 	var bit:u32 = 8 * (target & 3)
 
-	registers[rt] = registers[rt] & (0xFFFFFFFF << (32 - bit)) | (value >> bit)
+	registers[rt] := registers[rt] & (0xFFFFFFFF << (32 - bit)) | (value >> bit)
 }
 
 export func LWL(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
@@ -115,7 +117,7 @@ export func LWL(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
 	if ((0xFFFFFFFF ^ target) & 3) then {
 		var bit:u32 = 8 * (target & 3) + 8
 
-		registers[rt] = (registers[rt] & (0xFFFFFFFF >> bit)) | (value << (32 - bit))
+		registers[rt] := (registers[rt] & (0xFFFFFFFF >> bit)) | (value << (32 - bit))
 	}
 }
 
@@ -146,11 +148,11 @@ export func ADD(rd:u32, rs:u32, rt:u32, address:u32, delayed:u32) {
 		exception(Overflow, address, delayed, 0)
 	}
 
-	registers[rd] = value:u32
+	registers[rd] := value:u32
 }
 
 export func ADDU(rd:u32, rs:u32, rt:u32) {
-	registers[rd] = reg(rs) + reg(rt)
+	registers[rd] := reg(rs) + reg(rt)
 }
 
 export func SUB(rd:u32, rs:u32, rt:u32, address:u32, delayed:u32) {
@@ -160,11 +162,11 @@ export func SUB(rd:u32, rs:u32, rt:u32, address:u32, delayed:u32) {
 		exception(Overflow, address, delayed, 0)
 	}
 
-	registers[rd] = value:u32
+	registers[rd] := value:u32
 }
 
 export func SUBU(rd:u32, rs:u32, rt:u32) {
-	registers[rd] = reg(rs) - reg(rt)
+	registers[rd] := reg(rs) - reg(rt)
 }
 
 export func ADDI(rt:u32, rs:u32, simm16:s32, address:u32, delayed:u32) {
@@ -174,11 +176,11 @@ export func ADDI(rt:u32, rs:u32, simm16:s32, address:u32, delayed:u32) {
 		exception(Overflow, address, delayed, 0)
 	}
 
-	registers[rt] = value:u32
+	registers[rt] := value:u32
 }
 
 export func ADDIU(rt:u32, rs:u32, simm16:s32) {
-	registers[rt] = (reg(rs):s32 + simm16):u32
+	registers[rt] := (reg(rs):s32 + simm16):u32
 }
 
 ########
@@ -186,19 +188,19 @@ export func ADDIU(rt:u32, rs:u32, simm16:s32) {
 ########
 
 export func SLT(rd:u32, rs:u32, rt:u32) {
-	registers[rd] = reg(rs):s32 < reg(rt):s32
+	registers[rd] := reg(rs):s32 < reg(rt):s32
 }
 
 export func SLTU(rd:u32, rs:u32, rt:u32) {
-	registers[rd] = reg(rs) < reg(rt)
+	registers[rd] := reg(rs) < reg(rt)
 }
 
 export func SLTI(rt:u32, rs:u32, simm16:s32) {
-	registers[rt] = reg(rs):s32 < simm16
+	registers[rt] := reg(rs):s32 < simm16
 }
 
 export func SLTIU(rt:u32, rs:u32, simm16:s32) {
-	registers[rt] = reg(rs) < simm16:u32
+	registers[rt] := reg(rs) < simm16:u32
 }
 
 ########
@@ -206,31 +208,31 @@ export func SLTIU(rt:u32, rs:u32, simm16:s32) {
 ########
 
 export func AND(rd:u32, rs:u32, rt:u32) {
-	registers[rd] = reg(rt) & reg(rs)
+	registers[rd] := reg(rt) & reg(rs)
 }
 
 export func OR(rd:u32, rs:u32, rt:u32) {
-	registers[rd] = reg(rt) | reg(rs)
+	registers[rd] := reg(rt) | reg(rs)
 }
 
 export func XOR(rd:u32, rs:u32, rt:u32) {
-	registers[rd] = reg(rt) ^ reg(rs)
+	registers[rd] := reg(rt) ^ reg(rs)
 }
 
 export func NOR(rd:u32, rs:u32, rt:u32) {
-	registers[rd] = 0xFFFFFFFF ^ (reg(rt) | reg(rs))
+	registers[rd] := 0xFFFFFFFF ^ (reg(rt) | reg(rs))
 }
 
 export func ANDI(rt:u32, rs:u32, imm16:u32) {
-	registers[rt] = reg(rs) & imm16
+	registers[rt] := reg(rs) & imm16
 }
 
 export func ORI(rt:u32, rs:u32, imm16:u32) {
-	registers[rt] = reg(rs) | imm16
+	registers[rt] := reg(rs) | imm16
 }
 
 export func XORI(rt:u32, rs:u32, imm16:u32) {
-	registers[rt] = reg(rs) ^ imm16
+	registers[rt] := reg(rs) ^ imm16
 }
 
 ########
@@ -238,31 +240,31 @@ export func XORI(rt:u32, rs:u32, imm16:u32) {
 ########
 
 export func SLLV(rd:u32, rt:u32, rs:u32) {
-	registers[rd] = reg(rt) << (reg(rs) & 0x1F)
+	registers[rd] := reg(rt) << (reg(rs) & 0x1F)
 }
 
 export func SRLV(rd:u32, rt:u32, rs:u32) {
-	registers[rd] = reg(rt) >> (reg(rs) & 0x1F)
+	registers[rd] := reg(rt) >> (reg(rs) & 0x1F)
 }
 
 export func SRAV(rd:u32, rt:u32, rs:u32) {
-	registers[rd] = reg(rt):s32 >> (reg(rs) & 0x1F)
+	registers[rd] := reg(rt):s32 >> (reg(rs) & 0x1F)
 }
 
 export func SLL(rd:u32, rt:u32, shamt:u32) {
-	registers[rd] = reg(rt) << shamt
+	registers[rd] := reg(rt) << shamt
 }
 
 export func SRL(rd:u32, rt:u32, shamt:u32) {
-	registers[rd] = reg(rt) >> shamt
+	registers[rd] := reg(rt) >> shamt
 }
 
 export func SRA(rd:u32, rt:u32, shamt:u32) {
-	registers[rd] = reg(rt):s32 >> shamt
+	registers[rd] := reg(rt):s32 >> shamt
 }
 
 export func LUI(rt:u32, imm16:u32) {
-	registers[rt] = imm16 << 16
+	registers[rt] := imm16 << 16
 }
 
 ########
@@ -272,15 +274,15 @@ export func LUI(rt:u32, imm16:u32) {
 export func MULT(rs:u32, rt:u32) {
 	var res:s64 = reg(rs):s64 * reg(rt):s64
 
-	hi = (res >> 32):u32
-	lo = res:u32
+	hi := (res >> 32):u32
+	lo := res:u32
 }
 
 export func MULTU(rs:u32, rt:u32) {
 	var res:u64 = reg(rs):u64 * reg(rt):u64
 
-	hi = (res >> 32):u32
-	lo = res:u32
+	hi := (res >> 32):u32
+	lo := res:u32
 }
 
 export func DIV(rs:u32, rt:u32) {
@@ -288,14 +290,14 @@ export func DIV(rs:u32, rt:u32) {
 	var t:s32 = reg(rt):s32
 
 	if (s == -0x80000000 and t == -1) then {
-		hi = 0x80000000
-		lo = 0
+		hi := 0x80000000
+		lo := 0
 	} else if (t == 0) then {
-		hi = s
-		lo = if (s < 0) then 1 else -1
+		hi := s
+		lo := if (s < 0) then 1 else -1
 	} else {
-		hi = s % t
-		lo = s / t
+		hi := s % t
+		lo := s / t
 	}
 }
 
@@ -304,28 +306,28 @@ export func DIVU(rs:u32, rt:u32) {
 	var t:u32 = reg(rt)
 
 	if (t == 0) then {
-		hi = s
-		lo = 0
+		hi := s
+		lo := 0
 	} else {
-		hi = s % t
-		lo = s / t
+		hi := s % t
+		lo := s / t
 	}
 }
 
 export func MFHI(rd:u32) {
-	registers[rd] = hi
+	registers[rd] := hi
 }
 
 export func MFLO(rd:u32) {
-	registers[rd] = lo
+	registers[rd] := lo
 }
 
 export func MTHI(rs:u32) {
-	hi = reg(rs)
+	hi := reg(rs)
 }
 
 export func MTLO(rs:u32) {
-	lo = reg(rs)
+	lo := reg(rs)
 }
 
 ########
@@ -333,81 +335,81 @@ export func MTLO(rs:u32) {
 ########
 
 export func J (address:u32, imm26:u32) {
-	pc = (address & 0xF0000000) | (imm26 * 4)
+	pc := (address & 0xF0000000) | (imm26 * 4)
 	delay(address + 4)
 }
 
 export func JAL (address:u32, imm26:u32) {
-	registers[31] = address + 8
-	pc = (address & 0xF0000000) | (imm26 * 4)
+	registers[31] := address + 8
+	pc := (address & 0xF0000000) | (imm26 * 4)
 	delay(address + 4)
 }
 
 export func JR(rs:u32, address:u32) {
-	pc = reg(rs) & 0xFFFFFFFC
+	pc := reg(rs) & 0xFFFFFFFC
 	delay(address + 4)
 }
 
 export func JALR(rs:u32, rd:u32, address:u32) {
-	registers[rd] = address + 8
-	pc = reg(rs):s32 & 0xFFFFFFFC
+	registers[rd] := address + 8
+	pc := reg(rs):s32 & 0xFFFFFFFC
 	delay(address + 4)
 }
 
 export func BEQ(address:u32, rs:u32, rt:u32, simm16:s32) {
 	if (reg(rs):s32 == reg(rt):s32) then {
-		pc = (address + 4) + (simm16 * 4)
+		pc := (address + 4) + (simm16 * 4)
 		delay(address + 4)
 	}
 }
 
 export func BNE(address:u32, rs:u32, rt:u32, simm16:s32) {
 	if (reg(rs):s32 != reg(rt):s32) then {
-		pc = (address + 4) + (simm16 * 4)
+		pc := (address + 4) + (simm16 * 4)
 		delay(address + 4)
 	}
 }
 
 export func BLTZ(address:u32, rs:u32, simm16:s32) {
 	if (reg(rs):s32 < 0) then  {
-		pc = (address + 4) + (simm16 * 4)
+		pc := (address + 4) + (simm16 * 4)
 		delay(address + 4)
 	}
 }
 
 export func BGEZ(address:u32, rs:u32, simm16:s32) {
 	if (reg(rs):s32 >= 0) then {
-		pc = (address + 4) + (simm16 * 4)
+		pc := (address + 4) + (simm16 * 4)
 		delay(address + 4)
 	}
 }
 
 export func BGTZ(address:u32, rs:u32, simm16:s32) {
 	if (reg(rs):s32 > 0) then  {
-		pc = (address + 4) + (simm16 * 4)
+		pc := (address + 4) + (simm16 * 4)
 		delay(address + 4)
 	}
 }
 
 export func BLEZ(address:u32, rs:u32, simm16:s32) {
 	if (reg(rs):s32 <= 0) then {
-		pc = (address + 4) + (simm16 * 4)
+		pc := (address + 4) + (simm16 * 4)
 		delay(address + 4)
 	}
 }
 
 export func BLTZAL(address:u32, rs:u32, simm16:s32) {
 	if (reg(rs):s32 < 0) then {
-		registers[31] = address + 8
-		pc = (address + 4) + (simm16 * 4)
+		registers[31] := address + 8
+		pc := (address + 4) + (simm16 * 4)
 		delay(address + 4)
 	}
 }
 
 export func BGEZAL(address:u32, rs:u32, simm16:s32) {
 	if (reg(rs):s32 >= 0) then {
-		registers[31] = address + 8
-		pc = (address + 4) + (simm16 * 4)
+		registers[31] := address + 8
+		pc := (address + 4) + (simm16 * 4)
 		delay(address + 4)
 	}
 }
@@ -420,7 +422,7 @@ import func mfc0(u32, u32, u32)
 import func mtc0(u32, u32, u32, u32)
 
 export func MFC0(rt:u32, rd:u32, address:u32, delayed:u32) {
-	registers[rt] = mfc0(rd, address, delayed)
+	registers[rt] := mfc0(rd, address, delayed)
 }
 
 export func MTC0(rt:u32, rd:u32, address:u32, delayed:u32) {

@@ -2,97 +2,100 @@
 
 /* lexical grammar */
 %lex
-ec                      (?![a-zA-Z0-9_])
+ec                          (?![a-zA-Z0-9_])
 
 %%
-\s+                     /* skip whitespace */
-"#".*                   /* skip comment */
+\s+                         /* skip whitespace */
+"#".*                       /* skip comment */
 
 /* Operators */
-"("                     return "("
-")"                     return ")"
-"{"                     return "{"
-"}"                     return "}"
-"["                     return "["
-"]"                     return "]"
-";"                     return ";"
-"="                     return "="
-"=="                    return "=="
-"!="                    return "!="
-">="                    return ">="
-"<="                    return "<="
-">"                     return ">"
-"<"                     return "<"
-"<<<"                   return "<<<"
-">>>"                   return ">>>"
-"<<"                    return "<<"
-">>"                    return ">>"
-"^"                     return "^"
-"&"                     return "&"
-"|"                     return "|"
-"+"                     return "+"
-"-"                     return "-"
-"*"                     return "*"
-"/"                     return "/"
-"%"                     return "%"
-":"                     return ":"
-"~"                     return "~"
-","                     return ","
-"."                     return "."
-"@"                     return "@"
-"-"                     return "-"
+":="                        return ":="
+"=="                        return "=="
+"!="                        return "!="
+">="                        return ">="
+"<="                        return "<="
+"<<<"                       return "<<<"
+">>>"                       return ">>>"
+"<<"                        return "<<"
+">>"                        return ">>"
+"="                         return "="
+">"                         return ">"
+"<"                         return "<"
+"^"                         return "^"
+"&"                         return "&"
+"|"                         return "|"
+"+"                         return "+"
+"-"                         return "-"
+"*"                         return "*"
+"/"                         return "/"
+"%"                         return "%"
+":"                         return ":"
+"~"                         return "~"
+","                         return ","
+"."                         return "."
+"@"                         return "@"
+"-"                         return "-"
+"("                         return "("
+")"                         return ")"
+"{"                         return "{"
+"}"                         return "}"
+"["                         return "["
+"]"                         return "]"
+";"                         return ";"
 
 /* Formatted numbers */
-"-"?"0"[xX][0-9a-fA-F]+ return "NUMBER"
-"-"?"0"[bB][01]+        return "NUMBER"
-"-"?"0"[0-7]+           return "NUMBER"
-"-"?[0-9]+("."[0-9]+)?  return "NUMBER"
+"-"?"0"[xX][0-9a-fA-F]+     return "NUMBER"
+"-"?"0"[bB][01]+            return "NUMBER"
+"-"?"0"[0-7]+               return "NUMBER"
+"-"?[0-9]+("."[0-9]+)?      return "NUMBER"
 
 /* Reserved words */
-"and"{ec}               return "AND"
-"or"{ec}                return "OR"
-"import"{ec}            return "IMPORT"
-"export"{ec}            return "EXPORT"
-"sizeof"{ec}            return "SIZEOF"
-"struct"{ec}            return "STRUCT"
-"union"{ec}             return "UNION"
-"memory"{ec}            return "MEMORY"
-"func"{ec}              return "FUNC"
-"def"{ec}               return "DEF"
-"var"{ec}               return "VAR"
-"const"{ec}             return "CONST"
-"if"{ec}                return "IF"
-"then"{ec}              return "THEN"
-"else"{ec}              return "ELSE"
-"loop"{ec}              return "LOOP"
-"break"{ec}             return "BREAK"
-"trap"{ec}              return "TRAP"
-"nop"{ec}               return "NOP"
-"return"{ec}            return "RETURN"
-"unsigned"{ec}          return "UNSIGNED"
-"signed"{ec}            return "SIGNED"
-"float"{ec}             return "FLOAT"
+"and"{ec}                   return "AND"
+"or"{ec}                    return "OR"
+"import"{ec}                return "IMPORT"
+"export"{ec}                return "EXPORT"
+"sizeof"{ec}                return "SIZEOF"
+"struct"{ec}                return "STRUCT"
+"union"{ec}                 return "UNION"
+"memory"{ec}                return "MEMORY"
+"func"{ec}                  return "FUNC"
+"def"{ec}                   return "DEF"
+"var"{ec}                   return "VAR"
+"const"{ec}                 return "CONST"
+"if"{ec}                    return "IF"
+"then"{ec}                  return "THEN"
+"else"{ec}                  return "ELSE"
+"loop"{ec}                  return "LOOP"
+"break"{ec}                 return "BREAK"
+"trap"{ec}                  return "TRAP"
+"nop"{ec}                   return "NOP"
+"return"{ec}                return "RETURN"
+"unsigned"{ec}              return "UNSIGNED"
+"signed"{ec}                return "SIGNED"
+"float"{ec}                 return "FLOAT"
 
-\"((?!\").)*\"          yytext = JSON.parse(yytext); return "STRING"   //"
-\'((?!\').)*\'          yytext = JSON.parse(yytext); return "STRING"
+\"((?!\").)*\"              yytext = JSON.parse(yytext); return "STRING"   //"
+\'((?!\').)*\'              yytext = JSON.parse(yytext); return "STRING"
 
-[a-zA-Z_][a-zA-Z0-9_]*  return "IDENTIFIER"
-<<EOF>>                 return "EOF"
-.                       return "ILLEGAL"
+"@"[a-zA-Z_][a-zA-Z0-9_]*   yytext = yytext.substr(1); return "LABEL"
+[a-zA-Z_][a-zA-Z0-9_]*      return "IDENTIFIER"
+<<EOF>>                     return "EOF"
+.                           return "ILLEGAL"
 
 /lex
 
 %start Module
 
-%left '='
+%right ASSIGN
 %nonassoc '>=' '<=' '>' '<' '!=' '=='
 %right '<<' '>>' '<<<' '>>>'
 %right '&' '^' '|'
 %left '+' '-'
 %left '*' '/' '%'
 %right CAST COERSE
-%left MINUS REFERENCE COMPLEMENT
-%left CALL
+%left MINUS REFERENCE DEREFERENCE COMPLEMENT
+%left CALL INDEX PROPERTY
+%nonassoc GROUP
 
 %% /* language grammar */
 
@@ -113,28 +116,30 @@ Statement
     | NopStatement
     | SeperationStatement
     | BreakStatement
-    | IfStatement
-    | AssignmentStatement
+
     | BlockStatement
+    | AssignmentStatement
+    | CallStatement
+    | IfStatement
     ;
 
-AssignmentStatement
-    : ReferenceList "=" ExpressionList
-        { $$ = { type: "AssignmentStatement", targets: $1, values: $3 } }
+FunctionDeclaration
+    : FUNC IDENTIFIER "(" ParameterList ")" ReturnList
+        { $$ = { type: "FunctionDeclaration", name: $2, parameters: $4, returns: $6 } }
     ;
 
-BlockStatement
-    : "{" StatementList "}"
-        { $$ = { type: "BlockStatement", body: $2 } }
+MemoryDeclaration
+    : MEMORY IDENTIFIER
     ;
 
-IfStatement
-    : IF Expression THEN Statement ELSE Statement
-        { $$ = { type: "IfStatement", condition: $2, onTrue: $2, onFalse: $4 } }
-    | IF Expression THEN Statement
-        { $$ = { type: "IfStatement", condition: $2, onTrue: $2, onFalse: null } }
+EntityDeclaration
+    : CONST Entity
+        { $$ = { type: "ConstantDeclaration", entity: $2 } }
+    | VAR Entity
+        { $$ = { type: "VariableDeclaration", entity: $2 } }
+    | DEF Entity
+        { $$ = { type: "TypeDeclaration", entity: $2 } }
     ;
-
 ImportStatement
     : IMPORT FunctionDeclaration
         { $$ = { type: "Import", declaration: $2 } }
@@ -152,26 +157,30 @@ ExportStatement
         { $$ = { type: "Export", definition: $2 } }
     ;
 
-FunctionDeclaration
-    : FUNC Identifier "(" TypeList ")" ReturnList
-        { $$ = { type: "FunctionDeclaration", name: $2, parameters: $4, returns: $6 } }
+BlockStatement
+    : "{" StatementList "}"
+        { $$ = { type: "BlockStatement", body: $2 } }
     ;
 
-EntityDeclaration
-    : CONST Entity
-        { $$ = { type: "ConstantDeclaration", entity: $2 } }
-    | VAR Entity
-        { $$ = { type: "VariableDeclaration", entity: $2 } }
-    | DEF Entity
-        { $$ = { type: "TypeDeclaration", entity: $2 } }
+CallStatement
+    : AssignableExpression "(" ArgumentList ")" %prec CALL
+        { $$ = { type: "CallStatement", parameters: $3, target: $1 } }
     ;
 
-MemoryDeclaration
-    : MEMORY Identifier
+AssignmentStatement
+    : AssignableList ":=" ExpressionList
+        { $$ = { type: "AssignmentStatement", targets: $1, values: $3 } }
+    ;
+
+IfStatement
+    : IF Expression THEN Statement ELSE Statement
+        { $$ = { type: "IfStatement", condition: $2, onTrue: $2, onFalse: $4 } }
+    | IF Expression THEN Statement
+        { $$ = { type: "IfStatement", condition: $2, onTrue: $2, onFalse: null } }
     ;
 
 FunctionStatement
-    : FUNC Identifier "(" EntityList ")" ReturnList Statement
+    : FUNC IDENTIFIER "(" EntityList ")" ReturnList Statement
         { $$ = { type: "FunctionStatement", name: $2, parameters: $4, returns: $6, body: $7 } }
     ;
 
@@ -184,7 +193,7 @@ EntityStatement
 
 /* Statements */
 LabelStatement
-    : Label
+    : LABEL
         { $$ = { type: "LabelStatement", label: $1 } }
     ;
 
@@ -194,12 +203,12 @@ LoopStatement
     ;
 
 ReturnStatement
-    : RETURN ExpressionList
+    : RETURN ArgumentList
         { $$ = { type: "ReturnStatement", values: $2 } }
     ;
 
 BreakStatement
-    : BREAK Label
+    : BREAK LABEL
         { $$ = { type: "BreakStatement", target: $2 } }
     | BREAK
         { $$ = { type: "BreakStatement", target: null } }
@@ -222,15 +231,17 @@ SeperationStatement
 
 /* Expressions */
 Expression
-    : "(" Expression ")"
+    : "(" Expression ")" %prec GROUP
         { $$ = $2 }
     | SIZEOF Type
         { $$ = { type: "SizeOfExpression", body: $2 } }
+
     | IF Expression THEN Expression ELSE Expression
         { $$ = { type: "IfExpression", condition: $2, onTrue: $2, onFalse: $4 } }
     | IF Expression THEN Expression
         { $$ = { type: "IfExpression", condition: $2, onTrue: $2, onFalse: null } }
-    | ReferenceList "=" ExpressionList
+
+    | AssignableExpression "=" Expression %prec ASSIGN
         { $$ = { type: "AssignmentExpression", targets: $1, values: $3 } }
     | Expression AND Expression
         { $$ = { type: "LogicalAndExpression", left: $1, right: $3 } }
@@ -282,57 +293,23 @@ Expression
         { $$ = { type: "ReferenceExpression", value: $2 } }
     | "~" Expression %prec COMPLEMENT
         { $$ = { type: "ComplementExpression", value: $2 } }
-    | Expression "(" ExpressionList ")" %prec CALL
-        { $$ = { type: "CallExpression", parameters: $3, target: $1 } }
-    | Reference
+    | AssignableExpression
     | Number
     ;
 
-/* Lists */
-StatementList
-    : Statement StatementList
-        { $$ = [$1].concat($3) }
-    | Statement
-        { $$ = [$1] }
-    |
-    ;
-
-ExpressionList
-    : Expression "," ExpressionList
-        { $$ = [$1].concat($3) }
-    | Expression
-        { $$ = [$1] }
-    |
-    ;
-
-ReferenceList
-    : Reference "," ReferenceList
-        { $$ = [$1].concat($3) }
-    | Reference
-        { $$ = [$1] }
-    |
-    ;
-
-EntityList
-    : Entity "," EntityList
-        { $$ = [$1].concat($3) }
-    | Entity
-        { $$ = [$1] }
-    |
-    ;
-
-TypeList
-    : Type "," TypeList
-        { $$ = [$1].concat($3) }
-    | Type
-        { $$ = [$1] }
-    |
-    ;
-
-ReturnList
-    : ":" TypeList
+AssignableExpression
+    : AssignableExpression "[" Expression "]" %prec INDEX
+        { $$ = { type: "IndexExpression", index: $3, target: $1 } }
+    | AssignableExpression "." IDENTIFIER %prec PROPERTY
+        { $$ = { type: "PropertyExpression", index: $3, target: $1 } }
+    | "*" AssignableExpression %prec DEREFERENCE
+        { $$ = { type: "DereferenceExpression", parameters: $2 } }
+    | AssignableExpression "(" ArgumentList ")" %prec CALL
+        { $$ = { type: "CallExpression", parameters: $3, target: $1 } }
+    | "(" Expression ")"
         { $$ = $2 }
-    |
+    | IDENTIFIER
+        { $$ = { type: "Identifier", name: $1 } }
     ;
 
 /* Atomic helpers */
@@ -351,40 +328,76 @@ Type
         { $$ = { type: "IntegerType", size: $2, signed: "true" } }
     | FLOAT Number
         { $$ = { type: "FloatType", size: $2 } }
-    | Identifier
+    | IDENTIFIER
         { $$ = { type: "DefinedType", name: $1 } }
-    | FUNC Identifier "(" TypeList ")" ReturnList
-        { $$ = { type: "FunctionType", parameters: $4, returns: $6 } }
-    ;
-
-Reference
-    : Reference "[" Expression "]"
-        { $$ = { type: "Index", index: $3, target: $1 } }
-    | Reference "." Identifier
-        { $$ = { type: "PropertyReference", index: $3, target: $1 } }
-    | "*" Expression
-        { $$ = { type: "Dereference", parameters: $2 } }
-    | "." Identifier
-        { $$ = { type: "ImpliedField", name: $2 } }
-    | Identifier
+    | "(" ParameterList ")" ReturnList
+        { $$ = { type: "FunctionType", parameters: $2, returns: $4 } }
     ;
 
 Number
     : NUMBER
-        { $$ = Number(yytext) }
-    ;
-
-Identifier
-    : IDENTIFIER
-        { $$ = { type: "Identifier", name: $1 } }
-    ;
-
-Label
-    : "@" Identifier
-        { $$ = { type: "Label", name: $2 } }
+        { $$ = { type: "Number", value: Number(yytext) } }
     ;
 
 Entity
-    : Identifier ":" Type
+    : IDENTIFIER ":" Type
         { $$ = { type: "Entity", name: $1, type: $3 } }
     ;
+
+/* Lists */
+StatementList
+    : Statement StatementList
+        { $$ = [$1].concat($2) }
+    | Statement
+        { $$ = [$1] }
+    ;
+
+AssignableList
+    : AssignableExpression "," AssignableList
+        { $$ = [$1].concat($3) }
+    | AssignableExpression
+        { $$ = [$1] }
+    ;
+
+ExpressionList
+    : Expression "," ExpressionList
+        { $$ = [$1].concat($3) }
+    | Expression
+        { $$ = [$1] }
+    ;
+
+EntityList
+    : Entity "," EntityList
+        { $$ = [$1].concat($3) }
+    | Entity
+        { $$ = [$1] }
+    |
+    ;
+
+TypeList
+    : Type "," TypeList
+        { $$ = [$1].concat($3) }
+    | Type
+        { $$ = [$1] }
+    ;
+
+/* Optional Lists */
+ArgumentList
+    : ExpressionList
+    |
+        { $$ = null }
+    ;
+
+ParameterList
+    : TypeList
+    |
+        { $$ = null }
+    ;
+
+ReturnList
+    : ":" TypeList
+        { $$ = $2 }
+    |
+        { $$ = null }
+    ;
+
