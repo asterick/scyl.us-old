@@ -1,5 +1,3 @@
- /* description: Parses end evaluates mathematical expressions. */
-
 /* lexical grammar */
 %lex
 ec                          (?![a-zA-Z0-9_])
@@ -88,11 +86,11 @@ ec                          (?![a-zA-Z0-9_])
 
 %right ASSIGN
 %nonassoc '>=' '<=' '>' '<' '!=' '=='
-%right '<<' '>>' '<<<' '>>>'
-%right '&' '^' '|'
+%left '<<' '>>' '<<<' '>>>'
+%left '&' '^' '|'
 %left '+' '-'
 %left '*' '/' '%'
-%right CAST COERSE
+%left CAST COERSE
 %left MINUS REFERENCE DEREFERENCE COMPLEMENT
 %left CALL INDEX PROPERTY
 %nonassoc GROUP
@@ -130,6 +128,7 @@ FunctionDeclaration
 
 MemoryDeclaration
     : MEMORY IDENTIFIER
+        { $$ = { type: "MemoryDeclaration", name: $2 } }
     ;
 
 EntityDeclaration
@@ -140,6 +139,7 @@ EntityDeclaration
     | DEF Entity
         { $$ = { type: "TypeDeclaration", entity: $2 } }
     ;
+
 ImportStatement
     : IMPORT FunctionDeclaration
         { $$ = { type: "Import", declaration: $2 } }
@@ -163,12 +163,12 @@ BlockStatement
     ;
 
 CallStatement
-    : AssignableExpression "(" ArgumentList ")" %prec CALL
+    : ValueExpression "(" ArgumentList ")"
         { $$ = { type: "CallStatement", parameters: $3, target: $1 } }
     ;
 
 AssignmentStatement
-    : AssignableList ":=" ExpressionList
+    : ValueList ":=" ExpressionList
         { $$ = { type: "AssignmentStatement", targets: $1, values: $3 } }
     ;
 
@@ -231,22 +231,19 @@ SeperationStatement
 
 /* Expressions */
 Expression
-    : "(" Expression ")" %prec GROUP
-        { $$ = $2 }
-    | SIZEOF Type
-        { $$ = { type: "SizeOfExpression", body: $2 } }
-
-    | IF Expression THEN Expression ELSE Expression
+    : IF Expression THEN Expression ELSE Expression
         { $$ = { type: "IfExpression", condition: $2, onTrue: $2, onFalse: $4 } }
     | IF Expression THEN Expression
         { $$ = { type: "IfExpression", condition: $2, onTrue: $2, onFalse: null } }
 
-    | AssignableExpression "=" Expression %prec ASSIGN
+    | ValueExpression "=" Expression %prec ASSIGN
         { $$ = { type: "AssignmentExpression", targets: $1, values: $3 } }
+
     | Expression AND Expression
         { $$ = { type: "LogicalAndExpression", left: $1, right: $3 } }
     | Expression OR Expression
         { $$ = { type: "LogicalOrExpression", left: $1, right: $3 } }
+
     | Expression ">=" Expression
         { $$ = { type: "GreaterEqualExpression", left: $1, right: $3 } }
     | Expression "<=" Expression
@@ -259,6 +256,7 @@ Expression
         { $$ = { type: "NotEqualExpression", left: $1, right: $3 } }
     | Expression "==" Expression
         { $$ = { type: "EqualExpression", left: $1, right: $3 } }
+
     | Expression ">>" Expression
         { $$ = { type: "ShiftRightExpression", left: $1, right: $3 } }
     | Expression "<<" Expression
@@ -267,44 +265,56 @@ Expression
         { $$ = { type: "RotateRightExpression", left: $1, right: $3 } }
     | Expression "<<<" Expression
         { $$ = { type: "RotateLeftExpression", left: $1, right: $3 } }
+
     | Expression "^" Expression
         { $$ = { type: "BitwiseXOrExpression", left: $1, right: $3 } }
     | Expression "&" Expression
         { $$ = { type: "BitwiseAndExpression", left: $1, right: $3 } }
     | Expression "|" Expression
         { $$ = { type: "BitwiseOrExpression", left: $1, right: $3 } }
+
     | Expression "+" Expression
         { $$ = { type: "AddExpression", left: $1, right: $3 } }
     | Expression "-" Expression
         { $$ = { type: "SubtractExpression", left: $1, right: $3 } }
+
     | Expression "*" Expression
         { $$ = { type: "MultiplyExpression", left: $1, right: $3 } }
     | Expression "/" Expression
         { $$ = { type: "DivideExpression", left: $1, right: $3 } }
     | Expression "%" Expression
         { $$ = { type: "ModuloExpression", left: $1, right: $3 } }
+
     | Expression ":" Type %prec COERSE
         { $$ = { type: "CoerseExpression", left: $1, right: $3 } }
     | Expression "~" Type %prec CAST
         { $$ = { type: "CastExpression", left: $1, right: $3 } }
+
     | "-" Expression %prec MINUS
         { $$ = { type: "NegateExpression", value: $2 } }
     | "&" Expression %prec REFERENCE
         { $$ = { type: "ReferenceExpression", value: $2 } }
     | "~" Expression %prec COMPLEMENT
         { $$ = { type: "ComplementExpression", value: $2 } }
-    | AssignableExpression
+
+    | ValueExpression
+    | ConstantExpression
+    ;
+
+ConstantExpression
+    : SIZEOF Type
+        { $$ = { type: "SizeOfExpression", body: $2 } }
     | Number
     ;
 
-AssignableExpression
-    : AssignableExpression "[" Expression "]" %prec INDEX
+ValueExpression
+    : ValueExpression "[" Expression "]" %prec INDEX
         { $$ = { type: "IndexExpression", index: $3, target: $1 } }
-    | AssignableExpression "." IDENTIFIER %prec PROPERTY
+    | ValueExpression "." IDENTIFIER %prec PROPERTY
         { $$ = { type: "PropertyExpression", index: $3, target: $1 } }
-    | "*" AssignableExpression %prec DEREFERENCE
+    | "*" ValueExpression %prec DEREFERENCE
         { $$ = { type: "DereferenceExpression", parameters: $2 } }
-    | AssignableExpression "(" ArgumentList ")" %prec CALL
+    | ValueExpression "(" ArgumentList ")" %prec CALL
         { $$ = { type: "CallExpression", parameters: $3, target: $1 } }
     | "(" Expression ")"
         { $$ = $2 }
@@ -352,10 +362,10 @@ StatementList
         { $$ = [$1] }
     ;
 
-AssignableList
-    : AssignableExpression "," AssignableList
+ValueList
+    : ValueExpression "," ValueList
         { $$ = [$1].concat($3) }
-    | AssignableExpression
+    | ValueExpression
         { $$ = [$1] }
     ;
 
@@ -400,4 +410,3 @@ ReturnList
     |
         { $$ = null }
     ;
-

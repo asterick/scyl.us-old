@@ -478,3 +478,5 @@ export func ReservedInstruction(address:u32, delayed:u32) {
 export func CopUnusable(address:u32, delayed:u32, cop:u32) {
 	exception(CoprocessorUnusable, address, delayed, cop)
 }
+
+a := (*y[32](a,b,c) * 2)
