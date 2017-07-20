@@ -142,9 +142,7 @@ export func SWL(rt:u32, rs:u32, imm16:u32, address:u32, delayed:u32) {
 export func ADD(rd:u32, rs:u32, rt:u32, address:u32, delayed:u32) {
 	var value:s64 = (reg(rs):s32):s64 + (reg(rt):s32):s64
 
-	if (value < -0x80000000) then {
-		exception(Overflow, address, delayed, 0)
-	} else if (value >= 0x80000000) then {
+	if (value < -0x80000000 or value >= 0x80000000) then {
 		exception(Overflow, address, delayed, 0)
 	}
 
@@ -158,9 +156,7 @@ export func ADDU(rd:u32, rs:u32, rt:u32) {
 export func SUB(rd:u32, rs:u32, rt:u32, address:u32, delayed:u32) {
 	var value:s64 = (reg(rs):s32):s64 - (reg(rt):s32):s64
 
-	if (value < -0x80000000) then {
-		exception(Overflow, address, delayed, 0)
-	} else if (value >= 0x80000000) then {
+	if (value < -0x80000000 or value >= 0x80000000) then {
 		exception(Overflow, address, delayed, 0)
 	}
 
@@ -174,9 +170,7 @@ export func SUBU(rd:u32, rs:u32, rt:u32) {
 export func ADDI(rt:u32, rs:u32, simm16:s32, address:u32, delayed:u32) {
 	var value:s64 = (reg(rs):s32):s64 + simm16:s64
 
-	if (value < -0x80000000) then {
-		exception(Overflow, address, delayed, 0)
-	} else if (value >= 0x80000000) then {
+	if (value < -0x80000000 or value >= 0x80000000) then {
 		exception(Overflow, address, delayed, 0)
 	}
 
@@ -293,7 +287,7 @@ export func DIV(rs:u32, rt:u32) {
 	var s:s32 = reg(rs):s32
 	var t:s32 = reg(rt):s32
 
-	if (s == -0x80000000 && t == -1) then {
+	if (s == -0x80000000 and t == -1) then {
 		hi = 0x80000000
 		lo = 0
 	} else if (t == 0) then {

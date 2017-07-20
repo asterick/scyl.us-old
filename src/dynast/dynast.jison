@@ -49,6 +49,8 @@ ec                      (?![a-zA-Z0-9_])
 "-"?[0-9]+("."[0-9]+)?  return "NUMBER"
 
 /* Reserved words */
+"and"{ec}               return "AND"
+"or"{ec}                return "OR"
 "import"{ec}            return "IMPORT"
 "export"{ec}            return "EXPORT"
 "sizeof"{ec}            return "SIZEOF"
@@ -82,134 +84,238 @@ ec                      (?![a-zA-Z0-9_])
 
 %start Module
 
+%left '='
+%nonassoc '>=' '<=' '>' '<' '!=' '=='
+%right '<<' '>>' '<<<' '>>>'
+%right '&' '^' '|'
+%left '+' '-'
+%left '*' '/' '%'
+%right CAST COERSE
+%left MINUS REFERENCE COMPLEMENT
+%left CALL
+
 %% /* language grammar */
 
 Module
-    : DefinitionList EOF
+    : StatementList EOF
         { return $1 }
     ;
 
-Definition
-    : Import
-    | Export
+Statement
+    : ImportStatement
+    | ExportStatement
     | LabelStatement
-    | FunctionDefinition
-    | VariableDefinition
-    | TypeDeclaration
+    | FunctionStatement
+    | EntityStatement
     | LoopStatement
     | ReturnStatement
     | TrapStatement
     | NopStatement
     | SeperationStatement
     | BreakStatement
-    | Expression
+    | IfStatement
+    | AssignmentStatement
+    | BlockStatement
     ;
 
-Import
-    : IMPORT FunctionDeclaration
-    | IMPORT VariableDeclaration
-    | IMPORT MemoryDeclaration
+AssignmentStatement
+    : ReferenceList "=" ExpressionList
+        { $$ = { type: "AssignmentStatement", targets: $1, values: $3 } }
     ;
-Export
-    : EXPORT FunctionDeclaration
-    | EXPORT VariableDeclaration
+
+BlockStatement
+    : "{" StatementList "}"
+        { $$ = { type: "BlockStatement", body: $2 } }
+    ;
+
+IfStatement
+    : IF Expression THEN Statement ELSE Statement
+        { $$ = { type: "IfStatement", condition: $2, onTrue: $2, onFalse: $4 } }
+    | IF Expression THEN Statement
+        { $$ = { type: "IfStatement", condition: $2, onTrue: $2, onFalse: null } }
+    ;
+
+ImportStatement
+    : IMPORT FunctionDeclaration
+        { $$ = { type: "Import", declaration: $2 } }
+    | IMPORT EntityDeclaration
+        { $$ = { type: "Import", declaration: $2 } }
+    | IMPORT MemoryDeclaration
+        { $$ = { type: "Import", declaration: $2 } }
+    ;
+ExportStatement
+    : EXPORT FunctionStatement
+        { $$ = { type: "Export", definition: $2 } }
+    | EXPORT EntityStatement
+        { $$ = { type: "Export", definition: $2 } }
     | EXPORT MemoryDeclaration
+        { $$ = { type: "Export", definition: $2 } }
     ;
 
 FunctionDeclaration
-    : FUNC IDENTIFIER "(" TypeList ")" ReturnList
-    | FUNC IDENTIFIER "(" ")" ReturnList
+    : FUNC Identifier "(" TypeList ")" ReturnList
+        { $$ = { type: "FunctionDeclaration", name: $2, parameters: $4, returns: $6 } }
     ;
 
-VariableDeclaration
+EntityDeclaration
     : CONST Entity
+        { $$ = { type: "ConstantDeclaration", entity: $2 } }
     | VAR Entity
-    ;
-
-CallDeclaration
-    : FUNC IDENTIFIER "(" TypeList ")" ReturnList
-    | FUNC IDENTIFIER "(" ")" ReturnList
-    ;
-
-
-StructDeclaration
-    : STRUCT "{" EntityList "}"
-    | UNION "{" EntityList "}"
+        { $$ = { type: "VariableDeclaration", entity: $2 } }
+    | DEF Entity
+        { $$ = { type: "TypeDeclaration", entity: $2 } }
     ;
 
 MemoryDeclaration
-    : MEMORY IDENTIFIER
+    : MEMORY Identifier
     ;
 
-FunctionDefinition
-    : FUNC IDENTIFIER "(" EntityList ")" ReturnList Definition
-    | FUNC IDENTIFIER "(" ")" ReturnList Definition
+FunctionStatement
+    : FUNC Identifier "(" EntityList ")" ReturnList Statement
+        { $$ = { type: "FunctionStatement", name: $2, parameters: $4, returns: $6, body: $7 } }
     ;
 
-VariableDefinition
-    : VariableDeclaration "=" Expression
-    | VariableDeclaration
-    ;
-
-TypeDeclaration
-    : DEF Entity
+EntityStatement
+    : EntityDeclaration "=" Expression
+        { $$ = { type: "EntityStatement", entity: $1, initializer: $3 }}
+    | EntityDeclaration
+        { $$ = { type: "EntityStatement", entity: $1, initializer: null }}
     ;
 
 /* Statements */
 LabelStatement
     : Label
+        { $$ = { type: "LabelStatement", label: $1 } }
     ;
 
 LoopStatement
-    : LOOP Definition
+    : LOOP Statement
+        { $$ = { type: "LoopStatement", body: $2 } }
     ;
 
 ReturnStatement
     : RETURN ExpressionList
+        { $$ = { type: "ReturnStatement", values: $2 } }
     ;
 
 BreakStatement
     : BREAK Label
+        { $$ = { type: "BreakStatement", target: $2 } }
     | BREAK
+        { $$ = { type: "BreakStatement", target: null } }
     ;
 
 TrapStatement
     : TRAP
+        { $$ = { type: "TrapStatement" } }
     ;
 
 NopStatement
     : NOP
+        { $$ = { type: "NopStatement" } }
     ;
 
 SeperationStatement
     : ";"
+        { $$ = { type: "SeperationStatement" } }
     ;
 
 /* Expressions */
-Expression // INCOMPLETE
-    : Number
+Expression
+    : "(" Expression ")"
+        { $$ = $2 }
+    | SIZEOF Type
+        { $$ = { type: "SizeOfExpression", body: $2 } }
+    | IF Expression THEN Expression ELSE Expression
+        { $$ = { type: "IfExpression", condition: $2, onTrue: $2, onFalse: $4 } }
+    | IF Expression THEN Expression
+        { $$ = { type: "IfExpression", condition: $2, onTrue: $2, onFalse: null } }
+    | ReferenceList "=" ExpressionList
+        { $$ = { type: "AssignmentExpression", targets: $1, values: $3 } }
+    | Expression AND Expression
+        { $$ = { type: "LogicalAndExpression", left: $1, right: $3 } }
+    | Expression OR Expression
+        { $$ = { type: "LogicalOrExpression", left: $1, right: $3 } }
+    | Expression ">=" Expression
+        { $$ = { type: "GreaterEqualExpression", left: $1, right: $3 } }
+    | Expression "<=" Expression
+        { $$ = { type: "LessEqualExpression", left: $1, right: $3 } }
+    | Expression ">" Expression
+        { $$ = { type: "GreaterExpression", left: $1, right: $3 } }
+    | Expression "<" Expression
+        { $$ = { type: "LessExpression", left: $1, right: $3 } }
+    | Expression "!=" Expression
+        { $$ = { type: "NotEqualExpression", left: $1, right: $3 } }
+    | Expression "==" Expression
+        { $$ = { type: "EqualExpression", left: $1, right: $3 } }
+    | Expression ">>" Expression
+        { $$ = { type: "ShiftRightExpression", left: $1, right: $3 } }
+    | Expression "<<" Expression
+        { $$ = { type: "ShiftLeftExpression", left: $1, right: $3 } }
+    | Expression ">>>" Expression
+        { $$ = { type: "RotateRightExpression", left: $1, right: $3 } }
+    | Expression "<<<" Expression
+        { $$ = { type: "RotateLeftExpression", left: $1, right: $3 } }
+    | Expression "^" Expression
+        { $$ = { type: "BitwiseXOrExpression", left: $1, right: $3 } }
+    | Expression "&" Expression
+        { $$ = { type: "BitwiseAndExpression", left: $1, right: $3 } }
+    | Expression "|" Expression
+        { $$ = { type: "BitwiseOrExpression", left: $1, right: $3 } }
+    | Expression "+" Expression
+        { $$ = { type: "AddExpression", left: $1, right: $3 } }
+    | Expression "-" Expression
+        { $$ = { type: "SubtractExpression", left: $1, right: $3 } }
+    | Expression "*" Expression
+        { $$ = { type: "MultiplyExpression", left: $1, right: $3 } }
+    | Expression "/" Expression
+        { $$ = { type: "DivideExpression", left: $1, right: $3 } }
+    | Expression "%" Expression
+        { $$ = { type: "ModuloExpression", left: $1, right: $3 } }
+    | Expression ":" Type %prec COERSE
+        { $$ = { type: "CoerseExpression", left: $1, right: $3 } }
+    | Expression "~" Type %prec CAST
+        { $$ = { type: "CastExpression", left: $1, right: $3 } }
+    | "-" Expression %prec MINUS
+        { $$ = { type: "NegateExpression", value: $2 } }
+    | "&" Expression %prec REFERENCE
+        { $$ = { type: "ReferenceExpression", value: $2 } }
+    | "~" Expression %prec COMPLEMENT
+        { $$ = { type: "ComplementExpression", value: $2 } }
+    | Expression "(" ExpressionList ")" %prec CALL
+        { $$ = { type: "CallExpression", parameters: $3, target: $1 } }
+    | Reference
+    | Number
     ;
 
 /* Lists */
-DefinitionList
-    : Definition DefinitionList
-        { $$ = [$1].concat($2) }
-    | Definition
+StatementList
+    : Statement StatementList
+        { $$ = [$1].concat($3) }
+    | Statement
         { $$ = [$1] }
     |
     ;
 
 ExpressionList
     : Expression "," ExpressionList
-        { $$ = [$1].concat($2) }
+        { $$ = [$1].concat($3) }
     | Expression
+        { $$ = [$1] }
+    |
+    ;
+
+ReferenceList
+    : Reference "," ReferenceList
+        { $$ = [$1].concat($3) }
+    | Reference
         { $$ = [$1] }
     |
     ;
 
 EntityList
     : Entity "," EntityList
-        { $$ = [$1].concat($2) }
+        { $$ = [$1].concat($3) }
     | Entity
         { $$ = [$1] }
     |
@@ -217,7 +323,7 @@ EntityList
 
 TypeList
     : Type "," TypeList
-        { $$ = [$1].concat($2) }
+        { $$ = [$1].concat($3) }
     | Type
         { $$ = [$1] }
     |
@@ -225,19 +331,42 @@ TypeList
 
 ReturnList
     : ":" TypeList
+        { $$ = $2 }
     |
     ;
 
 /* Atomic helpers */
 Type
-    : "*" Type
+    : STRUCT "{" EntityList "}"
+        { $$ = { type: "StructType", elements: $3 } }
+    | UNION "{" EntityList "}"
+        { $$ = { type: "UnionType", elements: $3 } }
+    | "*" Type
+        { $$ = { type: "PointerType", type: $2 } }
     | "[" Expression "]" Type
+        { $$ = { type: "ArrayType", size: $2, type: $4 } }
     | UNSIGNED Number
+        { $$ = { type: "IntegerType", size: $2, signed: "false" } }
     | SIGNED Number
+        { $$ = { type: "IntegerType", size: $2, signed: "true" } }
     | FLOAT Number
-    | IDENTIFIER
-    | CallDeclaration
-    | StructDeclaration
+        { $$ = { type: "FloatType", size: $2 } }
+    | Identifier
+        { $$ = { type: "DefinedType", name: $1 } }
+    | FUNC Identifier "(" TypeList ")" ReturnList
+        { $$ = { type: "FunctionType", parameters: $4, returns: $6 } }
+    ;
+
+Reference
+    : Reference "[" Expression "]"
+        { $$ = { type: "Index", index: $3, target: $1 } }
+    | Reference "." Identifier
+        { $$ = { type: "PropertyReference", index: $3, target: $1 } }
+    | "*" Expression
+        { $$ = { type: "Dereference", parameters: $2 } }
+    | "." Identifier
+        { $$ = { type: "ImpliedField", name: $2 } }
+    | Identifier
     ;
 
 Number
@@ -245,10 +374,17 @@ Number
         { $$ = Number(yytext) }
     ;
 
+Identifier
+    : IDENTIFIER
+        { $$ = { type: "Identifier", name: $1 } }
+    ;
+
 Label
-    : "@" IDENTIFIER
+    : "@" Identifier
+        { $$ = { type: "Label", name: $2 } }
     ;
 
 Entity
-    : IDENTIFIER ":" Type
+    : Identifier ":" Type
+        { $$ = { type: "Entity", name: $1, type: $3 } }
     ;
