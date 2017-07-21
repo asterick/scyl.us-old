@@ -31,7 +31,6 @@ ec                          (?![a-zA-Z0-9_])
 "~"                         return "~"
 ","                         return ","
 "."                         return "."
-"@"                         return "@"
 "-"                         return "-"
 "("                         return "("
 ")"                         return ")"
@@ -72,11 +71,11 @@ ec                          (?![a-zA-Z0-9_])
 "signed"{ec}                return "SIGNED"
 "float"{ec}                 return "FLOAT"
 
-\"((?!\").)*\"              yytext = JSON.parse(yytext); return "STRING"   //"
-\'((?!\').)*\'              yytext = JSON.parse(yytext); return "STRING"
+\"(\\.|(?!\").)*\"          yytext = JSON.parse(yytext); return "STRING"   //"
+\'(\\.|(?!\').)*\'          yytext = JSON.parse(yytext); return "STRING"
 
-"@"[a-zA-Z_][a-zA-Z0-9_]*   yytext = yytext.substr(1); return "LABEL"
-[a-zA-Z_][a-zA-Z0-9_]*      return "IDENTIFIER"
+"@"[a-zA-Z0-9_]+            yytext = yytext.substr(1); return "LABEL"
+[a-zA-Z0-9_]+               return "IDENTIFIER"
 <<EOF>>                     return "EOF"
 .                           return "ILLEGAL"
 
@@ -99,7 +98,7 @@ ec                          (?![a-zA-Z0-9_])
 
 Module
     : StatementList EOF
-        { return $1 }
+        { return { type: "Program", body: $1 } }
     ;
 
 Statement
@@ -164,7 +163,7 @@ BlockStatement
 
 CallStatement
     : ValueExpression "(" ArgumentList ")"
-        { $$ = { type: "CallStatement", parameters: $3, target: $1 } }
+        { $$ = { type: "CallStatement", target: $1, parameters: $3 } }
     ;
 
 AssignmentStatement
@@ -174,9 +173,9 @@ AssignmentStatement
 
 IfStatement
     : IF Expression THEN Statement ELSE Statement
-        { $$ = { type: "IfStatement", condition: $2, onTrue: $2, onFalse: $4 } }
+        { $$ = { type: "IfStatement", condition: $2, onTrue: $4, onFalse: $6 } }
     | IF Expression THEN Statement
-        { $$ = { type: "IfStatement", condition: $2, onTrue: $2, onFalse: null } }
+        { $$ = { type: "IfStatement", condition: $2, onTrue: $4, onFalse: null } }
     ;
 
 FunctionStatement
@@ -285,11 +284,6 @@ Expression
     | Expression "%" Expression
         { $$ = { type: "ModuloExpression", left: $1, right: $3 } }
 
-    | Expression ":" Type %prec COERSE
-        { $$ = { type: "CoerseExpression", left: $1, right: $3 } }
-    | Expression "~" Type %prec CAST
-        { $$ = { type: "CastExpression", left: $1, right: $3 } }
-
     | "-" Expression %prec MINUS
         { $$ = { type: "NegateExpression", value: $2 } }
     | "&" Expression %prec REFERENCE
@@ -305,6 +299,7 @@ ConstantExpression
     : SIZEOF Type
         { $$ = { type: "SizeOfExpression", body: $2 } }
     | Number
+    | STRING
     ;
 
 ValueExpression
@@ -316,6 +311,10 @@ ValueExpression
         { $$ = { type: "DereferenceExpression", parameters: $2 } }
     | ValueExpression "(" ArgumentList ")" %prec CALL
         { $$ = { type: "CallExpression", parameters: $3, target: $1 } }
+    | ValueExpression ":" Type %prec COERSE
+        { $$ = { type: "CoerseExpression", left: $1, right: $3 } }
+    | ValueExpression "~" Type %prec CAST
+        { $$ = { type: "CastExpression", left: $1, right: $3 } }
     | "(" Expression ")"
         { $$ = $2 }
     | IDENTIFIER
@@ -360,6 +359,8 @@ StatementList
         { $$ = [$1].concat($2) }
     | Statement
         { $$ = [$1] }
+    |
+        { $$ = null }
     ;
 
 ValueList

@@ -1,4 +1,3 @@
-import { parse } from "./dynast";
 import decode from "./import";
 import encode from "./export";
 

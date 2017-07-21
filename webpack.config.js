@@ -35,10 +35,6 @@ module.exports = {
             {
                 test: /\.jison$/,
                 loader: "jison-loader"
-            },
-            {
-                test: /\.pegjs$/,
-                loader: 'pegjs-loader?cache=true'
             }
       ]
     },
