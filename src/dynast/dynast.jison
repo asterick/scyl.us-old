@@ -1,8 +1,16 @@
-/*
-TODO:
-  character literals (number type) don't support UTF-32 escaped sequences
-*/
-
+%{
+function unicode(str) {
+    var chr = str.charCodeAt(0);
+    if(chr >= 0xD800 && chr <= 0xDBFF) {
+        // surrogate pair
+        var low = str.charCodeAt(1);
+        return 0x10000 + ((chr - 0xD800) << 10) | (low - 0xDC00);
+    } else {
+        // ordinary character
+        return chr;
+    }
+}
+%}
 
 /* lexical grammar */
 %lex
@@ -61,7 +69,7 @@ ec                          (?!{wc})
 
 /* Formatted values */
 \"(\\.|(?!\").)*\"          yytext = JSON.parse(yytext); return "STRING"   //"
-\'(\\.|(?!\').)*\'          yytext = JSON.parse(`"${yytext.substr(1,yytext.length-2)}"`).charCodeAt(0); return "NUMBER"
+\'(\\.|(?!\').)*\'          yytext = unicode(JSON.parse(`"${yytext.substr(1,yytext.length-2)}"`)); return "NUMBER"
 
 /* Reserved words */
 "and"{ec}                   return "AND"
@@ -85,6 +93,8 @@ ec                          (?!{wc})
 "unsigned"{ec}              return "UNSIGNED"
 "signed"{ec}                return "SIGNED"
 "float"{ec}                 return "FLOAT"
+"from"{ec}                  return "FROM"
+"inline"{ec}                return "INLINE"
 "asm"{ec}                   this.begin("assembly"); return "ASSEMBLY_START"
 
 "@"{wc}+                    yytext = yytext.substr(1); return "LABEL"
@@ -148,7 +158,7 @@ AssemblyTerm
         { $$ = { Type: "AssemblyTerm", name: $1 } }
     | "{" StatementList "}"
         { $$ = { Type: "VisitorStatement", body: $2 } }
-    | "=" Expression
+    | "=" ExpressionList
         { $$ = { Type: "VisitorExpression", body: $2 } }
     | "&" IDENTIFIER
         { $$ = { Type: "TableIndex", name: $1 } }
@@ -160,7 +170,7 @@ AssemblyTerm
     ;
 
 FunctionDeclaration
-    : FUNC IDENTIFIER "(" ParameterList ")" ReturnList
+    : FUNC FunctionName "(" ParameterList ")" ReturnList
         { $$ = { type: "FunctionDeclaration", name: $2, parameters: $4, returns: $6 } }
     ;
 
@@ -185,7 +195,16 @@ ImportStatement
         { $$ = { type: "Import", declaration: $2 } }
     | IMPORT MemoryDeclaration
         { $$ = { type: "Import", declaration: $2 } }
+    | ImportFile
     ;
+
+ImportFile
+    : IMPORT STRING
+        { $$ = { type: "ImportFile", filename: $2 } }
+    | IMPORT IdentifierList FROM STRING
+        { $$ = { type: "ImportFile", filename: $4, names: $2 } }
+    ;
+
 ExportStatement
     : EXPORT FunctionStatement
         { $$ = { type: "Export", definition: $2 } }
@@ -218,8 +237,37 @@ IfStatement
     ;
 
 FunctionStatement
-    : FUNC IDENTIFIER "(" EntityList ")" ReturnList Statement
+    : FUNC INLINE FunctionName "(" EntityList ")" ReturnList Statement
+        { $$ = { type: "InlineFunctionStatement", name: $3, parameters: $5, returns: $7, body: $8 } }
+    | FUNC FunctionName "(" EntityList ")" ReturnList Statement
         { $$ = { type: "FunctionStatement", name: $2, parameters: $4, returns: $6, body: $7 } }
+    ;
+
+FunctionName
+    : IDENTIFIER
+    | ":="
+    | "=="
+    | "!="
+    | ">="
+    | "<="
+    | "<<<"
+    | ">>>"
+    | "<<"
+    | ">>"
+    | "="
+    | ">"
+    | "<"
+    | "^"
+    | "&"
+    | "|"
+    | "+"
+    | "-"
+    | "*"
+    | "/"
+    | "%"
+    | ":"
+    | "~"
+    | "-"
     ;
 
 EntityStatement
@@ -404,6 +452,14 @@ ExpressionList
         { $$ = [$1].concat($3) }
     | Expression
         { $$ = [$1] }
+    ;
+
+IdentifierList
+    : IDENTIFIER "," IdentifierList
+        { $$ = [$1].concat($3) }
+    | IDENTIFIER
+        { $$ = [$1] }
+    |
     ;
 
 EntityList
