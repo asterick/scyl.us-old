@@ -1,3 +1,37 @@
+#/ Currently unmapped opcodes
+i32.const
+i32.load
+i32.load8_s
+i32.load8_u
+i32.load16_s
+i32.load16_u
+i32.store
+i32.store8
+i32.store16
+
+i64.const
+i64.load
+i64.load8_s
+i64.load8_u
+i64.load16_s
+i64.load16_u
+i64.load32_s
+i64.load32_u
+i64.store
+i64.store8
+i64.store16
+i64.store32
+
+f32.const
+f32.load
+f32.store
+
+f64.const
+f64.load
+f64.store
+/#
+
+# Default internal types
 def u32:unsigned 32
 def s32:signed 32
 def u64:unsigned 64
@@ -186,36 +220,3 @@ export func inline floor (i:f64):f64 asm = i f64.floor;
 export func inline trunc (i:f64):f64 asm = i f64.trunc;
 export func inline nearest (i:f64):f64 asm = i f64.nearest;
 export func inline sqrt (i:f64):f64 asm = i f64.sqrt;
-
-#/ Currently unmapped opcodes
-i32.const
-i32.load
-i32.load8_s
-i32.load8_u
-i32.load16_s
-i32.load16_u
-i32.store
-i32.store8
-i32.store16
-
-i64.const
-i64.load
-i64.load8_s
-i64.load8_u
-i64.load16_s
-i64.load16_u
-i64.load32_s
-i64.load32_u
-i64.store
-i64.store8
-i64.store16
-i64.store32
-
-f32.const
-f32.load
-f32.store
-
-f64.const
-f64.load
-f64.store
-/#

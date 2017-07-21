@@ -7,13 +7,7 @@ import { parser } from "./dynast.jison"
 
 try {
 	const ast = parser.parse(raw);
-
 	console.log(JSON.stringify(ast, null, 4));
 } catch(e) {
 	console.log(e.message)
 }
-
-/*
-const ast = parse(raw);
-console.log(ast, null, 4))
-*/

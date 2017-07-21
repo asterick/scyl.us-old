@@ -1,7 +1,5 @@
 /*
     TODO: 64-bit integer constants truncated
-    TODO: Specify if number is i32 or i64 in assembly
-    TODO: Ability to export imported from a module
 */
 
 %{
@@ -34,10 +32,10 @@ ec                          (?!{wc})
 \s+                         /* skip whitespace */
 "#".*                       /* skip comment */
 
-"-"?"0"[xX][0-9a-fA-F]+     return "NUMBER"
-"-"?"0"[bB][01]+            return "NUMBER"
-"-"?"0"[0-7]+               return "NUMBER"
-"-"?[0-9]+("."[0-9]+)?      return "NUMBER"
+"-"?"0"[xX][0-9a-fA-F]+     return "INTEGER"
+"-"?"0"[bB][01]+            return "INTEGER"
+"-"?"0"[0-7]+               return "INTEGER"
+"-"?[0-9]+("."[0-9]+)?      return "FLOAT"
 
 /* Assembly tokenizer */
 <assembly>";"               this.popState(); return "ASSEMBLY_END"
@@ -105,7 +103,7 @@ ec                          (?!{wc})
 
 /* Formatted values */
 \"(\\.|(?!\").)*\"          yytext = JSON.parse(yytext); return "STRING"   //"
-\'(\\.|(?!\').)+\'          yytext = unicode(yytext); return "NUMBER"
+\'(\\.|(?!\').)+\'          yytext = unicode(yytext); return "INTEGER"
 
 /* Identifiers and labels */
 "@"{wc}+                    yytext = yytext.substr(1); return "LABEL"
@@ -221,6 +219,8 @@ ExportStatement
         { $$ = { type: "Export", definition: $2 } }
     | EXPORT MemoryDeclaration
         { $$ = { type: "Export", definition: $2 } }
+    | EXPORT IDENTIFIER
+        { $$ = { type: "ExportDefinition", name: $2 }}
     ;
 
 BlockStatement
@@ -428,8 +428,10 @@ Type
     ;
 
 Number
-    : NUMBER
-        { $$ = { type: "Number", value: Number(yytext) } }
+    : INTEGER
+        { $$ = { type: "Integer", value: Number(yytext) } }
+    | FLOAT
+        { $$ = { type: "Float", value: Number(yytext) } }
     ;
 
 Entity
