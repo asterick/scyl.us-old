@@ -1,5 +1,13 @@
+/*
+    TODO: Specify number type for assembly
+    TODO: 64-bit integer constants
+    TODO: Ability to export imported from a module
+    TODO: Multi-line comments
+*/
+
 %{
-function unicode(str) {
+function unicode(yytext) {
+    var str = JSON.parse(`"${yytext.substr(1)}"`);
     var chr = str.charCodeAt(0);
     if(chr >= 0xD800 && chr <= 0xDBFF) {
         // surrogate pair
@@ -17,9 +25,13 @@ function unicode(str) {
 wc                          [^@\:\=\!\^\&\|\+\-\*\/\%\~\,\.\(\)\{\}\[\]\>\<\;\s]
 ec                          (?!{wc})
 
-%s assembly
+%s assembly comment
 
 %%
+"#/"                        this.begin('comment')
+<comment>"/#"               this.popState()
+<comment>.                  /* skip comment */
+
 \s+                         /* skip whitespace */
 "#".*                       /* skip comment */
 
@@ -31,6 +43,32 @@ ec                          (?!{wc})
 /* Assembly tokenizer */
 <assembly>";"               this.popState(); return "ASSEMBLY_END"
 <assembly>({wc}|[/.])+      return "IDENTIFIER"
+
+/* Reserved words */
+"and"{ec}                   return "AND"
+"or"{ec}                    return "OR"
+"import"{ec}                return "IMPORT"
+"export"{ec}                return "EXPORT"
+"sizeof"{ec}                return "SIZEOF"
+"struct"{ec}                return "STRUCT"
+"union"{ec}                 return "UNION"
+"memory"{ec}                return "MEMORY"
+"func"{ec}                  return "FUNC"
+"def"{ec}                   return "DEF"
+"var"{ec}                   return "VAR"
+"const"{ec}                 return "CONST"
+"if"{ec}                    return "IF"
+"then"{ec}                  return "THEN"
+"else"{ec}                  return "ELSE"
+"loop"{ec}                  return "LOOP"
+"break"{ec}                 return "BREAK"
+"return"{ec}                return "RETURN"
+"unsigned"{ec}              return "UNSIGNED"
+"signed"{ec}                return "SIGNED"
+"float"{ec}                 return "FLOAT"
+"from"{ec}                  return "FROM"
+"inline"{ec}                return "INLINE"
+"asm"{ec}                   this.begin("assembly"); return "ASSEMBLY_START"
 
 /* Operators */
 ":="                        return ":="
@@ -66,37 +104,11 @@ ec                          (?!{wc})
 "]"                         return "]"
 ";"                         return ";"
 
-
 /* Formatted values */
 \"(\\.|(?!\").)*\"          yytext = JSON.parse(yytext); return "STRING"   //"
-\'(\\.|(?!\').)*\'          yytext = unicode(JSON.parse(`"${yytext.substr(1,yytext.length-2)}"`)); return "NUMBER"
+\'(\\.|(?!\').)+\'          yytext = unicode(yytext); return "NUMBER"
 
-/* Reserved words */
-"and"{ec}                   return "AND"
-"or"{ec}                    return "OR"
-"import"{ec}                return "IMPORT"
-"export"{ec}                return "EXPORT"
-"sizeof"{ec}                return "SIZEOF"
-"struct"{ec}                return "STRUCT"
-"union"{ec}                 return "UNION"
-"memory"{ec}                return "MEMORY"
-"func"{ec}                  return "FUNC"
-"def"{ec}                   return "DEF"
-"var"{ec}                   return "VAR"
-"const"{ec}                 return "CONST"
-"if"{ec}                    return "IF"
-"then"{ec}                  return "THEN"
-"else"{ec}                  return "ELSE"
-"loop"{ec}                  return "LOOP"
-"break"{ec}                 return "BREAK"
-"return"{ec}                return "RETURN"
-"unsigned"{ec}              return "UNSIGNED"
-"signed"{ec}                return "SIGNED"
-"float"{ec}                 return "FLOAT"
-"from"{ec}                  return "FROM"
-"inline"{ec}                return "INLINE"
-"asm"{ec}                   this.begin("assembly"); return "ASSEMBLY_START"
-
+/* Identifiers and labels */
 "@"{wc}+                    yytext = yytext.substr(1); return "LABEL"
 {wc}+                       return "IDENTIFIER"
 <<EOF>>                     return "EOF"
@@ -243,7 +255,6 @@ FunctionStatement
 
 FunctionName
     : IDENTIFIER
-    | ":="
     | "=="
     | "!="
     | ">="
@@ -252,11 +263,9 @@ FunctionName
     | ">>>"
     | "<<"
     | ">>"
-    | "="
     | ">"
     | "<"
     | "^"
-    | "&"
     | "|"
     | "+"
     | "-"
@@ -266,6 +275,7 @@ FunctionName
     | ":"
     | "~"
     | "-"
+    | "&"
     ;
 
 EntityStatement
