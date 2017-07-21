@@ -6,7 +6,27 @@ import { parser } from "./dynast.jison"
 
 
 try {
-	console.log(JSON.stringify(parser.parse(raw), null, 4));
+	const source = `
+	*😘[10][32] := '1'
+	asm
+		i64.reinterpret/f64
+		{
+			call(1, 2, 3)
+		}
+		= 0
+		= 1
+		= 2
+		call.indirect
+		if
+			:(u32, u32):u32
+			@SomeLabel
+			else
+		end
+	;
+	`;
+	const ast = parser.parse(source);
+
+	console.log(JSON.stringify(ast, null, 4));
 } catch(e) {
 	console.log(e.message)
 }

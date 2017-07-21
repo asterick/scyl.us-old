@@ -1,10 +1,28 @@
+/*
+TODO:
+  character literals (number type) don't support UTF-32 escaped sequences
+*/
+
+
 /* lexical grammar */
 %lex
-ec                          (?![a-zA-Z0-9_])
+wc                          [^@\:\=\!\^\&\|\+\-\*\/\%\~\,\.\(\)\{\}\[\]\>\<\;\s]
+ec                          (?!{wc})
+
+%s assembly
 
 %%
 \s+                         /* skip whitespace */
 "#".*                       /* skip comment */
+
+"-"?"0"[xX][0-9a-fA-F]+     return "NUMBER"
+"-"?"0"[bB][01]+            return "NUMBER"
+"-"?"0"[0-7]+               return "NUMBER"
+"-"?[0-9]+("."[0-9]+)?      return "NUMBER"
+
+/* Assembly tokenizer */
+<assembly>";"               this.popState(); return "ASSEMBLY_END"
+<assembly>({wc}|[/.])+      return "IDENTIFIER"
 
 /* Operators */
 ":="                        return ":="
@@ -40,11 +58,10 @@ ec                          (?![a-zA-Z0-9_])
 "]"                         return "]"
 ";"                         return ";"
 
-/* Formatted numbers */
-"-"?"0"[xX][0-9a-fA-F]+     return "NUMBER"
-"-"?"0"[bB][01]+            return "NUMBER"
-"-"?"0"[0-7]+               return "NUMBER"
-"-"?[0-9]+("."[0-9]+)?      return "NUMBER"
+
+/* Formatted values */
+\"(\\.|(?!\").)*\"          yytext = JSON.parse(yytext); return "STRING"   //"
+\'(\\.|(?!\').)*\'          yytext = JSON.parse(`"${yytext.substr(1,yytext.length-2)}"`).charCodeAt(0); return "NUMBER"
 
 /* Reserved words */
 "and"{ec}                   return "AND"
@@ -64,18 +81,14 @@ ec                          (?![a-zA-Z0-9_])
 "else"{ec}                  return "ELSE"
 "loop"{ec}                  return "LOOP"
 "break"{ec}                 return "BREAK"
-"trap"{ec}                  return "TRAP"
-"nop"{ec}                   return "NOP"
 "return"{ec}                return "RETURN"
 "unsigned"{ec}              return "UNSIGNED"
 "signed"{ec}                return "SIGNED"
 "float"{ec}                 return "FLOAT"
+"asm"{ec}                   this.begin("assembly"); return "ASSEMBLY_START"
 
-\"(\\.|(?!\").)*\"          yytext = JSON.parse(yytext); return "STRING"   //"
-\'(\\.|(?!\').)*\'          yytext = JSON.parse(yytext); return "STRING"
-
-"@"[a-zA-Z0-9_]+            yytext = yytext.substr(1); return "LABEL"
-[a-zA-Z0-9_]+               return "IDENTIFIER"
+"@"{wc}+                    yytext = yytext.substr(1); return "LABEL"
+{wc}+                       return "IDENTIFIER"
 <<EOF>>                     return "EOF"
 .                           return "ILLEGAL"
 
@@ -109,15 +122,41 @@ Statement
     | EntityStatement
     | LoopStatement
     | ReturnStatement
-    | TrapStatement
-    | NopStatement
     | SeperationStatement
     | BreakStatement
-
+    | AssemblyStatement
     | BlockStatement
     | AssignmentStatement
     | CallStatement
     | IfStatement
+    ;
+
+AssemblyStatement
+    : ASSEMBLY_START AssemblyBody ASSEMBLY_END
+        { $$ = { type: "AssemblyBlock", body: $2 } }
+    ;
+
+AssemblyBody
+    : AssemblyTerm AssemblyBody
+        { $$ = [$1].concat($2) }
+    | AssemblyTerm
+        { $$ = [$1] }
+    ;
+
+AssemblyTerm
+    : IDENTIFIER
+        { $$ = { Type: "AssemblyTerm", name: $1 } }
+    | "{" StatementList "}"
+        { $$ = { Type: "VisitorStatement", body: $2 } }
+    | "=" Expression
+        { $$ = { Type: "VisitorExpression", body: $2 } }
+    | "&" IDENTIFIER
+        { $$ = { Type: "TableIndex", name: $1 } }
+    | ":" Type
+        { $$ = { Type: "TypeIndex", type: $2 } }
+    | LABEL
+        { $$ = { Type: "LabelIndex", name: $1 } }
+    | Number
     ;
 
 FunctionDeclaration
@@ -211,16 +250,6 @@ BreakStatement
         { $$ = { type: "BreakStatement", target: $2 } }
     | BREAK
         { $$ = { type: "BreakStatement", target: null } }
-    ;
-
-TrapStatement
-    : TRAP
-        { $$ = { type: "TrapStatement" } }
-    ;
-
-NopStatement
-    : NOP
-        { $$ = { type: "NopStatement" } }
     ;
 
 SeperationStatement

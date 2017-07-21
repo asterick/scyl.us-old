@@ -3,7 +3,7 @@ import {
 	MAGIC_NUMBER,
 	PAYLOAD_TYPES, VALUE_TYPES, KIND_TYPES,
 	FLAG_RESIZABLE_LIMIT_PRESENT, FLAG_GLOBAL_MUTABLE,
-	ByteCode, ReverseByteCode
+	ByteCode
 } from "./const";
 
 /************
