@@ -160,8 +160,6 @@ AssemblyTerm
         { $$ = { Type: "VisitorStatement", body: $2 } }
     | "=" ExpressionList
         { $$ = { Type: "VisitorExpression", body: $2 } }
-    | "&" IDENTIFIER
-        { $$ = { Type: "TableIndex", name: $1 } }
     | ":" Type
         { $$ = { Type: "TypeIndex", type: $2 } }
     | LABEL
