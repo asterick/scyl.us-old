@@ -1,8 +1,7 @@
 /*
-    TODO: Specify number type for assembly
-    TODO: 64-bit integer constants
+    TODO: 64-bit integer constants truncated
+    TODO: Specify if number is i32 or i64 in assembly
     TODO: Ability to export imported from a module
-    TODO: Multi-line comments
 */
 
 %{
