@@ -40,6 +40,11 @@ def f32:float 32
 def f64:float 64
 
 # Coersion casts
+export func inline : (i:s32):u32 asm = i;
+export func inline : (i:u32):s32 asm = i;
+export func inline : (i:s64):u64 asm = i;
+export func inline : (i:u64):s64 asm = i;
+
 export func inline : (i:s64):s32 asm = i s32.wrap/s64;
 export func inline : (i:f32):s32 asm = i s32.trunc_s/f32;
 export func inline : (i:f64):s32 asm = i s32.trunc_s/f64;

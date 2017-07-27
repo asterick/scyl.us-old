@@ -1,8 +1,23 @@
-/*
-    TODO: 64-bit integer constants truncated
-*/
-
 %{
+const bigInt = require("big-integer");
+
+function parseNumber(str, base) {
+    var sign = 1;
+
+    if (str[0] === '-') {
+        str = str.substr(1);
+        sign = -1;
+    }
+
+    switch (base) {
+    case 16: case 2:
+        str = str.substr(2);
+        break ;
+    }
+
+    return bigInt(str, base);
+}
+
 function unicode(yytext) {
     var str = JSON.parse(`"${yytext.substr(1)}"`);
     var chr = str.charCodeAt(0);
@@ -32,10 +47,11 @@ ec                          (?!{wc})
 \s+                         /* skip whitespace */
 "#".*                       /* skip comment */
 
-"-"?"0"[xX][0-9a-fA-F]+     return "INTEGER"
-"-"?"0"[bB][01]+            return "INTEGER"
-"-"?"0"[0-7]+               return "INTEGER"
-"-"?[0-9]+("."[0-9]+)?      return "FLOAT"
+"-"?"0"[xX][0-9a-fA-F]+     return "HEXADECIMAL"
+"-"?"0"[bB][01]+            return "BINARY"
+"-"?"0"[0-7]+               return "OCTAL"
+"-"?[0-9]+"."[0-9]+         return "FLOAT"
+"-"?[0-9]+                  return "DECIMAL"
 
 /* Assembly tokenizer */
 <assembly>";"               this.popState(); return "ASSEMBLY_END"
@@ -197,11 +213,11 @@ EntityDeclaration
 
 ImportStatement
     : IMPORT FunctionDeclaration
-        { $$ = { type: "Import", declaration: $2 } }
+        { $$ = { type: "ImportStatement", declaration: $2 } }
     | IMPORT EntityDeclaration
-        { $$ = { type: "Import", declaration: $2 } }
+        { $$ = { type: "ImportStatement", declaration: $2 } }
     | IMPORT MemoryDeclaration
-        { $$ = { type: "Import", declaration: $2 } }
+        { $$ = { type: "ImportStatement", declaration: $2 } }
     | ImportFile
     ;
 
@@ -214,11 +230,11 @@ ImportFile
 
 ExportStatement
     : EXPORT FunctionStatement
-        { $$ = { type: "Export", definition: $2 } }
+        { $$ = { type: "ExportStatement", definition: $2 } }
     | EXPORT EntityStatement
-        { $$ = { type: "Export", definition: $2 } }
+        { $$ = { type: "ExportStatement", definition: $2 } }
     | EXPORT MemoryDeclaration
-        { $$ = { type: "Export", definition: $2 } }
+        { $$ = { type: "ExportStatement", definition: $2 } }
     | EXPORT IDENTIFIER
         { $$ = { type: "ExportDefinition", name: $2 }}
     ;
@@ -428,8 +444,14 @@ Type
     ;
 
 Number
-    : INTEGER
-        { $$ = { type: "Integer", value: Number(yytext) } }
+    : DECIMAL
+        { $$ = { type: "Integer", value: parseNumber(yytext, 10) } }
+    | HEXADECIMAL
+        { $$ = { type: "Integer", value: parseNumber(yytext, 16) } }
+    | OCTAL
+        { $$ = { type: "Integer", value: parseNumber(yytext, 8) } }
+    | BINARY
+        { $$ = { type: "Integer", value: parseNumber(yytext, 2) } }
     | FLOAT
         { $$ = { type: "Float", value: Number(yytext) } }
     ;

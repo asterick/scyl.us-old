@@ -169,8 +169,6 @@ export default class {
 
 		// Set context to render by default
 		this._enterRender();
-		this._test();
-
 		this._requestRepaint();
 	}
 
