@@ -1,5 +1,5 @@
 import COP0 from "./process!./cop0";
-import { read, write, REGS } from "./wast";
+import { read, write, exception, REGS } from "./wast";
 
 // For the preprocessor to work, the name has to be pinned
 const Exception = require("../exception").default;
@@ -13,13 +13,7 @@ function ReservedInstruction(pc, delayed) {
     throw new Exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
 }
 ReservedInstruction.wasm = function (pc, delayed) {
-    return [
-        { op: 'i32.const', value: Consts.Exceptions.ReservedInstruction },
-        { op: 'i32.const', value: pc },
-        { op: 'i32.const', value: delayed ? 1 : 0 },
-        { op: 'i32.const', value: 0 },
-        { op: "call", function_index: CALLS.EXCEPTION }
-    ];
+    return exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
 }
 ReservedInstruction.assembly = () => `---`;
 
@@ -27,13 +21,7 @@ function CopUnusable(pc, delayed, cop) {
     throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, cop);
 }
 CopUnusable.wasm = function (pc, delayed, cop) {
-    return [
-        { op: 'i32.const', value: Consts.Exceptions.CoprocessorUnusable },
-        { op: 'i32.const', value: pc },
-        { op: 'i32.const', value: delayed ? 1 : 0 },
-        { op: 'i32.const', value: cop },
-        { op: "call", function_index: CALLS.EXCEPTION }
-    ];
+    return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, cop);
 }
 CopUnusable.assembly = (cop) => `COP${cop}\tunusable`;
 
@@ -126,13 +114,7 @@ LH.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "i32.const", value: 1 },
         { op: "i32.and" },
 
-        { op: "if", block: [
-            { op: 'i32.const', value: Consts.Exceptions.AddressLoad },
-            { op: 'i32.const', value: pc },
-            { op: 'i32.const', value: delayed ? 1 : 0 },
-            { op: 'i32.const', value: 0 },
-            { op: "call", function_index: CALLS.EXCEPTION }
-        ]},
+        { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
 
         { op: "get_local", index: 0 },
         { op: "i32.const", value: pc },
@@ -174,13 +156,7 @@ LHU.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "i32.const", value: 1 },
         { op: "i32.and" },
 
-        { op: "if", block: [
-            { op: 'i32.const', value: Consts.Exceptions.AddressLoad },
-            { op: 'i32.const', value: pc },
-            { op: 'i32.const', value: delayed ? 1 : 0 },
-            { op: 'i32.const', value: 0 },
-            { op: "call", function_index: CALLS.EXCEPTION }
-        ]},
+        { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
 
         { op: "get_local", index: 0 },
         { op: "i32.const", value: pc },
@@ -218,23 +194,13 @@ LW.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "i32.const", value: imm26 },
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
-
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
-
-        { op: "if", block: [
-            { op: 'i32.const', value: Consts.Exceptions.AddressLoad },
-            { op: 'i32.const', value: pc },
-            { op: 'i32.const', value: delayed ? 1 : 0 },
-            { op: 'i32.const', value: 0 },
-            { op: "call", function_index: CALLS.EXCEPTION }
-        ]},
-
+        { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
         { op: "get_local", index: 0 },
         { op: "i32.const", value: pc },
         { op: "i32.const", value: delayed ? 1 : 0 },
         { op: "call", function_index: CALLS.LOAD },
-
         ... write(rt)
     ];
 }
@@ -242,23 +208,67 @@ LW.assembly = (rs, rt, imm16) => `lw\t${Consts.Registers[rt]}, ${imm16}(${Consts
 
 function SB(rt, rs, imm16, pc, delayed) {
     var address = (rs ? this.registers[rs] : 0) + imm16;
+    var shift = 8 * (address & 3);
 
-    this.store(address, rt ? this.registers[rt] << (address & 3) : 0, 0xFF << (8 * (address & 3)), pc, delayed);
+    this.store(address, rt ? this.registers[rt] << shift : 0, 0xFF << shift, pc, delayed);
 }
 SB.wasm = function (rt, rs, imm16, pc, delayed) {
-    throw new Error("TODO");
+    return [
+        ... read(rs),
+        { op: "i32.const", value: imm26 },
+        { op: "i32.add" },
+        { op: "tee_local", index: 0 },
+        ... read(rt),
+        { op: "get_local", index: 0 },
+        { op: "i32.const", value: 3 },
+        { op: "i32.and" },
+        { op: "i32.const", value: 8 },
+        { op: "i32.mul" },
+        { op: "tee_local", index: 0 },
+        { op: "i32.shl" },
+        { op: "i32.const", value: 0xFF },
+        { op: "get_local", index: 0 },
+        { op: "i32.shl" },
+        { op: "i32.const", value: pc },
+        { op: "i32.const", value: delayed ? 1 : 0 },
+        { op: "call", function_index: CALLS.STORE },
+    ]
 }
 SB.assembly = (rs, rt, imm16) => `sb\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
 function SH(rt, rs, imm16, pc, delayed) {
     var address = (rs ? this.registers[rs] : 0) + imm16;
+    var shift = 8 * (address & 3);
 
     if (address & 1) throw new Exception(Consts.Exceptions.AddressStore, pc, delayed);
 
-    this.store(address, rt ? this.registers[rt] << (address & 2) : 0, 0xFFFF << (8 * (address & 3)), pc, delayed);
+    this.store(address, rt ? this.registers[rt] << shift : 0, 0xFFFF << shift, pc, delayed);
 }
 SH.wasm = function (rt, rs, imm16, pc, delayed) {
-    throw new Error("TODO");
+    return [
+        ... read(rs),
+        { op: "i32.const", value: imm26 },
+        { op: "i32.add" },
+        { op: "tee_local", index: 0 },
+        { op: "i32.const", value: 1 },
+        { op: "i32.and" },
+        { op: "if", block: exception(Consts.Exceptions.AddressStore, pc, delayed) },
+        { op: "get_local", index: 0 },
+        ... read(rt),
+        { op: "get_local", index: 0 },
+        { op: "i32.const", value: 3 },
+        { op: "i32.and" },
+        { op: "i32.const", value: 8 },
+        { op: "i32.mul" },
+        { op: "tee_local", index: 0 },
+        { op: "i32.shl" },
+        { op: "i32.const", value: 0xFFFF },
+        { op: "get_local", index: 0 },
+        { op: "i32.shl" },
+        { op: "i32.const", value: pc },
+        { op: "i32.const", value: delayed ? 1 : 0 },
+        { op: "call", function_index: CALLS.STORE }
+    ]
 }
 SH.assembly = (rs, rt, imm16) => `sh\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
@@ -270,7 +280,21 @@ function SW(rt, rs, imm16, pc, delayed) {
     this.store(address, rt ? this.registers[rt] : 0, ~0, pc, delayed);
 }
 SW.wasm = function (rt, rs, imm16, pc, delayed) {
-    throw new Error("TODO");
+    return [
+        ... read(rs),
+        { op: "i32.const", value: imm26 },
+        { op: "i32.add" },
+        { op: "tee_local", index: 0 },
+        { op: "i32.const", value: 3 },
+        { op: "i32.and" },
+        { op: "if", block: exception(Consts.Exceptions.AddressStore, pc, delayed) },
+        { op: "get_local", index: 0 },
+        ... read(rt),
+        { op: "i32.const", value: -1 },
+        { op: "i32.const", value: pc },
+        { op: "i32.const", value: delayed ? 1 : 0 },
+        { op: "call", function_index: CALLS.STORE }
+    ]
 }
 SW.assembly = (rs, rt, imm16) => `sw\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
@@ -361,13 +385,7 @@ ADD.wasm = function (rd, rs, rt, pc, delayed) {
         { op: "i64.ge_s" },
 
         { op: "i32.or" },
-        { op: "if", block: [
-            { op: 'i32.const', value: Consts.Exceptions.Overflow },
-            { op: 'i32.const', value: pc },
-            { op: 'i32.const', value: delayed ? 1 : 0 },
-            { op: 'i32.const', value: 0 },
-            { op: "call", function_index: CALLS.EXCEPTION }
-        ]},
+        { op: "if", block: exception(Consts.Exceptions.Overflow, pc, delayed) },
 
         { op: "get_local", index: 1 },
         { op: "i32.wrap/i64" },
@@ -419,13 +437,7 @@ SUB.wasm = function (rd, rs, rt, pc, delayed) {
         { op: "i64.ge_s" },
 
         { op: "i32.or" },
-        { op: "if", block: [
-            { op: 'i32.const', value: Consts.Exceptions.Overflow },
-            { op: 'i32.const', value: pc },
-            { op: 'i32.const', value: delayed ? 1 : 0 },
-            { op: 'i32.const', value: 0 },
-            { op: "call", function_index: CALLS.EXCEPTION }
-        ]},
+        { op: "if", block: exception(Consts.Exceptions.Overflow, pc, delayed) },
 
         { op: "get_local", index: 1 },
         { op: "i32.wrap/i64" },
@@ -460,7 +472,27 @@ function ADDI(rt, rs, simm16, pc, delayed) {
     }
 }
 ADDI.wasm = function (rt, rs, simm16, pc, delayed) {
-    throw new Error("TODO");
+    return [
+        ... read(rs),
+        { op: "i64.extend_s/i32" },
+        { op: "i64.const", value: simm16 },
+        { op: "i64.add" },
+
+        { op: "tee_local", index: 1 },
+        { op: "i64.const", value: -0x80000000 },
+        { op: "i64.lt_s" },
+
+        { op: "get_local", index: 1 },
+        { op: "i64.const", value: 0x80000000 },
+        { op: "i64.ge_s" },
+
+        { op: "i32.or" },
+        { op: "if", block: exception(Consts.Exceptions.Overflow, pc, delayed) },
+
+        { op: "get_local", index: 1 },
+        { op: "i32.wrap/i64" },
+        ... write(rt)
+    ]
 }
 ADDI.assembly = (rt, rs, simm16) => rt ? `addi\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}` : "nop";
 
@@ -470,9 +502,15 @@ function ADDIU(rt, rs, simm16) {
     }
 }
 ADDIU.wasm = function (rt, rs, simm16) {
-    throw new Error("TODO");
+    return [
+        ... read(rs),
+        { op: "i32.const", value: simm16 },
+        { op: "i32.add" },
+        ... write(rt)
+    ];
 }
-ADDIU.assembly = (rt, rs, simm16) => rt ? `addiu\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}` : "nop";
+
+DDIU.assembly = (rt, rs, simm16) => rt ? `addiu\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}` : "nop";
 
 /******
  ** Comparison instructions
@@ -789,7 +827,23 @@ function MULT(rs, rt) {
     }
 }
 MULT.wasm = function (rs, rt) {
-    throw new Error("TODO");
+    return [
+        ... read(rs),
+        { op: "i64.extend_s/i32" },
+        ... read(rt),
+        { op: "i64.extend_s/i32" },
+        { op: "i64.mul" },
+
+        { op: "tee_local", index: 1 },
+        { op: "i32.wrap/i64" },
+        ... write(REGS.LO),
+
+        { op: "get_local", index: 1 },
+        { op: "i64.const", value: 32 },
+        { op: "i64.shr_u" },
+        { op: "i32.wrap/i64" },
+        ... write(REGS.HI)
+    ]
 }
 MULT.assembly = (rs, rt) => `mult\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
 
@@ -804,7 +858,23 @@ function MULTU(rs, rt) {
     this.lo = (xl * yl) + (((x & 0xFFFF0000) >>> 0) * yl + ((y & 0xFFFF0000) >>> 0) * xl) >>> 0;
 }
 MULTU.wasm = function (rs, rt) {
-    throw new Error("TODO");
+    return [
+        ... read(rs),
+        { op: "i64.extend_u/i32" },
+        ... read(rt),
+        { op: "i64.extend_u/i32" },
+        { op: "i64.mul" },
+
+        { op: "tee_local", index: 1 },
+        { op: "i32.wrap/i64" },
+        ... write(REGS.LO),
+
+        { op: "get_local", index: 1 },
+        { op: "i64.const", value: 32 },
+        { op: "i64.shr_u" },
+        { op: "i32.wrap/i64" },
+        ... write(REGS.HI)
+    ]
 }
 MULTU.assembly = (rs, rt) => `multu\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
 
@@ -824,7 +894,45 @@ function DIV(rs, rt) {
     }
 }
 DIV.wasm = function (rs, rt) {
-    throw new Error("TODO");
+    return [
+        ... read(rs),
+        { op: "i32.const", value: -0x80000000 },
+        { op: "i32.eq" },
+        ... read(rt),
+        { op: "i32.const", value: -1 },
+        { op: "i32.eq" },
+        { op: "i32.and" },
+        { op: "if", block: [
+            { op: "i32.const", value: -0x80000000 },
+            ... write(REGS.HI),
+            { op: "i32.const", value: 0 },
+            ... write(REGS.LO),
+        { op: "else" },
+        ... read(rt),
+        { op: "i32.eqz" },
+        { op: "if", block: [
+            ... read(rs),
+            ... write(REGS.HI),
+
+            ... read(rs),
+            { op: "i32.const", value: -1 },
+            { op: "i32.xor"},
+            { op: "i32.const", value: 31 },
+            { op: "i32.shr_s"},
+            ... write(REGS.LO),
+
+        { op: "else" },
+            ... read(rs),
+            ... read(rt),
+            { op: "i32.rem_s"},
+            ... write(REGS.HI),
+            ... read(rs),
+            ... read(rt),
+            { op: "i32.div_s"},
+            ... write(REGS.LO),
+        ]}
+        ]}
+    ]
 }
 DIV.assembly = (rs, rt) => `div\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
 
@@ -841,6 +949,25 @@ function DIVU(rs, rt) {
     }
 }
 DIVU.wasm = function (rs, rt) {
+    return [
+        ... read(rt),
+        { op: "i32.eqz" },
+        { op: if, block: [
+            ... read(rs),
+            ... write(REGS.HI),
+            { op: "i32.const", value: -1 },
+            ... write(REGS.LO),
+        { op: "else" },
+            ... read(rs),
+            ... read(rt),
+            { op: "i32.rem_u"},
+            ... write(REGS.HI),
+            ... read(rs),
+            ... read(rt),
+            { op: "i32.div_u"},
+            ... write(REGS.LO),
+        ]}
+    ]
     throw new Error("TODO");
 }
 DIVU.assembly = (rs, rt) => `divu\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
@@ -1140,13 +1267,7 @@ function SYSCALL(pc, delayed) {
     throw new Exception(Consts.Exceptions.SysCall, pc, delayed);
 }
 SYSCALL.wasm = function (pc, delayed) {
-    return [
-        { op: 'i32.const', value: Consts.Exceptions.SysCall },
-        { op: 'i32.const', value: pc },
-        { op: 'i32.const', value: delayed ? 1 : 0 },
-        { op: 'i32.const', value: 0 },
-        { op: "call", function_index: CALLS.EXCEPTION }
-    ];
+    return exception(Consts.Exceptions.SysCall, pc, delayed);
 }
 SYSCALL.assembly = (imm20) => `syscall\t$${imm20.toString(16)}`;
 
@@ -1154,13 +1275,7 @@ function BREAK(pc, delayed) {
     throw new Exception(Consts.Exceptions.Breakpoint, pc, delayed);
 }
 BREAK.wasm = function (pc, delayed) {
-    return [
-        { op: 'i32.const', value: Consts.Exceptions.Breakpoint },
-        { op: 'i32.const', value: pc },
-        { op: 'i32.const', value: delayed ? 1 : 0 },
-        { op: 'i32.const', value: 0 },
-        { op: "call", function_index: CALLS.EXCEPTION }
-    ];
+    return exception(Consts.Exceptions.Breakpoint, pc, delayed);
 }
 BREAK.assembly = (imm20) => `break\t$${imm20.toString(16)}`;
 
