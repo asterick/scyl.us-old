@@ -50,7 +50,27 @@ function LB(rt, rs, imm16, pc, delayed) {
 	}
 }
 LB.wasm = function (rt, rs, imm16, pc, delayed) {
-    throw new Error("TODO");
+ 	return [
+ 		... read(rs),
+ 		{ op: "i32.const", value: imm26 },
+ 		{ op: "i32.add" },
+ 		{ op: "tee_local", index: 0 },
+ 		{ op: "i32.const", value: pc },
+ 		{ op: "i32.const", value: delayed ? 1 : 0 },
+		{ op: "call", function_index: CALLS.LOAD },
+
+		{ op: "i32.const", value: 24 },
+		{ op: "get_local", index: 0 },
+		{ op: "i32.const", value: 3 },
+		{ op: "i32.and" },
+		{ op: "i32.const", value: 8 },
+		{ op: "i32.mul" },
+		{ op: "i32.sub" },
+		{ op: "i32.shl" },
+		{ op: "i32.shr_s" },
+
+		... write(rt)
+ 	];
 }
 LB.assembly = (rs, rt, imm16) => `lb\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
@@ -64,7 +84,25 @@ function LBU(rt, rs, imm16, pc, delayed) {
 	}
 }
 LBU.wasm = function (rt, rs, imm16, pc, delayed) {
-    throw new Error("TODO");
+ 	return [
+ 		... read(rs),
+ 		{ op: "i32.const", value: imm26 },
+ 		{ op: "i32.add" },
+ 		{ op: "tee_local", index: 0 },
+ 		{ op: "i32.const", value: pc },
+ 		{ op: "i32.const", value: delayed ? 1 : 0 },
+		{ op: "call", function_index: CALLS.LOAD },
+		{ op: "i32.const", value: 24 },
+		{ op: "get_local", index: 0 },
+		{ op: "i32.const", value: 3 },
+		{ op: "i32.and" },
+		{ op: "i32.const", value: 8 },
+		{ op: "i32.mul" },
+		{ op: "i32.sub" },
+		{ op: "i32.shl" },
+		{ op: "i32.shr_u" },
+		... write(rt)
+ 	];
 }
 LBU.assembly = (rs, rt, imm16) => `lbu\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
@@ -79,7 +117,40 @@ function LH(rt, rs, imm16, pc, delayed) {
 	}
 }
 LH.wasm = function (rt, rs, imm16, pc, delayed) {
-    throw new Error("TODO");
+ 	return [
+ 		... read(rs),
+ 		{ op: "i32.const", value: imm26 },
+ 		{ op: "i32.add" },
+ 		{ op: "tee_local", index: 0 },
+
+		{ op: "i32.const", value: 1 },
+ 		{ op: "i32.and" },
+
+ 		{ op: "if", block: [
+			{ op: 'i32.const', value: Consts.Exceptions.AddressLoad },
+			{ op: 'i32.const', value: pc },
+			{ op: 'i32.const', value: delayed ? 1 : 0 },
+			{ op: 'i32.const', value: 0 },
+			{ op: "call", function_index: CALLS.EXCEPTION }
+ 		]},
+
+ 		{ op: "get_local", index: 0 },
+ 		{ op: "i32.const", value: pc },
+ 		{ op: "i32.const", value: delayed ? 1 : 0 },
+		{ op: "call", function_index: CALLS.LOAD },
+
+		{ op: "i32.const", value: 16 },
+		{ op: "get_local", index: 0 },
+		{ op: "i32.const", value: 2 },
+		{ op: "i32.and" },
+		{ op: "i32.const", value: 8 },
+		{ op: "i32.mul" },
+
+		{ op: "i32.sub" },
+		{ op: "i32.shl" },
+		{ op: "i32.shr_s" },
+		... write(rt)
+ 	];
 }
 LH.assembly = (rs, rt, imm16) => `lh\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
@@ -94,7 +165,40 @@ function LHU(rt, rs, imm16, pc, delayed) {
 	}
 }
 LHU.wasm = function (rt, rs, imm16, pc, delayed) {
-    throw new Error("TODO");
+ 	return [
+ 		... read(rs),
+ 		{ op: "i32.const", value: imm26 },
+ 		{ op: "i32.add" },
+ 		{ op: "tee_local", index: 0 },
+
+		{ op: "i32.const", value: 1 },
+ 		{ op: "i32.and" },
+
+ 		{ op: "if", block: [
+			{ op: 'i32.const', value: Consts.Exceptions.AddressLoad },
+			{ op: 'i32.const', value: pc },
+			{ op: 'i32.const', value: delayed ? 1 : 0 },
+			{ op: 'i32.const', value: 0 },
+			{ op: "call", function_index: CALLS.EXCEPTION }
+ 		]},
+
+ 		{ op: "get_local", index: 0 },
+ 		{ op: "i32.const", value: pc },
+ 		{ op: "i32.const", value: delayed ? 1 : 0 },
+		{ op: "call", function_index: CALLS.LOAD },
+
+		{ op: "i32.const", value: 16 },
+		{ op: "get_local", index: 0 },
+		{ op: "i32.const", value: 2 },
+		{ op: "i32.and" },
+		{ op: "i32.const", value: 8 },
+		{ op: "i32.mul" },
+
+		{ op: "i32.sub" },
+		{ op: "i32.shl" },
+		{ op: "i32.shr_u" },
+		... write(rt)
+ 	];
 }
 LHU.assembly = (rs, rt, imm16) => `lhu\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
@@ -109,7 +213,30 @@ function LW(rt, rs, imm16, pc, delayed) {
 	}
 }
 LW.wasm = function (rt, rs, imm16, pc, delayed) {
-    throw new Error("TODO");
+ 	return [
+ 		... read(rs),
+ 		{ op: "i32.const", value: imm26 },
+ 		{ op: "i32.add" },
+ 		{ op: "tee_local", index: 0 },
+
+		{ op: "i32.const", value: 3 },
+ 		{ op: "i32.and" },
+
+ 		{ op: "if", block: [
+			{ op: 'i32.const', value: Consts.Exceptions.AddressLoad },
+			{ op: 'i32.const', value: pc },
+			{ op: 'i32.const', value: delayed ? 1 : 0 },
+			{ op: 'i32.const', value: 0 },
+			{ op: "call", function_index: CALLS.EXCEPTION }
+ 		]},
+
+ 		{ op: "get_local", index: 0 },
+ 		{ op: "i32.const", value: pc },
+ 		{ op: "i32.const", value: delayed ? 1 : 0 },
+		{ op: "call", function_index: CALLS.LOAD },
+
+		... write(rt)
+ 	];
 }
 LW.assembly = (rs, rt, imm16) => `lw\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
@@ -650,7 +777,7 @@ JAL.wasm = function (pc, imm26, delay, escape_depth) {
 	return [
 		... delay(),
 		{ op: 'i32.const', value: pc + 8 },
-		... write(31)
+		... write(31),
 		{ op: 'i32.const', value: ((pc & 0xF0000000) | (imm26 * 4)) >>> 0 },
 		... write(REGS.PC),
 		{ op: 'br', relative_depth: escape_depth }
@@ -689,7 +816,7 @@ JALR.wasm = function (rs, rd, pc, delay, escape_depth) {
 		... write(rd),
 		... read(rs),
 		{ op: 'i32.const', value: 0xFFFFFFFC },
-		{ op: 'i32.and' }
+		{ op: 'i32.and' },
 		... write(REGS.PC),
 		{ op: 'br', relative_depth: escape_depth }
 	];
@@ -711,7 +838,7 @@ BEQ.wasm = function (pc, rs, rt, simm16, delay, escape_depth) {
 			... delay(),
 			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
 			... write(REGS.PC),
-			{ op: 'br', relative_depth: escape_depth }
+			{ op: 'br', relative_depth: escape_depth + 1 }
 		]},
 	];
 }
@@ -732,7 +859,7 @@ BNE.wasm = function (pc, rs, rt, simm16, delay, escape_depth) {
 			... delay(),
 			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
 			... write(REGS.PC),
-			{ op: 'br', relative_depth: escape_depth }
+			{ op: 'br', relative_depth: escape_depth + 1 }
 		]},
 	];
 }
@@ -753,7 +880,7 @@ BLTZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
 			... delay(),
 			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
 			... write(REGS.PC),
-			{ op: 'br', relative_depth: escape_depth }
+			{ op: 'br', relative_depth: escape_depth + 1 }
 		]},
 	];
 }
@@ -774,7 +901,7 @@ BGEZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
 			... delay(),
 			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
 			... write(REGS.PC),
-			{ op: 'br', relative_depth: escape_depth }
+			{ op: 'br', relative_depth: escape_depth + 1 }
 		]},
 	];
 }
@@ -795,7 +922,7 @@ BGTZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
 			... delay(),
 			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
 			... write(REGS.PC),
-			{ op: 'br', relative_depth: escape_depth }
+			{ op: 'br', relative_depth: escape_depth + 1 }
 		]},
 	];
 }
@@ -816,7 +943,7 @@ BLEZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
 			... delay(),
 			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
 			... write(REGS.PC),
-			{ op: 'br', relative_depth: escape_depth }
+			{ op: 'br', relative_depth: escape_depth + 1 }
 		]},
 	];
 }
@@ -840,7 +967,7 @@ BLTZAL.wasm = function (pc, rs, simm16, delay, escape_depth) {
 			... write(31),
 			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
 			... write(REGS.PC),
-			{ op: 'br', relative_depth: escape_depth }
+			{ op: 'br', relative_depth: escape_depth + 1 }
 		]},
 	];
 }
@@ -864,7 +991,7 @@ BGEZAL.wasm = function (pc, rs, simm16, delay, escape_depth) {
 			... write(31),
 			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
 			... write(REGS.PC),
-			{ op: 'br', relative_depth: escape_depth }
+			{ op: 'br', relative_depth: escape_depth + 1 }
 		]},
 	];
 }
