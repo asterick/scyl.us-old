@@ -152,24 +152,19 @@ LHU.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "i32.const", value: imm26 },
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
-
         { op: "i32.const", value: 1 },
         { op: "i32.and" },
-
         { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
-
         { op: "get_local", index: 0 },
         { op: "i32.const", value: pc },
         { op: "i32.const", value: delayed ? 1 : 0 },
         { op: "call", function_index: CALLS.LOAD },
-
         { op: "i32.const", value: 16 },
         { op: "get_local", index: 0 },
         { op: "i32.const", value: 2 },
         { op: "i32.and" },
         { op: "i32.const", value: 8 },
         { op: "i32.mul" },
-
         { op: "i32.sub" },
         { op: "i32.shl" },
         { op: "i32.shr_u" },
@@ -355,7 +350,40 @@ function LWL(rt, rs, imm16, pc, delayed) {
     }
 }
 LWL.wasm = function (rt, rs, imm16, pc, delayed) {
-    throw new Error("TODO");
+    return [
+        ... read(rs),
+        { op: "i32.const", value: imm26 },
+        { op: "i32.add" },
+
+        { op: "tee_local", index: 0 },
+        { op: "i32.const", value: pc },
+        { op: "i32.const", value: delayed ? 1 : 0 },
+        { op: "call", function_index: CALLS.LOAD },
+
+        { op: "get_local", index: 0 },
+        { op: "i32.const", value: 32 },
+        { op: "i32.eq" }
+        { op: "br_if", relative_depth: escape_depth },
+
+        { op: "i32.const", value: 32 },
+        { op: "get_local", index: 0 },
+        { op: "i32.const", value: 3 },
+        { op: "i32.and" },
+        { op: "i32.const", value: 1 },
+        { op: "i32.add" },
+        { op: "i32.const", value: 8 },
+        { op: "i32.mul" },
+        { op: "tee_local", index: 0 },
+        { op: "i32.sub" },
+        { op: "i32.shl" },
+
+        ... read(rt),
+        { op: "i32.const", value: -1 },
+        { op: "i32.shr_u" },
+        { op: "i32.and" },
+        { op: "i32.or" },
+        ... write(rt)
+    ];
 }
 LWL.assembly = (rs, rt, imm16) => `lwl\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
