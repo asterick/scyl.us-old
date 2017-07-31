@@ -1,5 +1,5 @@
 import COP0 from "./process!./cop0";
-import { readReg, writeReg, REGS } from "./wast";
+import { read, write, REGS } from "./wast";
 
 // For the preprocessor to work, the name has to be pinned
 const Exception = require("../exception").default;
@@ -18,7 +18,7 @@ ReservedInstruction.wasm = function (pc, delayed) {
 		{ op: 'i32.const', value: pc },
 		{ op: 'i32.const', value: delayed ? 1 : 0 },
 		{ op: 'i32.const', value: 0 },
-		{ "op": "call", "function_index": CALLS.EXCEPTION }
+		{ op: "call", function_index: CALLS.EXCEPTION }
 	];
 }
 ReservedInstruction.assembly = () => `---`;
@@ -32,7 +32,7 @@ CopUnusable.wasm = function (pc, delayed, cop) {
 		{ op: 'i32.const', value: pc },
 		{ op: 'i32.const', value: delayed ? 1 : 0 },
 		{ op: 'i32.const', value: cop },
-		{ "op": "call", "function_index": CALLS.EXCEPTION }
+		{ op: "call", function_index: CALLS.EXCEPTION }
 	];
 }
 CopUnusable.assembly = (cop) => `COP${cop}\tunusable`;
@@ -293,11 +293,12 @@ function SLT(rd, rs, rt) {
 	}
 }
 SLT.wasm = function (rd, rs, rt) {
-	return writeReg(rd, [].concat(
-		readReg(rs),
-		readReg(rt),
-		{ op: 'i32.lt_s'}
-	))
+	return [
+		... read(rs),
+		... read(rt),
+		{ op: 'i32.lt_s'},
+		... write(rd)
+	];
 }
 SLT.assembly = (rd, rs, rt) => `slt\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
 
@@ -307,11 +308,12 @@ function SLTU(rd, rs, rt) {
 	}
 }
 SLTU.wasm = function (rd, rs, rt) {
-	return writeReg(rd, [].concat(
-		readReg(rs),
-		readReg(rt),
-		{ op: 'i32.lt_u'}
-	))
+	return [
+		... read(rs),
+		... read(rt),
+		{ op: 'i32.lt_u'},
+		... write(rd)
+	];
 }
 SLTU.assembly = (rd, rs, rt) => `sltu\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
 
@@ -321,11 +323,12 @@ function SLTI(rt, rs, simm16) {
 	}
 }
 SLTI.wasm = function (rt, rs, simm16) {
-	return writeReg(rt, [].concat(
-		readReg(rs),
+	return [
+		... read(rs),
 		{ op: 'i32.const', value: simm16 },
-		{ op: 'i32.lt_s'}
-	))
+		{ op: 'i32.lt_s'},
+		... write(rt)
+	]
 }
 SLTI.assembly = (rt, rs, simm16) => `slti\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}`;
 
@@ -335,11 +338,12 @@ function SLTIU(rt, rs, simm16) {
 	}
 }
 SLTIU.wasm = function (rt, rs, simm16) {
-	return writeReg(rt, [].concat(
-		readReg(rs),
+	return [
+		... read(rs),
 		{ op: 'i32.const', value: simm16 },
-		{ op: 'i32.lt_u'}
-	))
+		{ op: 'i32.lt_u'},
+		... write(rt)
+	]
 }
 SLTIU.assembly = (rt, rs, simm16) => `sltiu\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, $${(simm16 >>> 0).toString(16)}`;
 
@@ -579,7 +583,10 @@ function MFHI(rd) {
 	if (rd) this.registers[rd] = this.hi;
 }
 MFHI.wasm = function(rd) {
-	return writeReg(rd, readReg(REGS.HI));
+	return [
+		... read(REGS.HI),
+		... write(rd)
+	];
 }
 MFHI.assembly = (rd) => `mfhi\t${Consts.Registers[rd]}`;
 
@@ -587,7 +594,10 @@ function MFLO(rd) {
 	if (rd) this.registers[rd] = this.lo;
 }
 MFLO.wasm = function(rd) {
-	return writeReg(rd, readReg(REGS.LO));
+	return [
+		... read(REGS.LO),
+		... write(rd)
+	];
 }
 MFLO.assembly = (rd) => `mflo\t${Consts.Registers[rd]}`;
 
@@ -595,7 +605,10 @@ function MTHI(rs) {
 	this.hi = rs ? this.registers[rs] : 0;
 }
 MTHI.wasm = function(rs) {
-	return writeReg(REGS.HI, readReg(rs));
+	return [
+		... read(rs),
+		... write(REGS.HI)
+	];
 }
 MTHI.assembly = (rs) => `mthi\t${Consts.Registers[rs]}`;
 
@@ -603,7 +616,10 @@ function MTLO(rs) {
 	this.lo = rs ? this.registers[rs] : 0;
 }
 MTLO.wasm = function(rs) {
-	return writeReg(REGS.LO, readReg(rs));
+	return [
+		... read(rs),
+		... write(REGS.LO)
+	];
 }
 MTLO.assembly = (rs) => `mtlo\t${Consts.Registers[rs]}`;
 
@@ -616,11 +632,12 @@ function J (pc, imm26, delay) {
 	return ((pc & 0xF0000000) | (imm26 * 4)) >>> 0;
 }
 J.wasm = function (pc, imm26, delay, escape_depth) {
-	return [].concat(
-		delay(),
-		writeReg(REGS.PC, [{ op: 'i32.const', value: ((pc & 0xF0000000) | (imm26 * 4)) >>> 0 }]),
+	return [
+		... delay(),
+		{ op: 'i32.const', value: ((pc & 0xF0000000) | (imm26 * 4)) >>> 0 },
+		... write(REGS.PC),
 		{ op: 'br', relative_depth: escape_depth }
-	);
+	];
 }
 J.assembly = (pc, imm26) => `j\t$${(((pc & 0xF0000000) | (imm26 * 4)) >>> 0).toString(16)}`;
 
@@ -630,12 +647,14 @@ function JAL (pc, imm26, delay) {
 	return ((pc & 0xF0000000) | (imm26 * 4)) >>> 0;
 }
 JAL.wasm = function (pc, imm26, delay, escape_depth) {
-	return [].concat(
-		delay(),
-		writeReg(31, [{ op: 'i32.const', value: pc + 8 }]),
-		writeReg(REGS.PC, [{ op: 'i32.const', value: ((pc & 0xF0000000) | (imm26 * 4)) >>> 0 }]),
+	return [
+		... delay(),
+		{ op: 'i32.const', value: pc + 8 },
+		... write(31)
+		{ op: 'i32.const', value: ((pc & 0xF0000000) | (imm26 * 4)) >>> 0 },
+		... write(REGS.PC),
 		{ op: 'br', relative_depth: escape_depth }
-	);
+	];
 }
 JAL.assembly = (pc, imm26) => `jal\t$${(((pc & 0xF0000000) | (imm26 * 4)) >>> 0).toString(16)}`;
 
@@ -644,14 +663,14 @@ function JR(rs, pc, delay) {
 	return (rs ? this.registers[rs] & ~3: 0) >>> 0;
 }
 JR.wasm = function (rs, pc, delay, escape_depth) {
-	return [].concat(
-		delay(),
-		writeReg(REGS.PC, readReg(rs).concat(
-			{ op: 'i32.const', value: 0xFFFFFFFC },
-			{ op: 'i32.and' }
-		)),
+	return [
+		... delay(),
+		... read(rs),
+		{ op: 'i32.const', value: 0xFFFFFFFC },
+		{ op: 'i32.and' },
+		... write(REGS.PC),
 		{ op: 'br', relative_depth: escape_depth }
-	);
+	];
 }
 JR.assembly = (rs) => `jr\t${Consts.Registers[rs]}`;
 
@@ -664,15 +683,16 @@ function JALR(rs, rd, pc, delay) {
 	return (rs ? this.registers[rs] & ~3 : 0) >>> 0;
 }
 JALR.wasm = function (rs, rd, pc, delay, escape_depth) {
-	return [].concat(
-		delay(),
-		writeReg(rd, [{ op: 'i32.const', value: pc + 8 }]),
-		writeReg(REGS.PC, readReg(rs).concat(
-			{ op: 'i32.const', value: 0xFFFFFFFC },
-			{ op: 'i32.and' }
-		)),
+	return [
+		... delay(),
+		{ op: 'i32.const', value: pc + 8 },
+		... write(rd),
+		... read(rs),
+		{ op: 'i32.const', value: 0xFFFFFFFC },
+		{ op: 'i32.and' }
+		... write(REGS.PC),
 		{ op: 'br', relative_depth: escape_depth }
-	);
+	];
 }
 JALR.assembly = (rs, rd) => `jalr\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}`;
 
@@ -683,16 +703,17 @@ function BEQ(pc, rs, rt, simm16, delay) {
 	}
 }
 BEQ.wasm = function (pc, rs, rt, simm16, delay, escape_depth) {
-	return [].concat(
-		regRead(rs),
-		regRead(rs),
+	return [
+		... read(rs),
+		... read(rt),
 		{ op: 'i32.eq' },
-		{ op: 'if', block: [].concat(
-			delay(),
-			writeReg(REGS.PC, [{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) }]),
+		{ op: 'if', block: [
+			... delay(),
+			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+			... write(REGS.PC),
 			{ op: 'br', relative_depth: escape_depth }
-		)},
-	);
+		]},
+	];
 }
 BEQ.assembly = (pc, rs, rt, simm16) => `beq\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
@@ -703,16 +724,17 @@ function BNE(pc, rs, rt, simm16, delay) {
 	}
 }
 BNE.wasm = function (pc, rs, rt, simm16, delay, escape_depth) {
-	return [].concat(
-		regRead(rs),
-		regRead(rs),
+	return [
+		... read(rs),
+		... read(rt),
 		{ op: 'i32.ne' },
-		{ op: 'if', block: [].concat(
-			delay(),
-			writeReg(REGS.PC, [{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) }]),
+		{ op: 'if', block: [
+			... delay(),
+			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+			... write(REGS.PC),
 			{ op: 'br', relative_depth: escape_depth }
-		)},
-	);
+		]},
+	];
 }
 BNE.assembly = (pc, rs, rt, simm16) => `bne\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
@@ -723,16 +745,17 @@ function BLTZ(pc, rs, simm16, delay) {
 	}
 }
 BLTZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
-	return [].concat(
-		regRead(rs),
+	return [
+		... read(rs),
 		{ op: 'i32.const', value: 0 },
 		{ op: 'i32.lt_s' },
-		{ op: 'if', block: [].concat(
-			delay(),
-			writeReg(REGS.PC, [{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) }]),
+		{ op: 'if', block: [
+			... delay(),
+			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+			... write(REGS.PC),
 			{ op: 'br', relative_depth: escape_depth }
-		)},
-	);
+		]},
+	];
 }
 BLTZ.assembly = (pc, rs, simm16) => `bltz\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
@@ -743,16 +766,17 @@ function BGEZ(pc, rs, simm16, delay) {
 	}
 }
 BGEZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
-	return [].concat(
-		regRead(rs),
+	return [
+		... read(rs),
 		{ op: 'i32.const', value: 0 },
 		{ op: 'i32.ge_s' },
-		{ op: 'if', block: [].concat(
-			delay(),
-			writeReg(REGS.PC, [{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) }]),
+		{ op: 'if', block: [
+			... delay(),
+			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+			... write(REGS.PC),
 			{ op: 'br', relative_depth: escape_depth }
-		)},
-	);
+		]},
+	];
 }
 BGEZ.assembly = (pc, rs, simm16) => `bgez\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
@@ -763,16 +787,17 @@ function BGTZ(pc, rs, simm16, delay) {
 	}
 }
 BGTZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
-	return [].concat(
-		regRead(rs),
+	return [
+		... read(rs),
 		{ op: 'i32.const', value: 0 },
 		{ op: 'i32.gt_s' },
-		{ op: 'if', block: [].concat(
-			delay(),
-			writeReg(REGS.PC, [{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) }]),
+		{ op: 'if', block: [
+			... delay(),
+			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+			... write(REGS.PC),
 			{ op: 'br', relative_depth: escape_depth }
-		)},
-	);
+		]},
+	];
 }
 BGTZ.assembly = (pc, rs, simm16) => `bgtz\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
@@ -783,16 +808,17 @@ function BLEZ(pc, rs, simm16, delay) {
 	}
 }
 BLEZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
-	return [].concat(
-		regRead(rs),
+	return [
+		... read(rs),
 		{ op: 'i32.const', value: 0 },
 		{ op: 'i32.le_s' },
-		{ op: 'if', block: [].concat(
-			delay(),
-			writeReg(REGS.PC, [{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) }]),
+		{ op: 'if', block: [
+			... delay(),
+			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+			... write(REGS.PC),
 			{ op: 'br', relative_depth: escape_depth }
-		)},
-	);
+		]},
+	];
 }
 BLEZ.assembly = (pc, rs, simm16) => `blez\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
@@ -804,17 +830,19 @@ function BLTZAL(pc, rs, simm16, delay) {
 	}
 }
 BLTZAL.wasm = function (pc, rs, simm16, delay, escape_depth) {
-		return [].concat(
-		regRead(rs),
+	return [
+		... read(rs),
 		{ op: 'i32.const', value: 0 },
 		{ op: 'i32.lt_s' },
-		{ op: 'if', block: [].concat(
-			delay(),
-			writeReg(31, [{ op: 'i32.const', value: pc + 8 }]),
-			writeReg(REGS.PC, [{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) }]),
+		{ op: 'if', block: [
+			... delay(),
+			{ op: 'i32.const', value: pc + 8 },
+			... write(31),
+			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+			... write(REGS.PC),
 			{ op: 'br', relative_depth: escape_depth }
-		)},
-	);
+		]},
+	];
 }
 BLTZAL.assembly = (pc, rs, simm16) => `bltzal\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
@@ -826,17 +854,19 @@ function BGEZAL(pc, rs, simm16, delay) {
 	}
 }
 BGEZAL.wasm = function (pc, rs, simm16, delay, escape_depth) {
-	return [].concat(
+	return [
 		{ op: 'i32.const', value: 0 },
-		regRead(rs),
+		... read(rs),
 		{ op: 'i32.le_s' },
-		{ op: 'if', block: [].concat(
-			delay(),
-			writeReg(31, [{ op: 'i32.const', value: pc + 8 }]),
-			writeReg(REGS.PC, [{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) }]),
+		{ op: 'if', block: [
+			... delay(),
+			{ op: 'i32.const', value: pc + 8 },
+			... write(31),
+			{ op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+			... write(REGS.PC),
 			{ op: 'br', relative_depth: escape_depth }
-		)},
-	);
+		]},
+	];
 }
 BGEZAL.assembly = (pc, rs, simm16) => `bgezal\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
 
@@ -849,7 +879,7 @@ SYSCALL.wasm = function (pc, delayed) {
 		{ op: 'i32.const', value: pc },
 		{ op: 'i32.const', value: delayed ? 1 : 0 },
 		{ op: 'i32.const', value: 0 },
-		{ "op": "call", "function_index": CALLS.EXCEPTION }
+		{ op: "call", function_index: CALLS.EXCEPTION }
 	];
 }
 SYSCALL.assembly = (imm20) => `syscall\t$${imm20.toString(16)}`;
@@ -863,7 +893,7 @@ BREAK.wasm = function (pc, delayed) {
 		{ op: 'i32.const', value: pc },
 		{ op: 'i32.const', value: delayed ? 1 : 0 },
 		{ op: 'i32.const', value: 0 },
-		{ "op": "call", "function_index": CALLS.EXCEPTION }
+		{ op: "call", function_index: CALLS.EXCEPTION }
 	];
 }
 BREAK.assembly = (imm20) => `break\t$${imm20.toString(16)}`;

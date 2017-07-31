@@ -18,18 +18,20 @@ export const CALLS = {
 	TLBP: 10,
 };
 
-export function readReg(index) {
+export function read(index) {
 	return index ? [
 		{ op: 'i32.const', value: index * 4 },
-		{ "op": "i32.load", "flags": 2, "offset": 0 }
+		{ op: "i32.load", "flags": 2, "offset": 0 }
 	] : [
 		{ op: 'i32.const', value: 0 }
 	];
 }
 
-export function writeReg(index, value) {
-	return index ? value.concat([
+export function write(index, value) {
+	return index ? [
 		{ op: 'i32.const', value: index * 4 },
-		{ "op": "i32.store", "flags": 2, "offset": 0 }
-	]) : [];
+		{ op: "i32.store", "flags": 2, "offset": 0 }
+	] : [
+		{ op: "drop" }
+	];
 }

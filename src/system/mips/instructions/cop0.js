@@ -1,6 +1,6 @@
 const Exception = require("../exception").default;
 const Consts = require("../consts");
-import { readReg, writeReg, call, CALLS } from "./wast";
+import { read, write, call, CALLS } from "./wast";
 
 /******
  ** Co-Processor Move registers
@@ -15,12 +15,13 @@ export function MFC0(rt, rd, pc, delayed) {
 	}
 }
 MFC0.wasm = function (rt, rd, pc, delayed) {
-	return writeReg(rt, [
+	return [
 		{ op: 'i32.const', value: rd },
 		{ op: 'i32.const', value: pc },
 		{ op: 'i32.const', value: delayed ? 1 : 0 },
-		{ op: 'call', function_index: CALLS.MFC0 }
-	]);
+		{ op: 'call', function_index: CALLS.MFC0 },
+		... write(rt)
+	];
 }
 MFC0.assembly = (rt, rd) => `mfc0\t${Consts.Registers[rt]}, ${Consts.COP0Registers[rd]}`;
 
@@ -30,7 +31,7 @@ export function MTC0(rt, rd, pc, delayed) {
 MTC0.wasm = function (rt, rd, pc, delayed) {
 	return [].concat(
 		{ op: 'i32.const', value: rd },
-		readReg(rt),
+		... read(rt),
 		{ op: 'i32.const', value: pc },
 		{ op: 'i32.const', value: delayed ? 1 : 0 },
 		{ op: 'call', function_index: CALLS.MTC0 }
@@ -114,7 +115,7 @@ CFC0.wasm = function (pc, delayed) {
 		{ op: 'i32.const', value: pc },
 		{ op: 'i32.const', value: delayed },
 		{ op: 'i32.const', value: 0 },
-		{ "op": "call", "function_index": CALLS.EXCEPTION }
+		{ op: "call", function_index: CALLS.EXCEPTION }
 	];
 }
 CFC0.assembly = (rt, rd) => `cfc0\t${Consts.Registers[rt]}, cop0cnt${rd}`;
@@ -128,7 +129,7 @@ CTC0.wasm = function (pc, delayed) {
 		{ op: 'i32.const', value: pc },
 		{ op: 'i32.const', value: delayed },
 		{ op: 'i32.const', value: 0 },
-		{ "op": "call", "function_index": CALLS.EXCEPTION }
+		{ op: "call", function_index: CALLS.EXCEPTION }
 	];
 }
 CTC0.assembly = (rt, rd) => `ctc0\t${Consts.Registers[rt]}, cop0cnt${rd}`;
@@ -142,7 +143,7 @@ LWC0.wasm = function (pc, delayed) {
 		{ op: 'i32.const', value: pc },
 		{ op: 'i32.const', value: delayed },
 		{ op: 'i32.const', value: 0 },
-		{ "op": "call", "function_index": CALLS.EXCEPTION }
+		{ op: "call", function_index: CALLS.EXCEPTION }
 	];
 }
 LWC0.assembly = (rs, rt, imm16) => `lwc0\t${Consts.COP0Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`;
@@ -156,7 +157,7 @@ SWC0.wasm = function (pc, delayed) {
 		{ op: 'i32.const', value: pc },
 		{ op: 'i32.const', value: delayed },
 		{ op: 'i32.const', value: 0 },
-		{ "op": "call", "function_index": CALLS.EXCEPTION }
+		{ op: "call", function_index: CALLS.EXCEPTION }
 	];
 }
 SWC0.assembly = (rs, rt, imm16) => `swc0\t${Consts.COP0Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`;
