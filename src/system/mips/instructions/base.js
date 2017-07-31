@@ -354,19 +354,7 @@ LWL.wasm = function (rt, rs, imm16, pc, delayed) {
         ... read(rs),
         { op: "i32.const", value: imm26 },
         { op: "i32.add" },
-
         { op: "tee_local", index: 0 },
-        { op: "i32.const", value: pc },
-        { op: "i32.const", value: delayed ? 1 : 0 },
-        { op: "call", function_index: CALLS.LOAD },
-
-        { op: "get_local", index: 0 },
-        { op: "i32.const", value: 32 },
-        { op: "i32.eq" }
-        { op: "br_if", relative_depth: escape_depth },
-
-        { op: "i32.const", value: 32 },
-        { op: "get_local", index: 0 },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
         { op: "i32.const", value: 1 },
@@ -374,6 +362,17 @@ LWL.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "i32.const", value: 8 },
         { op: "i32.mul" },
         { op: "tee_local", index: 0 },
+        { op: "i32.const", value: 32 },
+        { op: "i32.eq" }
+        { op: "br_if", relative_depth: escape_depth },
+
+        { op: "get_local", index: 0 },
+        { op: "i32.const", value: pc },
+        { op: "i32.const", value: delayed ? 1 : 0 },
+        { op: "call", function_index: CALLS.LOAD },
+
+        { op: "i32.const", value: 32 },
+        { op: "get_local", index: 0 },
         { op: "i32.sub" },
         { op: "i32.shl" },
 
@@ -394,7 +393,26 @@ function SWR(rt, rs, imm16, pc, delayed) {
     this.store(address, rt ? this.registers[rt] << bit : 0, ~0 << bit, pc, delayed);
 }
 SWR.wasm = function (rt, rs, imm16, pc, delayed) {
-    throw new Error("TODO");
+    return [
+        ... read(rs),
+        { op: "i32.const", value: imm26 },
+        { op: "i32.add" },
+        { op: "tee_local", index: 0 },
+        ... read(rt)
+        { op: "get_local", index: 0 },
+        { op: "i32.const", value: 3 },
+        { op: "i32.and" },
+        { op: "i32.const", value: 8 },
+        { op: "i32.mul" },
+        { op: "tee_local", index: 0 },
+        { op: "i32.shl" },
+        { op: "i32.const", value: -1 },
+        { op: "get_local", index: 0 },
+        { op: "i32.shl" },
+        { op: "i32.const", value: pc },
+        { op: "i32.const", value: delayed ? 1 : 0 },
+        { op: "call", function_index: CALLS.STORE }
+    ]
 }
 SWR.assembly = (rs, rt, imm16) => `swr\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
@@ -402,12 +420,41 @@ function SWL(rt, rs, imm16, pc, delayed) {
     var address = (rs ? this.registers[rs] : 0) + imm16;
 
     if (~address & 3) {
-        var bit = 8 * (address & 3) + 8;
-        this.store(address, rt ? this.registers[rt] >>> (32 - bit) : 0, ~(~0 << bit) >>> 0, pc, delayed);
+        var bit = 32 - (8 * (address & 3) + 8);
+        this.store(address, rt ? this.registers[rt] >>> bit : 0, ~0 >>> bit, pc, delayed);
     }
 }
 SWL.wasm = function (rt, rs, imm16, pc, delayed) {
-    throw new Error("TODO");
+    return [
+        { op: "i32.const", value: imm26 },
+        { op: "i32.add" },
+        { op: "tee_local", index: 0 },
+
+        { op: "i32.const", value: 32 },
+        { op: "i32.const", value: 3 },
+        { op: "i32.and" },
+        { op: "i32.const", value: 1 },
+        { op: "i32.add" },
+        { op: "i32.const", value: 8 },
+        { op: "i32.mul" },
+        { op: "tee_local", index: 0 },
+        { op: "i32.sub" }
+        { op: "i32.eqz" }
+        { op: "br_if", relative_depth: escape_depth },
+
+        { op: "get_local", index: 0 },
+
+        ... read(rt)
+        { op: "get_local", index: 0 },
+        { op: "i32.shr_u" },
+
+        { op: "i32.const", value: -1 },
+        { op: "get_local", index: 0 },
+        { op: "i32.shr_u" },
+        { op: "i32.const", value: pc },
+        { op: "i32.const", value: delayed ? 1 : 0 },
+        { op: "call", function_index: CALLS.STORE }
+    ];
 }
 SWL.assembly = (rs, rt, imm16) => `swl\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
 
@@ -1026,7 +1073,6 @@ DIVU.wasm = function (rs, rt) {
             ... write(REGS.LO),
         ]}
     ]
-    throw new Error("TODO");
 }
 DIVU.assembly = (rs, rt) => `divu\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
 
