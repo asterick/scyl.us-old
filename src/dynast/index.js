@@ -1,6 +1,7 @@
 import decode from "./import";
 import encode from "./export";
 
+/*
 import raw from "raw-loader!./standard.dyn";
 import { parser } from "./dynast.jison"
 
@@ -31,3 +32,4 @@ try {
 } catch(e) {
 	console.log(e.message);
 }
+*/

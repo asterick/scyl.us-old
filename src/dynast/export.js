@@ -179,13 +179,19 @@ function encode_type_section(defs) {
 	payload.varuint(defs.length);
 
 	defs.forEach((def) => {
-		payload.varint(def.form);
-		payload.varuint(def.parameters.length);
+		payload.varint(VALUE_TYPES[def.form]);
+		switch (def.type) {
+		case "func_type":
+			payload.varuint(def.parameters.length);
 
-		def.parameters.forEach((param) => encode_value_type(payload, param));
+			def.parameters.forEach((param) => encode_value_type(payload, param));
 
-		payload.varuint(def.returns.length);
-		def.returns.forEach(ret => encode_value_type(payload, ret));
+			payload.varuint(def.returns.length);
+			def.returns.forEach(ret => encode_value_type(payload, ret));
+			break ;
+		default:
+			throw new Error(`Invalid type ${def.type}`)
+		}
 	});
 
 	return payload.result();
@@ -375,7 +381,7 @@ export default function (ast) {
 	});
 
 	// Stuff in our custom blobs
-	ast.custom.forEach((custom) => {
+	ast.custom && ast.custom.forEach((custom) => {
 		const payload = new WriteStream();
 		payload.string(custom.name);
 		payload.buffer(custom.data);

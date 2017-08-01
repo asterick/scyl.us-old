@@ -1,3 +1,12 @@
+import Export from "../../../dynast/export";
+import Import from "../../../dynast/import";
+
+fetch("test.wasm")
+	.then((blob) => blob.arrayBuffer())
+	.then((data) => {
+		console.log(JSON.stringify(Import(data), null, 4))
+	})
+
 export const REGS = {
 	LO: 32,
 	HI: 33,

@@ -184,17 +184,23 @@ function decode_type_section(payload) {
 	while (definitions.length < count) {
 		const form = payload.varint();
 
-		const param_count = payload.varuint();
-		const parameters = [];
+		switch (form) {
+		case VALUE_TYPES.func_type:
+			const param_count = payload.varuint();
+			const parameters = [];
 
-		while (parameters.length < param_count) parameters.push(decode_value_type(payload));
+			while (parameters.length < param_count) parameters.push(decode_value_type(payload));
 
-		const return_count = payload.varuint();
-		const returns = [];
+			const return_count = payload.varuint();
+			const returns = [];
 
-		while (returns.length < return_count) returns.push(decode_value_type(payload));
+			while (returns.length < return_count) returns.push(decode_value_type(payload));
 
-		definitions.push({ type: "func_type", form, parameters, returns });
+			definitions.push({ type: "func_type", parameters, returns });
+			break ;
+		default:
+			throw new Error("Form type invalid")
+		}
 	}
 
 	return definitions;

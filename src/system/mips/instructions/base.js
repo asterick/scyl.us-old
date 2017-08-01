@@ -1128,7 +1128,7 @@ function J (pc, imm26, delay) {
 }
 J.wasm = function (pc, imm26, delay, escape_depth) {
     return [
-        ... delay(escape_depth),
+        ... delay(pc+4, escape_depth),
         { op: 'i32.const', value: ((pc & 0xF0000000) | (imm26 * 4)) >>> 0 },
         ... write(REGS.PC),
         { op: 'br', relative_depth: escape_depth }
@@ -1143,7 +1143,7 @@ function JAL (pc, imm26, delay) {
 }
 JAL.wasm = function (pc, imm26, delay, escape_depth) {
     return [
-        ... delay(escape_depth),
+        ... delay(pc+4, escape_depth),
         { op: 'i32.const', value: pc + 8 },
         ... write(31),
         { op: 'i32.const', value: ((pc & 0xF0000000) | (imm26 * 4)) >>> 0 },
@@ -1159,7 +1159,7 @@ function JR(rs, pc, delay) {
 }
 JR.wasm = function (rs, pc, delay, escape_depth) {
     return [
-        ... delay(escape_depth),
+        ... delay(pc+4, escape_depth),
         ... read(rs),
         { op: 'i32.const', value: 0xFFFFFFFC },
         { op: 'i32.and' },
@@ -1179,7 +1179,7 @@ function JALR(rs, rd, pc, delay) {
 }
 JALR.wasm = function (rs, rd, pc, delay, escape_depth) {
     return [
-        ... delay(escape_depth),
+        ... delay(pc+4, escape_depth),
         { op: 'i32.const', value: pc + 8 },
         ... write(rd),
         ... read(rs),
@@ -1203,7 +1203,7 @@ BEQ.wasm = function (pc, rs, rt, simm16, delay, escape_depth) {
         ... read(rt),
         { op: 'i32.eq' },
         { op: 'if', block: [
-            ... delay(escape_depth+1),
+            ... delay(pc+4, escape_depth+1),
             { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
             ... write(REGS.PC),
             { op: 'br', relative_depth: escape_depth + 1 }
@@ -1224,7 +1224,7 @@ BNE.wasm = function (pc, rs, rt, simm16, delay, escape_depth) {
         ... read(rt),
         { op: 'i32.ne' },
         { op: 'if', block: [
-            ... delay(escape_depth+1),
+            ... delay(pc+4, escape_depth+1),
             { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
             ... write(REGS.PC),
             { op: 'br', relative_depth: escape_depth + 1 }
@@ -1245,7 +1245,7 @@ BLTZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
         { op: 'i32.const', value: 0 },
         { op: 'i32.lt_s' },
         { op: 'if', block: [
-            ... delay(escape_depth+1),
+            ... delay(pc+4, escape_depth+1),
             { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
             ... write(REGS.PC),
             { op: 'br', relative_depth: escape_depth + 1 }
@@ -1266,7 +1266,7 @@ BGEZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
         { op: 'i32.const', value: 0 },
         { op: 'i32.ge_s' },
         { op: 'if', block: [
-            ... delay(escape_depth+1),
+            ... delay(pc+4, escape_depth+1),
             { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
             ... write(REGS.PC),
             { op: 'br', relative_depth: escape_depth + 1 }
@@ -1287,7 +1287,7 @@ BGTZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
         { op: 'i32.const', value: 0 },
         { op: 'i32.gt_s' },
         { op: 'if', block: [
-            ... delay(escape_depth+1),
+            ... delay(pc+4, escape_depth+1),
             { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
             ... write(REGS.PC),
             { op: 'br', relative_depth: escape_depth + 1 }
@@ -1308,7 +1308,7 @@ BLEZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
         { op: 'i32.const', value: 0 },
         { op: 'i32.le_s' },
         { op: 'if', block: [
-            ... delay(escape_depth+1),
+            ... delay(pc+4, escape_depth+1),
             { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
             ... write(REGS.PC),
             { op: 'br', relative_depth: escape_depth + 1 }
@@ -1330,7 +1330,7 @@ BLTZAL.wasm = function (pc, rs, simm16, delay, escape_depth) {
         { op: 'i32.const', value: 0 },
         { op: 'i32.lt_s' },
         { op: 'if', block: [
-            ... delay(escape_depth+1),
+            ... delay(pc+4, escape_depth+1),
             { op: 'i32.const', value: pc + 8 },
             ... write(31),
             { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
@@ -1354,7 +1354,7 @@ BGEZAL.wasm = function (pc, rs, simm16, delay, escape_depth) {
         ... read(rs),
         { op: 'i32.le_s' },
         { op: 'if', block: [
-            ... delay(escape_depth+1),
+            ... delay(pc+4, escape_depth+1),
             { op: 'i32.const', value: pc + 8 },
             ... write(31),
             { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
