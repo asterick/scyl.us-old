@@ -1,6 +1,6 @@
 const Exception = require("../exception").default;
 const Consts = require("../consts");
-import { read, write, call, CALLS } from "./wast";
+import { read, write, call, exception, CALLS } from "./wast";
 
 /******
  ** Co-Processor Move registers
@@ -110,13 +110,7 @@ export function CFC0(pc, delayed) {
 	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, 0);
 }
 CFC0.wasm = function (pc, delayed) {
-	return [
-		{ op: 'i32.const', value: Consts.Exceptions.CoprocessorUnusable },
-		{ op: 'i32.const', value: pc },
-		{ op: 'i32.const', value: delayed },
-		{ op: 'i32.const', value: 0 },
-		{ op: "call", function_index: CALLS.EXCEPTION }
-	];
+	return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
 }
 CFC0.assembly = (rt, rd) => `cfc0\t${Consts.Registers[rt]}, cop0cnt${rd}`;
 
@@ -124,13 +118,7 @@ export function CTC0(pc, delayed) {
 	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, 0);
 }
 CTC0.wasm = function (pc, delayed) {
-	return [
-		{ op: 'i32.const', value: Consts.Exceptions.CoprocessorUnusable },
-		{ op: 'i32.const', value: pc },
-		{ op: 'i32.const', value: delayed },
-		{ op: 'i32.const', value: 0 },
-		{ op: "call", function_index: CALLS.EXCEPTION }
-	];
+	return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
 }
 CTC0.assembly = (rt, rd) => `ctc0\t${Consts.Registers[rt]}, cop0cnt${rd}`;
 
@@ -138,13 +126,7 @@ export function LWC0(pc, delayed) {
 	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, 0);
 }
 LWC0.wasm = function (pc, delayed) {
-	return [
-		{ op: 'i32.const', value: Consts.Exceptions.CoprocessorUnusable },
-		{ op: 'i32.const', value: pc },
-		{ op: 'i32.const', value: delayed },
-		{ op: 'i32.const', value: 0 },
-		{ op: "call", function_index: CALLS.EXCEPTION }
-	];
+	return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
 }
 LWC0.assembly = (rs, rt, imm16) => `lwc0\t${Consts.COP0Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`;
 
@@ -152,13 +134,7 @@ export function SWC0(pc, delayed) {
 	throw new Exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, 0);
 }
 SWC0.wasm = function (pc, delayed) {
-	return [
-		{ op: 'i32.const', value: Consts.Exceptions.CoprocessorUnusable },
-		{ op: 'i32.const', value: pc },
-		{ op: 'i32.const', value: delayed },
-		{ op: 'i32.const', value: 0 },
-		{ op: "call", function_index: CALLS.EXCEPTION }
-	];
+	return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
 }
 SWC0.assembly = (rs, rt, imm16) => `swc0\t${Consts.COP0Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`;
 

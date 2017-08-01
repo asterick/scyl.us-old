@@ -1,8 +1,6 @@
 import Inferno from 'inferno';
 import System from "./system";
 
-import Dynast from "./dynast";
-
 fetch("system0.rom")
 	.then((data) => data.arrayBuffer())
 	.then((bios) => {

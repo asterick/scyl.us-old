@@ -1,5 +1,5 @@
-import COP0 from "./process!./cop0";
-import { read, write, exception, REGS } from "./wast";
+import * as COP0 from "./process!./cop0";
+import { read, write, exception, REGS, CALLS } from "./wast";
 
 // For the preprocessor to work, the name has to be pinned
 const Exception = require("../exception").default;
@@ -40,13 +40,12 @@ function LB(rt, rs, imm16, pc, delayed) {
 LB.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm26 },
+        { op: "i32.const", value: imm16 },
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         { op: "i32.const", value: pc },
         { op: "i32.const", value: delayed ? 1 : 0 },
         { op: "call", function_index: CALLS.LOAD },
-
         { op: "i32.const", value: 24 },
         { op: "get_local", index: 0 },
         { op: "i32.const", value: 3 },
@@ -56,7 +55,6 @@ LB.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "i32.sub" },
         { op: "i32.shl" },
         { op: "i32.shr_s" },
-
         ... write(rt)
     ];
 }
@@ -74,7 +72,7 @@ function LBU(rt, rs, imm16, pc, delayed) {
 LBU.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm26 },
+        { op: "i32.const", value: imm16 },
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         { op: "i32.const", value: pc },
@@ -107,7 +105,7 @@ function LH(rt, rs, imm16, pc, delayed) {
 LH.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm26 },
+        { op: "i32.const", value: imm16 },
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
 
@@ -149,7 +147,7 @@ function LHU(rt, rs, imm16, pc, delayed) {
 LHU.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm26 },
+        { op: "i32.const", value: imm16 },
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         { op: "i32.const", value: 1 },
@@ -186,7 +184,7 @@ function LW(rt, rs, imm16, pc, delayed) {
 LW.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm26 },
+        { op: "i32.const", value: imm16 },
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         { op: "i32.const", value: 3 },
@@ -210,7 +208,7 @@ function SB(rt, rs, imm16, pc, delayed) {
 SB.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm26 },
+        { op: "i32.const", value: imm16 },
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         ... read(rt),
@@ -242,7 +240,7 @@ function SH(rt, rs, imm16, pc, delayed) {
 SH.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm26 },
+        { op: "i32.const", value: imm16 },
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         { op: "i32.const", value: 1 },
@@ -277,7 +275,7 @@ function SW(rt, rs, imm16, pc, delayed) {
 SW.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm26 },
+        { op: "i32.const", value: imm16 },
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         { op: "i32.const", value: 3 },
@@ -306,7 +304,7 @@ function LWR(rt, rs, imm16, pc, delayed) {
 LWR.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm26 },
+        { op: "i32.const", value: imm16 },
         { op: "i32.add" },
 
         { op: "tee_local", index: 0 },
@@ -349,10 +347,10 @@ function LWL(rt, rs, imm16, pc, delayed) {
         this.registers[rt] = (this.registers[rt] & mask) | (data << (32 - bit));
     }
 }
-LWL.wasm = function (rt, rs, imm16, pc, delayed) {
+LWL.wasm = function (rt, rs, imm16, pc, delayed, escape_depth) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm26 },
+        { op: "i32.const", value: imm16 },
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         { op: "i32.const", value: 3 },
@@ -363,7 +361,7 @@ LWL.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "i32.mul" },
         { op: "tee_local", index: 0 },
         { op: "i32.const", value: 32 },
-        { op: "i32.eq" }
+        { op: "i32.eq" },
         { op: "br_if", relative_depth: escape_depth },
 
         { op: "get_local", index: 0 },
@@ -395,10 +393,10 @@ function SWR(rt, rs, imm16, pc, delayed) {
 SWR.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm26 },
+        { op: "i32.const", value: imm16 },
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
-        ... read(rt)
+        ... read(rt),
         { op: "get_local", index: 0 },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
@@ -424,9 +422,9 @@ function SWL(rt, rs, imm16, pc, delayed) {
         this.store(address, rt ? this.registers[rt] >>> bit : 0, ~0 >>> bit, pc, delayed);
     }
 }
-SWL.wasm = function (rt, rs, imm16, pc, delayed) {
+SWL.wasm = function (rt, rs, imm16, pc, delayed, escape_depth) {
     return [
-        { op: "i32.const", value: imm26 },
+        { op: "i32.const", value: imm16 },
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
 
@@ -438,13 +436,13 @@ SWL.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "i32.const", value: 8 },
         { op: "i32.mul" },
         { op: "tee_local", index: 0 },
-        { op: "i32.sub" }
-        { op: "i32.eqz" }
+        { op: "i32.sub" },
+        { op: "i32.eqz" },
         { op: "br_if", relative_depth: escape_depth },
 
         { op: "get_local", index: 0 },
 
-        ... read(rt)
+        ... read(rt),
         { op: "get_local", index: 0 },
         { op: "i32.shr_u" },
 
@@ -615,7 +613,7 @@ ADDIU.wasm = function (rt, rs, simm16) {
     ];
 }
 
-DDIU.assembly = (rt, rs, simm16) => rt ? `addiu\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}` : "nop";
+ADDIU.assembly = (rt, rs, simm16) => rt ? `addiu\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}` : "nop";
 
 /******
  ** Comparison instructions

@@ -18,7 +18,7 @@ class Fields {
 	get imm20() { return (this._word >> 6) & 0xFFFFF; }
 	get imm25() { return this._word & 0x1FFFFFF; }
 	get imm26() { return this._word & 0x3FFFFFF; }
-	get cop() { return (this_word >>> 26) & 3 }
+	get cop() { return (this._word >>> 26) & 3 }
 }
 
 export default function (word) {
