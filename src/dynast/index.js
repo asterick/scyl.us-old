@@ -1,35 +1,26 @@
-import decode from "./import";
-import encode from "./export";
+import Export from "./export";
+import Import from "./import";
 
-/*
-import raw from "raw-loader!./standard.dyn";
-import { parser } from "./dynast.jison"
-
-export function process(source) {
-	const program = parser.parse(source);
-
-	if (program.type !== 'Program') {
-		throw new Error("This is not a valid program");
-	}
-
-	program.body.forEach(_processStatement);
+function j(y) {
+	return JSON.stringify(y, null, 4);
 }
 
-function _processStatement(node) {
-	switch (node.type) {
-	case 'ExportStatement':
-		break ;
-	case 'EntityStatement':
-		break ;
-	default:
-		console.log(JSON.stringify(node, null, 4))
-		throw new Error(`Cannot process statement ${node.type}`)
-	}
-}
+fetch("test.wasm")
+	.then((blob) => blob.arrayBuffer())
+	.then((data) => {
+		var decoded1 = Import(data);
+		var encoded1 = Export(decoded1);
+		var decoded2 = Import(encoded1);
 
-try {
-	console.log(process(raw));
-} catch(e) {
-	console.log(e.message);
-}
-*/
+		//console.log(j(decoded1), j(decoded2))
+		console.log(j(decoded1) == j(decoded2))
+
+		/*
+		var a1 = new Uint8Array(data);
+		var a2 = new Uint8Array(encoded1);
+
+		for (var i = 0; i < a1.length; i++) {
+			if (a1[i] !== a2[i]) throw new Error(`TEST FAILED ${i}`)
+		}
+		*/
+	});

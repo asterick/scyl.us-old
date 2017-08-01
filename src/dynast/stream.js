@@ -1,8 +1,6 @@
 const utf8decode = new TextDecoder('utf-8');
 const utf8encode = new TextEncoder('utf-8');
 
-// NOTE: THIS DOES NOT SUPPORT VARINT64
-
 export class ReadStream {
 	constructor (buffer) {
 		this._dv = new DataView(buffer);
@@ -15,7 +13,7 @@ export class ReadStream {
 	}
 
 	remaining() {
-		return this._buffer.byteLength - this._index;	
+		return this._buffer.byteLength - this._index;
 	}
 
 	uint8() {
@@ -64,12 +62,12 @@ export class ReadStream {
 		var byte;
 
 		do {
-			byte = this._dv.getUint8(this._index++);
-			value |= (byte & 0x7F) << bits;
+			byte = this.uint8();
+			value += (byte & 0x7F) * Math.pow(2, bits);
 			bits += 7;
 		} while (byte & 0x80);
 
-		return value >>> 0;
+		return value;
 	}
 
 	varint() {
@@ -78,13 +76,13 @@ export class ReadStream {
 		var byte;
 
 		do {
-			byte = this._dv.getUint8(this._index++);
-			value |= (byte & 0x7F) << bits;
+			byte = this.uint8();
+			value += (byte & 0x7F) * Math.pow(2, bits);
 			bits += 7;
 		} while (byte & 0x80);
 
 		if (byte & 0x40) {
-			value |= ~((1 << bits) - 1);
+			value = value - Math.pow(2, bits);
 		}
 
 		return value;
@@ -149,23 +147,24 @@ export class WriteStream {
 		var bytes = [];
 
 		do {
-			var byte = value & 0x7F;
-			value >>>= 7;
-			this._bytes.push(value ? byte | 0x80 : byte);
-		} while (value);
+			var byte = value % 0x7F;
+			value = (value - byte) / 128;
+			this._bytes.push(value ? (byte | 0x80) : byte);
+		} while (value >= 1);
 	}
 
 	varint(value) {
-		var compare = value < 0 ? -1 : 0;
+		var neg = value < 0;
+
+		// Get the complement and use that
+		if (neg) value = -1 - value;
 
 		do {
-			var diff = ((value >> 1) ^ value) & 0x40;
-			var byte = value & 0x7F;
-			value >>= 7;
+			var more = value >= 0x40;
+			var byte = value % 0x7F;
+			value = (value - byte) / 0x80;
 
-			var more = diff || value != compare;
-
-			this._bytes.push(more ? byte | 0x80 : byte);
+			this._bytes.push((byte ^ (neg ? 0x7F : 0)) | (more ? 0x80 : 0));
 		} while (more);
 	}
 }
