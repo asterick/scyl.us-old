@@ -1,4 +1,4 @@
-import dynast from "../../../dynast";
+import Export from "../../../dynast/export";
 
 export const REGS = {
 	LO: 32,

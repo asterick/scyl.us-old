@@ -394,7 +394,7 @@ export default function (ast) {
 		return mappedTypes[form];
 	}
 
-	// Unstamp the import section (DESTRUCTIVE)
+	// Unstamp the import section
 	ast.import_section = ast.import_section.map ((imp) => {
 		switch (imp.type.type) {
 		case "func_type":

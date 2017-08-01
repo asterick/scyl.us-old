@@ -40,6 +40,7 @@ function LB(rt, rs, imm16, pc, delayed) {
 LB.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
+
         { op: "i32.const", value: imm16 },
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
@@ -55,6 +56,7 @@ LB.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "i32.sub" },
         { op: "i32.shl" },
         { op: "i32.shr_s" },
+
         ... write(rt)
     ];
 }
