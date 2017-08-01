@@ -395,6 +395,7 @@ export default function (ast) {
 	}
 
 	// Unstamp the import section
+	if (ast.import_section)
 	ast.import_section = ast.import_section.map ((imp) => {
 		switch (imp.type.type) {
 		case "func_type":
@@ -406,6 +407,7 @@ export default function (ast) {
 	});
 
 	// Unroll the function section
+	if (ast.function_section)
 	ast.function_section.forEach((func, i) => {
 		ast.function_type_section.push(typeIndex(func.type));
 	});

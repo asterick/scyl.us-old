@@ -432,6 +432,7 @@ export default function (array) {
 	}
 
 	// Type stamp the imports
+	if (result.import_section)
 	result.import_section.forEach((imp) => {
 		switch (imp.type.type) {
 		case "func_type":
@@ -441,6 +442,7 @@ export default function (array) {
 	});
 
 	// Roll up function (for ease of use)
+	if (result.function_section)
 	result.function_section = result.function_section.map((code, i) => {
 		code.type = result.type_section[result.function_type_section[i]];
 		return code;

@@ -1,5 +1,14 @@
 import Export from "../../../dynast/export";
 
+/*
+import Import from "../../../dynast/import";
+fetch("test.wasm")
+	.then((v) => v.arrayBuffer())
+	.then((ab) => {
+		console.log(JSON.stringify(Import(ab), null, 4))
+	});
+*/
+
 export const REGS = {
 	LO: 32,
 	HI: 33,
@@ -48,3 +57,120 @@ export function exception(code, pc, delayed, cop = 0) {
         { op: "unreachable" }
 	]
 }
+
+export function module(functions) {
+	const result = {
+	    "magicNumber": 1836278016,
+	    "version": 1,
+	    "custom": [],
+	    "import_section": [
+	        {
+	            "module": "processor",
+	            "field": "exception",
+	            "type": {
+	                "type": "func_type",
+	                "parameters": [ "i32", "i32", "i32", "i32" ],
+	                "returns": []
+	            }
+	        },
+	        {
+	            "module": "processor",
+	            "field": "execute",
+	            "type": {
+	                "type": "func_type",
+	                "parameters": [ "i32", "i32" ],
+	                "returns": []
+	            }
+	        },
+	        {
+	            "module": "processor",
+	            "field": "load",
+	            "type": {
+	                "type": "func_type",
+	                "parameters": [ "i32", "i32", "i32" ],
+	                "returns": [
+	                    "i32"
+	                ]
+	            }
+	        },
+	        {
+	            "module": "processor",
+	            "field": "mfc0",
+	            "type": {
+	                "type": "func_type",
+	                "parameters": [ "i32", "i32", "i32" ],
+	                "returns": [ "i32" ]
+	            }
+	        },
+	        {
+	            "module": "processor",
+	            "field": "mtc0",
+	            "type": {
+	                "type": "func_type",
+	                "parameters": [ "i32", "i32", "i32", "i32" ],
+	                "returns": []
+	            }
+	        },
+	        {
+	            "module": "processor",
+	            "field": "rfe",
+	            "type": {
+	                "type": "func_type",
+	                "parameters": [ "i32", "i32" ],
+	                "returns": []
+	            }
+	        },
+	        {
+	            "module": "processor",
+	            "field": "store",
+	            "type": {
+	                "type": "func_type",
+	                "parameters": [ "i32", "i32", "i32", "i32", "i32" ],
+	                "returns": []
+	            }
+	        },
+	        {
+	            "module": "processor",
+	            "field": "tlbp",
+	            "type": {
+	                "type": "func_type",
+	                "parameters": [ "i32", "i32" ],
+	                "returns": []
+	            }
+	        },
+	        {
+	            "module": "processor",
+	            "field": "tlbr",
+	            "type": {
+	                "type": "func_type",
+	                "parameters": [ "i32", "i32" ],
+	                "returns": []
+	            }
+	        },
+	        {
+	            "module": "processor",
+	            "field": "tlbwi",
+	            "type": {
+	                "type": "func_type",
+	                "parameters": [ "i32", "i32" ],
+	                "returns": []
+	            }
+	        },
+	        {
+	            "module": "processor",
+	            "field": "tlbwr",
+	            "type": {
+	                "type": "func_type",
+	                "parameters": [ "i32", "i32" ],
+	                "returns": []
+	            }
+	        }
+	    ],
+	}
+
+	// TODO: PACK IN FUNCTIONS
+
+	return Export(result);
+}
+
+console.log(module())
