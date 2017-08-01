@@ -384,14 +384,14 @@ function decode_data_section(payload) {
 const DECODE_TYPES = {
 	[PAYLOAD_TYPES.TYPE]: { name: "type_section", decode: decode_type_section },
 	[PAYLOAD_TYPES.IMPORT]: { name: "import_section", decode: decode_import_section },
-	[PAYLOAD_TYPES.FUNCTION]: { name: "function_section", decode: decode_function_section },
+	[PAYLOAD_TYPES.FUNCTION]: { name: "function_type_section", decode: decode_function_section },
 	[PAYLOAD_TYPES.TABLE]: { name: "table_section", decode: decode_table_section },
 	[PAYLOAD_TYPES.MEMORY]: { name: "memory_section", decode: decode_memory_section },
 	[PAYLOAD_TYPES.GLOBAL]: { name: "global_section", decode: decode_global_section },
 	[PAYLOAD_TYPES.EXPORT]: { name: "export_section", decode: decode_export_section },
 	[PAYLOAD_TYPES.START]: { name: "start_section", decode: decode_start_section },
 	[PAYLOAD_TYPES.ELEMENT]: { name: "element_section", decode: decode_element_section },
-	[PAYLOAD_TYPES.CODE]: { name: "code_section", decode: decode_code_section },
+	[PAYLOAD_TYPES.CODE]: { name: "function_section", decode: decode_code_section },
 	[PAYLOAD_TYPES.DATA]: { name: "data_section", decode: decode_data_section }
 };
 
@@ -430,6 +430,24 @@ export default function (array) {
 			throw new Error(`section ${id} decoded with ${payload.remaining()} bytes remaining`)
 		}
 	}
+
+	// Type stamp the imports
+	result.import_section.forEach((imp) => {
+		switch (imp.type.type) {
+		case "func_type":
+			imp.type = result.type_section[imp.type.index];
+			break ;
+		}
+	});
+
+	// Roll up function (for ease of use)
+	result.function_section = result.function_section.map((code, i) => {
+		code.type = result.type_section[result.function_type_section[i]];
+		return code;
+	});
+
+	delete result.function_type_section;
+	delete result.type_section;
 
 	return result;
 }

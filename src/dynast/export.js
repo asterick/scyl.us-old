@@ -344,14 +344,14 @@ function encode_data_section(defs) {
 const ENCODE_TYPES = [
 	{ id: PAYLOAD_TYPES.TYPE, name: "type_section", encode: encode_type_section },
 	{ id: PAYLOAD_TYPES.IMPORT, name: "import_section", encode: encode_import_section },
-	{ id: PAYLOAD_TYPES.FUNCTION, name: "function_section", encode: encode_function_section },
+	{ id: PAYLOAD_TYPES.FUNCTION, name: "function_type_section", encode: encode_function_section },
 	{ id: PAYLOAD_TYPES.TABLE, name: "table_section", encode: encode_table_section },
 	{ id: PAYLOAD_TYPES.MEMORY, name: "memory_section", encode: encode_memory_section },
 	{ id: PAYLOAD_TYPES.GLOBAL, name: "global_section", encode: encode_global_section },
 	{ id: PAYLOAD_TYPES.EXPORT, name: "export_section", encode: encode_export_section },
 	{ id: PAYLOAD_TYPES.START, name: "start_section", encode: encode_start_section },
 	{ id: PAYLOAD_TYPES.ELEMENT, name: "element_section", encode: encode_element_section },
-	{ id: PAYLOAD_TYPES.CODE, name: "code_section", encode: encode_code_section },
+	{ id: PAYLOAD_TYPES.CODE, name: "function_section", encode: encode_code_section },
 	{ id: PAYLOAD_TYPES.DATA, name: "data_section", encode: encode_data_section }
 ];
 
@@ -368,6 +368,47 @@ export default function (ast) {
 
 	stream.uint32(ast.magicNumber);
 	stream.uint32(ast.version);
+
+	// Unpack types
+	var mappedTypes = {};
+	ast = Object.create(ast);
+	ast.function_type_section = [];
+	ast.type_section = [];
+
+	function typeIndex(def) {
+		var form;
+
+		switch (def.type) {
+		case "func_type":
+			form = `func:${def.parameters.join(",")}|${def.returns.join(",")}`
+			break ;
+		default:
+			throw new Error(`Unrecognized type ${def.type}`)
+		}
+
+		if (mappedTypes[form] === undefined) {
+			mappedTypes[form] = ast.type_section.length;
+			ast.type_section.push(def);
+		}
+
+		return mappedTypes[form];
+	}
+
+	// Unstamp the import section (DESTRUCTIVE)
+	ast.import_section = ast.import_section.map ((imp) => {
+		switch (imp.type.type) {
+		case "func_type":
+			imp = Object.create(imp);
+			imp.type = { type: "func_type", index: typeIndex(imp.type) }
+			return imp ;
+		}
+
+	});
+
+	// Unroll the function section
+	ast.function_section.forEach((func, i) => {
+		ast.function_type_section.push(typeIndex(func.type));
+	});
 
 	ENCODE_TYPES.forEach((encoder) => {
 		const def = ast[encoder.name];

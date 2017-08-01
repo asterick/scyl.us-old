@@ -13,6 +13,8 @@ fetch("test.wasm")
 		var decoded2 = Import(encoded1);
 
 		//console.log(j(decoded1), j(decoded2))
+		console.log(JSON.stringify(decoded1, null, 4))
+		console.log(JSON.stringify(decoded2, null, 4))
 		console.log(j(decoded1) == j(decoded2))
 
 		/*
