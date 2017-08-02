@@ -16,9 +16,9 @@ export function MFC0(rt, rd, pc, delayed) {
 }
 MFC0.wasm = function (rt, rd, pc, delayed) {
 	return [
-		{ op: 'i32.const', value: rd },
-		{ op: 'i32.const', value: pc },
-		{ op: 'i32.const', value: delayed ? 1 : 0 },
+		... rd,
+		... pc,
+		... delayed,
 		{ op: 'call', function_index: CALLS.MFC0 },
 		... write(rt)
 	];
@@ -30,10 +30,10 @@ export function MTC0(rt, rd, pc, delayed) {
 }
 MTC0.wasm = function (rt, rd, pc, delayed) {
 	return [].concat(
-		{ op: 'i32.const', value: rd },
+		... rd,
 		... read(rt),
-		{ op: 'i32.const', value: pc },
-		{ op: 'i32.const', value: delayed ? 1 : 0 },
+		... pc,
+		... delayed,
 		{ op: 'call', function_index: CALLS.MTC0 }
 	);
 }
@@ -48,8 +48,8 @@ export function RFE(pc, delayed) {
 }
 RFE.wasm = function (pc, delayed) {
 	return [
-		{ op: 'i32.const', value: pc },
-		{ op: 'i32.const', value: delayed ? 1 : 0 },
+		... pc,
+		... delayed,
 		{ op: 'call', function_index: CALLS.RFE }
 	];
 }
@@ -60,8 +60,8 @@ export function TLBR(pc, delayed) {
 }
 TLBR.wasm = function (pc, delayed) {
 	return [
-		{ op: 'i32.const', value: pc },
-		{ op: 'i32.const', value: delayed ? 1 : 0 },
+		... pc,
+		... delayed,
 		{ op: 'call', function_index: CALLS.TLBR }
 	];
 }
@@ -72,8 +72,8 @@ export function TLBWI(pc, delayed) {
 }
 TLBWI.wasm = function (pc, delayed) {
 	return [
-		{ op: 'i32.const', value: pc },
-		{ op: 'i32.const', value: delayed ? 1 : 0 },
+		... pc,
+		... delayed,
 		{ op: 'call', function_index: CALLS.TLBWI }
 	];
 }
@@ -84,8 +84,8 @@ export function TLBWR(pc, delayed) {
 }
 TLBWR.wasm = function (pc, delayed) {
 	return [
-		{ op: 'i32.const', value: pc },
-		{ op: 'i32.const', value: delayed ? 1 : 0 },
+		... pc,
+		... delayed,
 		{ op: 'call', function_index: CALLS.TLBWR }
 	];
 }
@@ -96,8 +96,8 @@ export function TLBP(pc, delayed) {
 }
 TLBP.wasm = function (pc, delayed) {
 	return [
-		{ op: 'i32.const', value: pc },
-		{ op: 'i32.const', value: delayed ? 1 : 0 },
+		... pc,
+		... delayed,
 		{ op: 'call', function_index: CALLS.TLBP }
 	];
 }

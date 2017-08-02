@@ -35,3 +35,16 @@ export default function (word) {
 
 	return fields;
 }
+
+function walk(table) {
+	Object.keys(table).forEach((key) => {
+		const entry = table[key];
+
+		if (typeof entry === "function") {
+			//console.log(key, entry.wasm({}, 0xDEADFACE, false, 5, () => ["DELAY_SLOT"]));
+		} else if (typeof entry === 'object') {
+			walk(entry);
+		}
+	})
+}
+walk(Instructions);

@@ -580,7 +580,8 @@ ADDI.wasm = function (rt, rs, simm16, pc, delayed) {
     return [
         ... read(rs),
         { op: "i64.extend_s/i32" },
-        { op: "i64.const", value: simm16 },
+        ... simm16,
+        { op: "i64.extend_s/i32" },
         { op: "i64.add" },
 
         { op: "tee_local", index: 1 },
@@ -740,7 +741,7 @@ NOR.wasm = function (rd, rs, rt) {
         ... read(rs),
         ... read(rt),
         { op: "i32.or" },
-        { op: "i32.const", value: 0xFFFFFFFF },
+        { op: "i32.const", value: -1 },
         { op: "i32.xor" },
         ... write(rd)
     ]
@@ -755,7 +756,7 @@ function ANDI(rt, rs, imm16) {
 ANDI.wasm = function (rt, rs, imm16) {
     return [
         ... read(rs),
-        { op: "i32.const", imm16 },
+        ... imm16,
         { op: "i32.and" },
         ... write(rt)
     ]
@@ -770,7 +771,7 @@ function ORI(rt, rs, imm16) {
 ORI.wasm = function (rt, rs, imm16) {
     return [
         ... read(rs),
-        { op: "i32.const", imm16 },
+        ... imm16,
         { op: "i32.or" },
         ... write(rt)
     ]
@@ -785,7 +786,7 @@ function XORI(rt, rs, imm16) {
 XORI.wasm = function (rt, rs, imm16) {
     return [
         ... read(rs),
-        { op: "i32.const", imm16 },
+        ... imm16,
         { op: "i32.xor" },
         ... write(rt)
     ]
@@ -899,7 +900,9 @@ function LUI(rt, imm16) {
 }
 LUI.wasm = function (rt, imm16) {
     return [
-        ... imm16 << 16,
+        ... imm16,
+        { op: "i32.const", value: 16 },
+        { op: "i32.shl" }
         ... write(rt)
     ]
 }
@@ -1130,7 +1133,7 @@ function J (pc, imm26, delay) {
 }
 J.wasm = function (pc, imm26, delay, escape_depth) {
     return [
-        ... delay(pc+4, escape_depth),
+        ... delay(),
         ... ((pc & 0xF0000000) | (imm26 * 4)) >>> 0,
         ... write(REGS.PC),
         { op: 'br', relative_depth: escape_depth }
@@ -1145,8 +1148,10 @@ function JAL (pc, imm26, delay) {
 }
 JAL.wasm = function (pc, imm26, delay, escape_depth) {
     return [
-        ... delay(pc+4, escape_depth),
-        ... pc + 8,
+        ... delay(),
+        ... pc
+        { op: 'i32.const', value: 8 },
+        { op: 'i32.add' },
         ... write(31),
         ... ((pc & 0xF0000000) | (imm26 * 4)) >>> 0,
         ... write(REGS.PC),
@@ -1161,7 +1166,7 @@ function JR(rs, pc, delay) {
 }
 JR.wasm = function (rs, pc, delay, escape_depth) {
     return [
-        ... delay(pc+4, escape_depth),
+        ... delay(),
         ... read(rs),
         { op: 'i32.const', value: 0xFFFFFFFC },
         { op: 'i32.and' },
@@ -1181,8 +1186,10 @@ function JALR(rs, rd, pc, delay) {
 }
 JALR.wasm = function (rs, rd, pc, delay, escape_depth) {
     return [
-        ... delay(pc+4, escape_depth),
-        ... pc + 8,
+        ... delay(),
+        ... pc
+        { op: 'i32.const', value: 8 },
+        { op: 'i32.add' },
         ... write(rd),
         ... read(rs),
         { op: 'i32.const', value: 0xFFFFFFFC },
@@ -1204,12 +1211,18 @@ BEQ.wasm = function (pc, rs, rt, simm16, delay, escape_depth) {
         ... read(rs),
         ... read(rt),
         { op: 'i32.eq' },
-        { op: 'if', block: [
-            ... delay(pc+4, escape_depth+1),
-            ... (pc + 4) + (simm16 * 4),
-            ... write(REGS.PC),
-            { op: 'br', relative_depth: escape_depth + 1 }
-        ]},
+        { op: 'br_if', escape_depth: 1 },
+
+        ... delay(),
+        ... simm16,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.mul' },
+        ... pc,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.add' },
+        { op: 'i32.add' },
+        ... write(REGS.PC),
+        { op: 'br', relative_depth: escape_depth }
     ];
 }
 BEQ.assembly = (pc, rs, rt, simm16) => `beq\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
@@ -1224,13 +1237,20 @@ BNE.wasm = function (pc, rs, rt, simm16, delay, escape_depth) {
     return [
         ... read(rs),
         ... read(rt),
-        { op: 'i32.ne' },
-        { op: 'if', block: [
-            ... delay(pc+4, escape_depth+1),
-            ... (pc + 4) + (simm16 * 4),
-            ... write(REGS.PC),
-            { op: 'br', relative_depth: escape_depth + 1 }
-        ]},
+        { op: 'i32.eq' },
+        { op: 'br_if', escape_depth: 1 },
+
+        ... delay(),
+        ... simm16,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.mul' },
+        ... pc,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.add' },
+        { op: 'i32.add' },
+        ... write(REGS.PC),
+
+        { op: 'br', relative_depth: escape_depth }
     ];
 }
 BNE.assembly = (pc, rs, rt, simm16) => `bne\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
@@ -1245,13 +1265,19 @@ BLTZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
     return [
         ... read(rs),
         { op: 'i32.const', value: 0 },
-        { op: 'i32.lt_s' },
-        { op: 'if', block: [
-            ... delay(pc+4, escape_depth+1),
-            ... (pc + 4) + (simm16 * 4),
-            ... write(REGS.PC),
-            { op: 'br', relative_depth: escape_depth + 1 }
-        ]},
+        { op: 'i32.ge_s' },
+        { op: 'br_if', escape_depth: 1 },
+
+        ... delay(),
+        ... simm16,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.mul' },
+        ... pc,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.add' },
+        { op: 'i32.add' },
+        ... write(REGS.PC),
+        { op: 'br', relative_depth: escape_depth }
     ];
 }
 BLTZ.assembly = (pc, rs, simm16) => `bltz\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
@@ -1266,13 +1292,19 @@ BGEZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
     return [
         ... read(rs),
         { op: 'i32.const', value: 0 },
-        { op: 'i32.ge_s' },
-        { op: 'if', block: [
-            ... delay(pc+4, escape_depth+1),
-            ... (pc + 4) + (simm16 * 4),
-            ... write(REGS.PC),
-            { op: 'br', relative_depth: escape_depth + 1 }
-        ]},
+        { op: 'i32.lt_s' },
+        { op: 'br_if', escape_depth: 1 },
+
+        ... delay(),
+        ... simm16,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.mul' },
+        ... pc,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.add' },
+        { op: 'i32.add' },
+        ... write(REGS.PC),
+        { op: 'br', relative_depth: escape_depth }
     ];
 }
 BGEZ.assembly = (pc, rs, simm16) => `bgez\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
@@ -1287,13 +1319,19 @@ BGTZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
     return [
         ... read(rs),
         { op: 'i32.const', value: 0 },
-        { op: 'i32.gt_s' },
-        { op: 'if', block: [
-            ... delay(pc+4, escape_depth+1),
-            ... (pc + 4) + (simm16 * 4),
-            ... write(REGS.PC),
-            { op: 'br', relative_depth: escape_depth + 1 }
-        ]},
+        { op: 'i32.le_s' },
+        { op: 'br_if', escape_depth: 1 },
+
+        ... delay(),
+        ... simm16,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.mul' },
+        ... pc,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.add' },
+        { op: 'i32.add' },
+        ... write(REGS.PC),
+        { op: 'br', relative_depth: escape_depth }
     ];
 }
 BGTZ.assembly = (pc, rs, simm16) => `bgtz\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
@@ -1308,13 +1346,21 @@ BLEZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
     return [
         ... read(rs),
         { op: 'i32.const', value: 0 },
-        { op: 'i32.le_s' },
-        { op: 'if', block: [
-            ... delay(pc+4, escape_depth+1),
-            ... (pc + 4) + (simm16 * 4),
-            ... write(REGS.PC),
-            { op: 'br', relative_depth: escape_depth + 1 }
-        ]},
+        { op: 'i32.gt_s' },
+        { op: 'br_if', escape_depth: 1 },
+
+        ... delay(),
+
+        ... simm16,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.mul' },
+        ... pc,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.add' },
+        { op: 'i32.add' },
+
+        ... write(REGS.PC),
+        { op: 'br', relative_depth: escape_depth }
     ];
 }
 BLEZ.assembly = (pc, rs, simm16) => `blez\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
@@ -1330,15 +1376,23 @@ BLTZAL.wasm = function (pc, rs, simm16, delay, escape_depth) {
     return [
         ... read(rs),
         { op: 'i32.const', value: 0 },
-        { op: 'i32.lt_s' },
-        { op: 'if', block: [
-            ... delay(pc+4, escape_depth+1),
-            ... pc + 8,
-            ... write(31),
-            ... (pc + 4) + (simm16 * 4),
-            ... write(REGS.PC),
-            { op: 'br', relative_depth: escape_depth + 1 }
-        ]},
+        { op: 'i32.ge_s' },
+        { op: 'br_if', escape_depth: 1 },
+
+        ... delay(),
+        ... pc
+        { op: 'i32.const', value: 8 },
+        { op: 'i32.add' },
+        ... write(31),
+        ... simm16,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.mul' },
+        ... pc,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.add' },
+        { op: 'i32.add' },
+        ... write(REGS.PC),
+        { op: 'br', relative_depth: escape_depth }
     ];
 }
 BLTZAL.assembly = (pc, rs, simm16) => `bltzal\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
@@ -1354,15 +1408,25 @@ BGEZAL.wasm = function (pc, rs, simm16, delay, escape_depth) {
     return [
         { op: 'i32.const', value: 0 },
         ... read(rs),
-        { op: 'i32.le_s' },
-        { op: 'if', block: [
-            ... delay(pc+4, escape_depth+1),
-            ... pc + 8,
-            ... write(31),
-            ... (pc + 4) + (simm16 * 4),
-            ... write(REGS.PC),
-            { op: 'br', relative_depth: escape_depth + 1 }
-        ]},
+        { op: 'i32.lt_s' },
+        { op: 'br_if', escape_depth: 1 },
+
+        ... delay(),
+
+        ... pc
+        { op: 'i32.const', value: 8 },
+        { op: 'i32.add' },
+
+        ... write(31),
+        ... simm16,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.mul' },
+        ... pc,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.add' },
+        { op: 'i32.add' },
+        ... write(REGS.PC),
+        { op: 'br', relative_depth: escape_depth }
     ];
 }
 BGEZAL.assembly = (pc, rs, simm16) => `bgezal\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
