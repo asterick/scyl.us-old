@@ -260,14 +260,8 @@ function LWL(fields, pc, delayed, delay, escape) {
         ... fields.imm16,
         { op: "i32.add" },
         { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
-        { op: "i32.const", value: 3 },
-        { op: "i32.and" },
-        { op: "i32.const", value: 1 },
-        { op: "i32.add" },
-        { op: "i32.const", value: 8 },
-        { op: "i32.mul" },
-        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
-        { op: "i32.const", value: 32 },
+
+        { op: 'i32.const', value: 3 },
         { op: "i32.eq" },
         { op: "br_if", relative_depth: 0 },
 
@@ -278,12 +272,21 @@ function LWL(fields, pc, delayed, delay, escape) {
 
         { op: "i32.const", value: 32 },
         { op: "get_local", index: LOCAL_VARS.I32_TEMP },
+        { op: "i32.const", value: 3 },
+        { op: "i32.and" },
+        { op: "i32.const", value: 1 },
+        { op: "i32.add" },
+        { op: "i32.const", value: 8 },
+        { op: "i32.mul" },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.sub" },
         { op: "i32.shl" },
 
-        ... read(fields.rt),
+
         { op: "i32.const", value: -1 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.shr_u" },
+        ... read(fields.rt),
         { op: "i32.and" },
         { op: "i32.or" },
         ... write(fields.rt)
@@ -317,31 +320,34 @@ SWR.assembly = (fields, pc) => `swr\t${Consts.Registers[fields.rt]}, ${fields.im
 
 function SWL(fields, pc, delayed, delay, escape) {
     return [
+        ... read(fields.rs),
         ... fields.imm16,
         { op: "i32.add" },
         { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
 
+        { op: 'i32.const', value: 3 },
+        { op: "i32.eq" },
+        { op: "br_if", relative_depth: 0 },
+
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
+
+        ... read(fields.rt),
         { op: "i32.const", value: 32 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
         { op: "i32.const", value: 1 },
         { op: "i32.add" },
         { op: "i32.const", value: 8 },
         { op: "i32.mul" },
-        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.sub" },
-        { op: "i32.eqz" },
-        { op: "br_if", relative_depth: 0 },
-
-        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
-
-        ... read(fields.rt),
-        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.shr_u" },
 
         { op: "i32.const", value: -1 },
         { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.shr_u" },
+
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.STORE }
@@ -1125,14 +1131,14 @@ export default {
     0x13: CopUnusable,
     0x20: LB,
     0x21: LH,
-    //0x22: LWL,
+    0x22: LWL,
     0x23: LW,
     0x24: LBU,
     0x25: LHU,
     0x26: LWR,
     0x28: SB,
     0x29: SH,
-    // 0x2A: SWL,
+    0x2A: SWL,
     0x2B: SW,
     0x2E: SWR,
     0x30: COP0.LWC0,
