@@ -1,9 +1,6 @@
 import * as COP0 from "./cop0";
-import { read, write, exception, REGS, CALLS, LOCAL_VARS } from "./wast";
-
-// For the preprocessor to work, the name has to be pinned
-const Exception = require("../exception").default;
-const Consts = require("../consts");
+import { block, read, write, exception, REGS, CALLS, LOCAL_VARS } from "./wast";
+import * as Consts from "../consts";
 
 /******
  ** Trap Instructions
@@ -81,7 +78,7 @@ function LH(fields, pc, delayed, delay, escape) {
         { op: "i32.const", value: 1 },
         { op: "i32.and" },
 
-        { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
+        { op: "if", block: block(exception(Consts.Exceptions.AddressLoad, pc, delayed)) },
 
         { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         ... pc,
@@ -111,7 +108,7 @@ function LHU(fields, pc, delayed, delay, escape) {
         { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 1 },
         { op: "i32.and" },
-        { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
+        { op: "if", block: block(exception(Consts.Exceptions.AddressLoad, pc, delayed)) },
         { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         ... pc,
         ... delayed,
@@ -138,7 +135,7 @@ function LW(fields, pc, delayed, delay, escape) {
         { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
-        { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
+        { op: "if", block: block(exception(Consts.Exceptions.AddressLoad, pc, delayed)) },
         { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         ... pc,
         ... delayed,
@@ -180,7 +177,7 @@ function SH(fields, pc, delayed, delay, escape) {
         { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 1 },
         { op: "i32.and" },
-        { op: "if", block: exception(Consts.Exceptions.AddressStore, pc, delayed) },
+        { op: "if", block: block(exception(Consts.Exceptions.AddressStore, pc, delayed)) },
         { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         ... read(fields.rt),
         { op: "get_local", index: LOCAL_VARS.I32_TEMP },
@@ -208,7 +205,7 @@ function SW(fields, pc, delayed, delay, escape) {
         { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
-        { op: "if", block: exception(Consts.Exceptions.AddressStore, pc, delayed) },
+        { op: "if", block: block(exception(Consts.Exceptions.AddressStore, pc, delayed)) },
         { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         ... read(fields.rt),
         { op: "i32.const", value: -1 },
@@ -269,7 +266,7 @@ function LWL(fields, pc, delayed, delay, escape) {
         { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 32 },
         { op: "i32.eq" },
-        { op: "br_if", relative_depth: 1 },
+        { op: "br_if", relative_depth: 0 },
 
         { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         ... pc,
@@ -331,7 +328,7 @@ function SWL(fields, pc, delayed, delay, escape) {
         { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.sub" },
         { op: "i32.eqz" },
-        { op: "br_if", relative_depth: 1 },
+        { op: "br_if", relative_depth: 0 },
 
         { op: "get_local", index: LOCAL_VARS.I32_TEMP },
 
@@ -370,7 +367,7 @@ function ADD(fields, pc, delayed, delay, escape) {
         { op: "i64.ge_s" },
 
         { op: "i32.or" },
-        { op: "if", block: exception(Consts.Exceptions.Overflow, pc, delayed) },
+        { op: "if", block: block(exception(Consts.Exceptions.Overflow, pc, delayed)) },
 
         { op: "get_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i32.wrap/i64" },
@@ -406,7 +403,7 @@ function SUB(fields, pc, delayed, delay, escape) {
         { op: "i64.ge_s" },
 
         { op: "i32.or" },
-        { op: "if", block: exception(Consts.Exceptions.Overflow, pc, delayed) },
+        { op: "if", block: block(exception(Consts.Exceptions.Overflow, pc, delayed)) },
 
         { op: "get_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i32.wrap/i64" },
@@ -441,7 +438,7 @@ function ADDI(fields, pc, delayed, delay, escape) {
         { op: "i64.ge_s" },
 
         { op: "i32.or" },
-        { op: "if", block: exception(Consts.Exceptions.Overflow, pc, delayed) },
+        { op: "if", block: block(exception(Consts.Exceptions.Overflow, pc, delayed)) },
 
         { op: "get_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i32.wrap/i64" },
@@ -714,7 +711,7 @@ function DIV(fields, pc, delayed, delay, escape) {
         { op: "i32.const", value: -1 },
         { op: "i32.eq" },
         { op: "i32.and" },
-        { op: "if", block: [
+        { op: "if", block: block([
             { op: "i32.const", value: -0x80000000 },
             ... write(REGS.HI),
             { op: "i32.const", value: 0 },
@@ -722,7 +719,7 @@ function DIV(fields, pc, delayed, delay, escape) {
         { op: "else" },
         ... read(fields.rt),
         { op: "i32.eqz" },
-        { op: "if", block: [
+        { op: "if", block: block([
             ... read(fields.rs),
             ... write(REGS.HI),
 
@@ -742,8 +739,8 @@ function DIV(fields, pc, delayed, delay, escape) {
             ... read(fields.rt),
             { op: "i32.div_s"},
             ... write(REGS.LO),
-        ]}
-        ]}
+        ])}
+        ])}
     ]
 }
 DIV.assembly = (fields, pc) => `div\t${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}`;
@@ -752,7 +749,7 @@ function DIVU(fields, pc, delayed, delay, escape) {
     return [
         ... read(fields.rt),
         { op: "i32.eqz" },
-        { op: "if", block: [
+        { op: "if", block: block([
             ... read(fields.rs),
             ... write(REGS.HI),
             { op: "i32.const", value: -1 },
@@ -766,7 +763,7 @@ function DIVU(fields, pc, delayed, delay, escape) {
             ... read(fields.rt),
             { op: "i32.div_u"},
             ... write(REGS.LO),
-        ]}
+        ])}
     ]
 }
 DIVU.assembly = (fields, pc) => `divu\t${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}`;
@@ -878,7 +875,7 @@ function BEQ(fields, pc, delayed, delay, escape) {
         ... read(fields.rs),
         ... read(fields.rt),
         { op: 'i32.eq' },
-        { op: 'br_if', relative_depth: 1 },
+        { op: 'br_if', relative_depth: 0 },
 
         ... delay(),
         ... fields.simm16,
@@ -899,7 +896,7 @@ function BNE(fields, pc, delayed, delay, escape) {
         ... read(fields.rs),
         ... read(fields.rt),
         { op: 'i32.eq' },
-        { op: 'br_if', relative_depth: 1 },
+        { op: 'br_if', relative_depth: 0 },
 
         ... delay(),
         ... fields.simm16,
@@ -921,7 +918,7 @@ function BLTZ(fields, pc, delayed, delay, escape) {
         ... read(fields.rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.ge_s' },
-        { op: 'br_if', relative_depth: 1 },
+        { op: 'br_if', relative_depth: 0 },
 
         ... delay(),
         ... fields.simm16,
@@ -942,7 +939,7 @@ function BGEZ(fields, pc, delayed, delay, escape) {
         ... read(fields.rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.lt_s' },
-        { op: 'br_if', relative_depth: 1 },
+        { op: 'br_if', relative_depth: 0 },
 
         ... delay(),
         ... fields.simm16,
@@ -963,7 +960,7 @@ function BGTZ(fields, pc, delayed, delay, escape) {
         ... read(fields.rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.le_s' },
-        { op: 'br_if', relative_depth: 1 },
+        { op: 'br_if', relative_depth: 0 },
 
         ... delay(),
         ... fields.simm16,
@@ -984,7 +981,7 @@ function BLEZ(fields, pc, delayed, delay, escape) {
         ... read(fields.rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.gt_s' },
-        { op: 'br_if', relative_depth: 1 },
+        { op: 'br_if', relative_depth: 0 },
 
         ... delay(),
 
@@ -1007,7 +1004,7 @@ function BLTZAL(fields, pc, delayed, delay, escape) {
         ... read(fields.rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.ge_s' },
-        { op: 'br_if', relative_depth: 1 },
+        { op: 'br_if', relative_depth: 0 },
 
         ... delay(),
         ... pc,
@@ -1032,7 +1029,7 @@ function BGEZAL(fields, pc, delayed, delay, escape) {
         { op: 'i32.const', value: 0 },
         ... read(fields.rs),
         { op: 'i32.lt_s' },
-        { op: 'br_if', relative_depth: 1 },
+        { op: 'br_if', relative_depth: 0 },
 
         ... delay(),
 

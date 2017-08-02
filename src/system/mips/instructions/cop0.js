@@ -1,6 +1,5 @@
-const Exception = require("../exception").default;
-const Consts = require("../consts");
 import { read, write, call, exception, CALLS } from "./wast";
+import * as Consts from "../consts";
 
 /******
  ** Co-Processor Move registers

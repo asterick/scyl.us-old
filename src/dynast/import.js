@@ -132,7 +132,6 @@ function decode_code_expr(payload) {
 			codes.push({ op: ReverseByteCode[byte], memory: payload.varuint() });
 			break ;
 		case ByteCode["i64.const"]:
-			console.warn("Potential truncation: 64-bit constant");
 		case ByteCode["i32.const"]:
 			codes.push({ op: ReverseByteCode[byte], value: payload.varint() });
 			break ;

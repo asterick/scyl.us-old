@@ -89,7 +89,7 @@ function encode_code_expr(payload, codes) {
 		const op = code.op;
 
 		if (ByteCode[op] === undefined) {
-			throw new Error(`illegal byte-code ${byte.toString(16)}`);
+			throw new Error(`illegal byte-code ${op}`);
 		}
 
 		payload.uint8(ByteCode[op]);
@@ -131,7 +131,6 @@ function encode_code_expr(payload, codes) {
 			payload.varuint(code.memory);
 			break ;
 		case "i64.const":
-			console.warn("Potential truncation: 64-bit constant");
 		case "i32.const":
 			payload.varint(code.value);
 			break ;
@@ -401,6 +400,7 @@ export default function (ast) {
 		case "func_type":
 			imp = Object.create(imp);
 			imp.type = { type: "func_type", index: typeIndex(imp.type) }
+		default:
 			return imp ;
 		}
 
@@ -424,6 +424,7 @@ export default function (ast) {
 	});
 
 	// Stuff in our custom blobs
+	if (ast.custom)
 	ast.custom.forEach((custom) => {
 		const payload = new WriteStream();
 		payload.string(custom.name);
