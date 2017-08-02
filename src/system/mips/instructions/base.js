@@ -1,5 +1,5 @@
 import * as COP0 from "./cop0";
-import { read, write, exception, REGS, CALLS } from "./wast";
+import { read, write, exception, REGS, CALLS, LOCAL_VARS } from "./wast";
 
 // For the preprocessor to work, the name has to be pinned
 const Exception = require("../exception").default;
@@ -9,32 +9,32 @@ const Consts = require("../consts");
  ** Trap Instructions
  ******/
 
-function ReservedInstruction(pc, delayed) {
+function ReservedInstruction(fields, pc, delayed, delay, escape) {
     return exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
 }
-ReservedInstruction.assembly = () => `---`;
+ReservedInstruction.assembly = (fields, pc) => `---`;
 
-function CopUnusable(pc, delayed, cop) {
-    return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, cop);
+function CopUnusable(fields, pc, delayed, delay, escape) {
+    return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, fields.cop);
 }
-CopUnusable.assembly = (cop) => `COP${cop}\tunusable`;
+CopUnusable.assembly = (fields, pc) => `COP${fields.cop}\tunusable`;
 
 /******
  ** Load/Store instructions
  ******/
 
-function LB(rt, rs, imm16, pc, delayed) {
+function LB(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
+        ... read(fields.rs),
 
-        ... imm16,
+        ... fields.imm16,
         { op: "i32.add" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.LOAD },
         { op: "i32.const", value: 24 },
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
         { op: "i32.const", value: 8 },
@@ -43,22 +43,22 @@ function LB(rt, rs, imm16, pc, delayed) {
         { op: "i32.shl" },
         { op: "i32.shr_s" },
 
-        ... write(rt)
+        ... write(fields.rt)
     ];
 }
-LB.assembly = (rs, rt, imm16) => `lb\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
+LB.assembly = (fields, pc) => `lb\t${Consts.Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
 
-function LBU(rt, rs, imm16, pc, delayed) {
+function LBU(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... imm16,
+        ... read(fields.rs),
+        ... fields.imm16,
         { op: "i32.add" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.LOAD },
         { op: "i32.const", value: 24 },
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
         { op: "i32.const", value: 8 },
@@ -66,30 +66,30 @@ function LBU(rt, rs, imm16, pc, delayed) {
         { op: "i32.sub" },
         { op: "i32.shl" },
         { op: "i32.shr_u" },
-        ... write(rt)
+        ... write(fields.rt)
     ];
 }
-LBU.assembly = (rs, rt, imm16) => `lbu\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
+LBU.assembly = (fields, pc) => `lbu\t${Consts.Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
 
-function LH(rt, rs, imm16, pc, delayed) {
+function LH(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... imm16,
+        ... read(fields.rs),
+        ... fields.imm16,
         { op: "i32.add" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
 
         { op: "i32.const", value: 1 },
         { op: "i32.and" },
 
         { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
 
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.LOAD },
 
         { op: "i32.const", value: 16 },
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 2 },
         { op: "i32.and" },
         { op: "i32.const", value: 8 },
@@ -98,26 +98,26 @@ function LH(rt, rs, imm16, pc, delayed) {
         { op: "i32.sub" },
         { op: "i32.shl" },
         { op: "i32.shr_s" },
-        ... write(rt)
+        ... write(fields.rt)
     ];
 }
-LH.assembly = (rs, rt, imm16) => `lh\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
+LH.assembly = (fields, pc) => `lh\t${Consts.Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
 
-function LHU(rt, rs, imm16, pc, delayed) {
+function LHU(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... imm16,
+        ... read(fields.rs),
+        ... fields.imm16,
         { op: "i32.add" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 1 },
         { op: "i32.and" },
         { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.LOAD },
         { op: "i32.const", value: 16 },
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 2 },
         { op: "i32.and" },
         { op: "i32.const", value: 8 },
@@ -125,201 +125,201 @@ function LHU(rt, rs, imm16, pc, delayed) {
         { op: "i32.sub" },
         { op: "i32.shl" },
         { op: "i32.shr_u" },
-        ... write(rt)
+        ... write(fields.rt)
     ];
 }
-LHU.assembly = (rs, rt, imm16) => `lhu\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
+LHU.assembly = (fields, pc) => `lhu\t${Consts.Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
 
-function LW(rt, rs, imm16, pc, delayed) {
+function LW(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... imm16,
+        ... read(fields.rs),
+        ... fields.imm16,
         { op: "i32.add" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
         { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.LOAD },
-        ... write(rt)
+        ... write(fields.rt)
     ];
 }
-LW.assembly = (rs, rt, imm16) => `lw\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
+LW.assembly = (fields, pc) => `lw\t${Consts.Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
 
-function SB(rt, rs, imm16, pc, delayed) {
+function SB(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... imm16,
+        ... read(fields.rs),
+        ... fields.imm16,
         { op: "i32.add" },
-        { op: "tee_local", index: 0 },
-        ... read(rt),
-        { op: "get_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
+        ... read(fields.rt),
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
         { op: "i32.const", value: 8 },
         { op: "i32.mul" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.shl" },
         { op: "i32.const", value: 0xFF },
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.shl" },
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.STORE },
     ]
 }
-SB.assembly = (rs, rt, imm16) => `sb\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
+SB.assembly = (fields, pc) => `sb\t${Consts.Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
 
-function SH(rt, rs, imm16, pc, delayed) {
+function SH(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... imm16,
+        ... read(fields.rs),
+        ... fields.imm16,
         { op: "i32.add" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 1 },
         { op: "i32.and" },
         { op: "if", block: exception(Consts.Exceptions.AddressStore, pc, delayed) },
-        { op: "get_local", index: 0 },
-        ... read(rt),
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
+        ... read(fields.rt),
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
         { op: "i32.const", value: 8 },
         { op: "i32.mul" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.shl" },
         { op: "i32.const", value: 0xFFFF },
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.shl" },
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.STORE }
     ]
 }
-SH.assembly = (rs, rt, imm16) => `sh\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
+SH.assembly = (fields, pc) => `sh\t${Consts.Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
 
-function SW(rt, rs, imm16, pc, delayed) {
+function SW(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... imm16,
+        ... read(fields.rs),
+        ... fields.imm16,
         { op: "i32.add" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
         { op: "if", block: exception(Consts.Exceptions.AddressStore, pc, delayed) },
-        { op: "get_local", index: 0 },
-        ... read(rt),
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
+        ... read(fields.rt),
         { op: "i32.const", value: -1 },
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.STORE }
     ]
 }
-SW.assembly = (rs, rt, imm16) => `sw\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
+SW.assembly = (fields, pc) => `sw\t${Consts.Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
 
-function LWR(rt, rs, imm16, pc, delayed) {
+function LWR(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... imm16,
+        ... read(fields.rs),
+        ... fields.imm16,
         { op: "i32.add" },
 
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.LOAD },
 
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
         { op: "i32.const", value: 8 },
         { op: "i32.mul" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.shr_u" },
 
-        ... read(rt),
+        ... read(fields.rt),
 
         { op: "i32.const", value: -1 },
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.shr_u" },
         { op: "i32.const", value: -1 },
         { op: "i32.xor" },
         { op: "i32.and" },
 
         { op: "i32.or" },
-        ... write(rt)
+        ... write(fields.rt)
     ];
 }
 
-LWR.assembly = (rs, rt, imm16) => `lwr\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
+LWR.assembly = (fields, pc) => `lwr\t${Consts.Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
 
-function LWL(rt, rs, imm16, pc, delayed) {
+function LWL(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... imm16,
+        ... read(fields.rs),
+        ... fields.imm16,
         { op: "i32.add" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
         { op: "i32.const", value: 1 },
         { op: "i32.add" },
         { op: "i32.const", value: 8 },
         { op: "i32.mul" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 32 },
         { op: "i32.eq" },
         { op: "br_if", relative_depth: 1 },
 
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.LOAD },
 
         { op: "i32.const", value: 32 },
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.sub" },
         { op: "i32.shl" },
 
-        ... read(rt),
+        ... read(fields.rt),
         { op: "i32.const", value: -1 },
         { op: "i32.shr_u" },
         { op: "i32.and" },
         { op: "i32.or" },
-        ... write(rt)
+        ... write(fields.rt)
     ];
 }
-LWL.assembly = (rs, rt, imm16) => `lwl\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
+LWL.assembly = (fields, pc) => `lwl\t${Consts.Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
 
-function SWR(rt, rs, imm16, pc, delayed) {
+function SWR(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... imm16,
+        ... read(fields.rs),
+        ... fields.imm16,
         { op: "i32.add" },
-        { op: "tee_local", index: 0 },
-        ... read(rt),
-        { op: "get_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
+        ... read(fields.rt),
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
         { op: "i32.const", value: 8 },
         { op: "i32.mul" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.shl" },
         { op: "i32.const", value: -1 },
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.shl" },
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.STORE }
     ]
 }
-SWR.assembly = (rs, rt, imm16) => `swr\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
+SWR.assembly = (fields, pc) => `swr\t${Consts.Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
 
-function SWL(rt, rs, imm16, pc, delayed) {
+function SWL(fields, pc, delayed, delay, escape) {
     return [
-        ... imm16,
+        ... fields.imm16,
         { op: "i32.add" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
 
         { op: "i32.const", value: 32 },
         { op: "i32.const", value: 3 },
@@ -328,389 +328,389 @@ function SWL(rt, rs, imm16, pc, delayed) {
         { op: "i32.add" },
         { op: "i32.const", value: 8 },
         { op: "i32.mul" },
-        { op: "tee_local", index: 0 },
+        { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.sub" },
         { op: "i32.eqz" },
         { op: "br_if", relative_depth: 1 },
 
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
 
-        ... read(rt),
-        { op: "get_local", index: 0 },
+        ... read(fields.rt),
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.shr_u" },
 
         { op: "i32.const", value: -1 },
-        { op: "get_local", index: 0 },
+        { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.shr_u" },
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.STORE }
     ];
 }
-SWL.assembly = (rs, rt, imm16) => `swl\t${Consts.Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`
+SWL.assembly = (fields, pc) => `swl\t${Consts.Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
 
 /******
  ** Arithmatic instructions
  ******/
 
-function ADD(rd, rs, rt, pc, delayed) {
+function ADD(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
+        ... read(fields.rs),
         { op: "i64.extend_s/i32" },
-        ... read(rt),
+        ... read(fields.rt),
         { op: "i64.extend_s/i32" },
         { op: "i64.add" },
 
-        { op: "tee_local", index: 1 },
+        { op: "tee_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i64.const", value: -0x80000000 },
         { op: "i64.lt_s" },
 
-        { op: "get_local", index: 1 },
+        { op: "get_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i64.const", value: 0x80000000 },
         { op: "i64.ge_s" },
 
         { op: "i32.or" },
         { op: "if", block: exception(Consts.Exceptions.Overflow, pc, delayed) },
 
-        { op: "get_local", index: 1 },
+        { op: "get_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i32.wrap/i64" },
-        ... write(rd)
+        ... write(fields.rd)
     ]
 }
-ADD.assembly = (rd, rs, rt) => rd ? `add\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
+ADD.assembly = (fields, pc) => fields.rd ? `add\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}` : "nop";
 
-function ADDU(rd, rs, rt) {
+function ADDU(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... read(rt),
+        ... read(fields.rs),
+        ... read(fields.rt),
         { op: "i32.add" },
-        ... write(rd)
+        ... write(fields.rd)
     ]
 }
-ADDU.assembly = (rd, rs, rt) => rd ? `addu\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
+ADDU.assembly = (fields, pc) => fields.rd ? `addu\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}` : "nop";
 
-function SUB(rd, rs, rt, pc, delayed) {
+function SUB(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
+        ... read(fields.rs),
         { op: "i64.extend_s/i32" },
-        ... read(rt),
+        ... read(fields.rt),
         { op: "i64.extend_s/i32" },
         { op: "i64.sub" },
 
-        { op: "tee_local", index: 1 },
+        { op: "tee_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i64.const", value: -0x80000000 },
         { op: "i64.lt_s" },
 
-        { op: "get_local", index: 1 },
+        { op: "get_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i64.const", value: 0x80000000 },
         { op: "i64.ge_s" },
 
         { op: "i32.or" },
         { op: "if", block: exception(Consts.Exceptions.Overflow, pc, delayed) },
 
-        { op: "get_local", index: 1 },
+        { op: "get_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i32.wrap/i64" },
-        ... write(rd)
+        ... write(fields.rd)
     ]}
-SUB.assembly = (rd, rs, rt) => rd ? `sub\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
+SUB.assembly = (fields, pc) => fields.rd ? `sub\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}` : "nop";
 
-function SUBU(rd, rs, rt) {
+function SUBU(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... read(rt),
+        ... read(fields.rs),
+        ... read(fields.rt),
         { op: "i32.sub" },
-        ... write(rd)
+        ... write(fields.rd)
     ]
 }
-SUBU.assembly = (rd, rs, rt) => rd ? `subu\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
+SUBU.assembly = (fields, pc) => fields.rd ? `subu\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}` : "nop";
 
-function ADDI(rt, rs, simm16, pc, delayed) {
+function ADDI(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
+        ... read(fields.rs),
         { op: "i64.extend_s/i32" },
-        ... simm16,
+        ... fields.simm16,
         { op: "i64.extend_s/i32" },
         { op: "i64.add" },
 
-        { op: "tee_local", index: 1 },
+        { op: "tee_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i64.const", value: -0x80000000 },
         { op: "i64.lt_s" },
 
-        { op: "get_local", index: 1 },
+        { op: "get_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i64.const", value: 0x80000000 },
         { op: "i64.ge_s" },
 
         { op: "i32.or" },
         { op: "if", block: exception(Consts.Exceptions.Overflow, pc, delayed) },
 
-        { op: "get_local", index: 1 },
+        { op: "get_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i32.wrap/i64" },
-        ... write(rt)
+        ... write(fields.rt)
     ]
 }
-ADDI.assembly = (rt, rs, simm16) => rt ? `addi\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}` : "nop";
+ADDI.assembly = (fields, pc) => fields.rt ? `addi\t${Consts.Registers[fields.rt]}, ${Consts.Registers[fields.rs]}, ${fields.simm16}` : "nop";
 
-function ADDIU(rt, rs, simm16) {
+function ADDIU(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... simm16,
+        ... read(fields.rs),
+        ... fields.simm16,
         { op: "i32.add" },
-        ... write(rt)
+        ... write(fields.rt)
     ];
 }
 
-ADDIU.assembly = (rt, rs, simm16) => rt ? `addiu\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}` : "nop";
+ADDIU.assembly = (fields, pc) => fields.rt ? `addiu\t${Consts.Registers[fields.rt]}, ${Consts.Registers[fields.rs]}, ${fields.simm16}` : "nop";
 
 /******
  ** Comparison instructions
  ******/
-function SLT(rd, rs, rt) {
+function SLT(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... read(rt),
+        ... read(fields.rs),
+        ... read(fields.rt),
         { op: 'i32.lt_s'},
-        ... write(rd)
+        ... write(fields.rd)
     ];
 }
-SLT.assembly = (rd, rs, rt) => `slt\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
+SLT.assembly = (fields, pc) => `slt\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}`;
 
-function SLTU(rd, rs, rt) {
+function SLTU(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... read(rt),
+        ... read(fields.rs),
+        ... read(fields.rt),
         { op: 'i32.lt_u'},
-        ... write(rd)
+        ... write(fields.rd)
     ];
 }
-SLTU.assembly = (rd, rs, rt) => `sltu\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
+SLTU.assembly = (fields, pc) => `sltu\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}`;
 
-function SLTI(rt, rs, simm16) {
+function SLTI(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... simm16,
+        ... read(fields.rs),
+        ... fields.simm16,
         { op: 'i32.lt_s'},
-        ... write(rt)
+        ... write(fields.rt)
     ]
 }
-SLTI.assembly = (rt, rs, simm16) => `slti\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, ${simm16}`;
+SLTI.assembly = (fields, pc) => `slti\t${Consts.Registers[fields.rt]}, ${Consts.Registers[fields.rs]}, ${fields.simm16}`;
 
-function SLTIU(rt, rs, simm16) {
+function SLTIU(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... simm16,
+        ... read(fields.rs),
+        ... fields.simm16,
         { op: 'i32.lt_u'},
-        ... write(rt)
+        ... write(fields.rt)
     ]
 }
-SLTIU.assembly = (rt, rs, simm16) => `sltiu\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, $${(simm16 >>> 0).toString(16)}`;
+SLTIU.assembly = (fields, pc) => `sltiu\t${Consts.Registers[fields.rt]}, ${Consts.Registers[fields.rs]}, $${(fields.simm16 >>> 0).toString(16)}`;
 
 /******
  ** Logical instructions
  ******/
 
-function AND(rd, rs, rt) {
+function AND(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... read(rt),
+        ... read(fields.rs),
+        ... read(fields.rt),
         { op: "i32.and" },
-        ... write(rd)
+        ... write(fields.rd)
     ]
 }
-AND.assembly = (rd, rs, rt) => rd ? `and\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
+AND.assembly = (fields, pc) => fields.rd ? `and\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}` : "nop";
 
-function OR(rd, rs, rt) {
+function OR(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... read(rt),
+        ... read(fields.rs),
+        ... read(fields.rt),
         { op: "i32.or" },
-        ... write(rd)
+        ... write(fields.rd)
     ]
 }
-OR.assembly = (rd, rs, rt) => rd ? `or\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
+OR.assembly = (fields, pc) => fields.rd ? `or\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}` : "nop";
 
-function XOR(rd, rs, rt) {
+function XOR(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... read(rt),
+        ... read(fields.rs),
+        ... read(fields.rt),
         { op: "i32.xor" },
-        ... write(rd)
+        ... write(fields.rd)
     ]
 }
-XOR.assembly = (rd, rs, rt) => rd ? `xor\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
+XOR.assembly = (fields, pc) => fields.rd ? `xor\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}` : "nop";
 
-function NOR(rd, rs, rt) {
+function NOR(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... read(rt),
+        ... read(fields.rs),
+        ... read(fields.rt),
         { op: "i32.or" },
         { op: "i32.const", value: -1 },
         { op: "i32.xor" },
-        ... write(rd)
+        ... write(fields.rd)
     ]
 }
-NOR.assembly = (rd, rs, rt) => rd ? `nor\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
+NOR.assembly = (fields, pc) => fields.rd ? `nor\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}` : "nop";
 
-function ANDI(rt, rs, imm16) {
+function ANDI(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... imm16,
+        ... read(fields.rs),
+        ... fields.imm16,
         { op: "i32.and" },
-        ... write(rt)
+        ... write(fields.rt)
     ]
 }
-ANDI.assembly = (rt, rs, imm16) => rt ? `andi\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, $${imm16.toString(16)}` : "nop";
+ANDI.assembly = (fields, pc) => fields.rt ? `andi\t${Consts.Registers[fields.rt]}, ${Consts.Registers[fields.rs]}, $${fields.imm16.toString(16)}` : "nop";
 
-function ORI(rt, rs, imm16) {
+function ORI(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... imm16,
+        ... read(fields.rs),
+        ... fields.imm16,
         { op: "i32.or" },
-        ... write(rt)
+        ... write(fields.rt)
     ]
 }
-ORI.assembly = (rt, rs, imm16) => rt ? `ori\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, $${imm16.toString(16)}` : "nop";
+ORI.assembly = (fields, pc) => fields.rt ? `ori\t${Consts.Registers[fields.rt]}, ${Consts.Registers[fields.rs]}, $${fields.imm16.toString(16)}` : "nop";
 
-function XORI(rt, rs, imm16) {
+function XORI(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... imm16,
+        ... read(fields.rs),
+        ... fields.imm16,
         { op: "i32.xor" },
-        ... write(rt)
+        ... write(fields.rt)
     ]
 }
-XORI.assembly = (rt, rs, imm16) => rt ? `xori\t${Consts.Registers[rt]}, ${Consts.Registers[rs]}, $${imm16.toString(16)}` : "nop";
+XORI.assembly = (fields, pc) => fields.rt ? `xori\t${Consts.Registers[fields.rt]}, ${Consts.Registers[fields.rs]}, $${fields.imm16.toString(16)}` : "nop";
 
 /******
  ** Shift instructions
  ******/
 
-function SLLV(rd, rt, rs) {
+function SLLV(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rt),
-        ... read(rs),
+        ... read(fields.rt),
+        ... read(fields.rs),
         { op: "i32.const", value: 0x1F },
         { op: "i32.and" },
         { op: "i32.shl" },
-        ... write(rd)
+        ... write(fields.rd)
     ]
 }
-SLLV.assembly = (rd, rt, rs) => rd ? `sllv\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
+SLLV.assembly = (fields, pc) => fields.rd ? `sllv\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}` : "nop";
 
-function SRLV(rd, rt, rs) {
+function SRLV(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rt),
-        ... read(rs),
+        ... read(fields.rt),
+        ... read(fields.rs),
         { op: "i32.const", value: 0x1F },
         { op: "i32.and" },
         { op: "i32.shr_u" },
-        ... write(rd)
+        ... write(fields.rd)
     ]
 }
-SRLV.assembly = (rd, rt, rs) => rd ? `srlv\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
+SRLV.assembly = (fields, pc) => fields.rd ? `srlv\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}` : "nop";
 
-function SRAV(rd, rt, rs) {
+function SRAV(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rt),
-        ... read(rs),
+        ... read(fields.rt),
+        ... read(fields.rs),
         { op: "i32.const", value: 0x1F },
         { op: "i32.and" },
         { op: "i32.shr_s" },
-        ... write(rd)
+        ... write(fields.rd)
     ]
 }
-SRAV.assembly = (rd, rt, rs) => rd ? `srav\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}, ${Consts.Registers[rt]}` : "nop";
+SRAV.assembly = (fields, pc) => fields.rd ? `srav\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}` : "nop";
 
-function SLL(rd, rt, shamt) {
+function SLL(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rt),
-        ... shamt,
+        ... read(fields.rt),
+        ... fields.shamt,
         { op: "i32.shl" },
-        ... write(rd)
+        ... write(fields.rd)
     ]
 }
-SLL.assembly = (rd, rt, shamt) => rd ? `sll\t${Consts.Registers[rd]}, ${Consts.Registers[rt]}, ${shamt}` : "nop";
+SLL.assembly = (fields, pc) => fields.rd ? `sll\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rt]}, ${fields.shamt}` : "nop";
 
-function SRL(rd, rt, shamt) {
+function SRL(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rt),
-        ... shamt,
+        ... read(fields.rt),
+        ... fields.shamt,
         { op: "i32.shr_u" },
-        ... write(rd)
+        ... write(fields.rd)
     ]
 }
-SRL.assembly = (rd, rt, shamt) => rd ? `srl\t${Consts.Registers[rd]}, ${Consts.Registers[rt]}, ${shamt}` : "nop";
+SRL.assembly = (fields, pc) => fields.rd ? `srl\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rt]}, ${fields.shamt}` : "nop";
 
-function SRA(rd, rt, shamt) {
+function SRA(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rt),
-        ... shamt,
+        ... read(fields.rt),
+        ... fields.shamt,
         { op: "i32.shr_s" },
-        ... write(rd)
+        ... write(fields.rd)
     ]
 }
-SRA.assembly = (rd, rt, shamt) => rd ? `sra\t${Consts.Registers[rd]}, ${Consts.Registers[rt]}, ${shamt}` : "nop";
+SRA.assembly = (fields, pc) => fields.rd ? `sra\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rt]}, ${fields.shamt}` : "nop";
 
-function LUI(rt, imm16) {
+function LUI(fields, pc, delayed, delay, escape) {
     return [
-        ... imm16,
+        ... fields.imm16,
         { op: "i32.const", value: 16 },
         { op: "i32.shl" },
-        ... write(rt)
+        ... write(fields.rt)
     ]
 }
-LUI.assembly = (rt, imm16) => `lui\t${Consts.Registers[rt]}, $${imm16.toString(16)}`;
+LUI.assembly = (fields, pc) => `lui\t${Consts.Registers[fields.rt]}, $${fields.imm16.toString(16)}`;
 
 /******
  ** Multiply/Divide instructions
  ******/
-function MULT(rs, rt) {
+function MULT(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
+        ... read(fields.rs),
         { op: "i64.extend_s/i32" },
-        ... read(rt),
+        ... read(fields.rt),
         { op: "i64.extend_s/i32" },
         { op: "i64.mul" },
 
-        { op: "tee_local", index: 1 },
+        { op: "tee_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i32.wrap/i64" },
         ... write(REGS.LO),
 
-        { op: "get_local", index: 1 },
+        { op: "get_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i64.const", value: 32 },
         { op: "i64.shr_u" },
         { op: "i32.wrap/i64" },
         ... write(REGS.HI)
     ]
 }
-MULT.assembly = (rs, rt) => `mult\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
+MULT.assembly = (fields, pc) => `mult\t${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}`;
 
-function MULTU(rs, rt) {
+function MULTU(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
+        ... read(fields.rs),
         { op: "i64.extend_u/i32" },
-        ... read(rt),
+        ... read(fields.rt),
         { op: "i64.extend_u/i32" },
         { op: "i64.mul" },
 
-        { op: "tee_local", index: 1 },
+        { op: "tee_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i32.wrap/i64" },
         ... write(REGS.LO),
 
-        { op: "get_local", index: 1 },
+        { op: "get_local", index: LOCAL_VARS.I64_TEMP },
         { op: "i64.const", value: 32 },
         { op: "i64.shr_u" },
         { op: "i32.wrap/i64" },
         ... write(REGS.HI)
     ]
 }
-MULTU.assembly = (rs, rt) => `multu\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
+MULTU.assembly = (fields, pc) => `multu\t${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}`;
 
-function DIV(rs, rt) {
+function DIV(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
+        ... read(fields.rs),
         { op: "i32.const", value: -0x80000000 },
         { op: "i32.eq" },
-        ... read(rt),
+        ... read(fields.rt),
         { op: "i32.const", value: -1 },
         { op: "i32.eq" },
         { op: "i32.and" },
@@ -720,13 +720,13 @@ function DIV(rs, rt) {
             { op: "i32.const", value: 0 },
             ... write(REGS.LO),
         { op: "else" },
-        ... read(rt),
+        ... read(fields.rt),
         { op: "i32.eqz" },
         { op: "if", block: [
-            ... read(rs),
+            ... read(fields.rs),
             ... write(REGS.HI),
 
-            ... read(rs),
+            ... read(fields.rs),
             { op: "i32.const", value: -1 },
             { op: "i32.xor"},
             { op: "i32.const", value: 31 },
@@ -734,140 +734,154 @@ function DIV(rs, rt) {
             ... write(REGS.LO),
 
         { op: "else" },
-            ... read(rs),
-            ... read(rt),
+            ... read(fields.rs),
+            ... read(fields.rt),
             { op: "i32.rem_s"},
             ... write(REGS.HI),
-            ... read(rs),
-            ... read(rt),
+            ... read(fields.rs),
+            ... read(fields.rt),
             { op: "i32.div_s"},
             ... write(REGS.LO),
         ]}
         ]}
     ]
 }
-DIV.assembly = (rs, rt) => `div\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
+DIV.assembly = (fields, pc) => `div\t${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}`;
 
-function DIVU(rs, rt) {
+function DIVU(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rt),
+        ... read(fields.rt),
         { op: "i32.eqz" },
         { op: "if", block: [
-            ... read(rs),
+            ... read(fields.rs),
             ... write(REGS.HI),
             { op: "i32.const", value: -1 },
             ... write(REGS.LO),
         { op: "else" },
-            ... read(rs),
-            ... read(rt),
+            ... read(fields.rs),
+            ... read(fields.rt),
             { op: "i32.rem_u"},
             ... write(REGS.HI),
-            ... read(rs),
-            ... read(rt),
+            ... read(fields.rs),
+            ... read(fields.rt),
             { op: "i32.div_u"},
             ... write(REGS.LO),
         ]}
     ]
 }
-DIVU.assembly = (rs, rt) => `divu\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}`;
+DIVU.assembly = (fields, pc) => `divu\t${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}`;
 
-function MFHI(rd) {
+function MFHI(fields, pc, delayed, delay, escape) {
     return [
         ... read(REGS.HI),
-        ... write(rd)
+        ... write(fields.rd)
     ];
 }
-MFHI.assembly = (rd) => `mfhi\t${Consts.Registers[rd]}`;
+MFHI.assembly = (fields, pc) => `mfhi\t${Consts.Registers[fields.rd]}`;
 
-function MFLO(rd) {
+function MFLO(fields, pc, delayed, delay, escape) {
     return [
         ... read(REGS.LO),
-        ... write(rd)
+        ... write(fields.rd)
     ];
 }
-MFLO.assembly = (rd) => `mflo\t${Consts.Registers[rd]}`;
+MFLO.assembly = (fields, pc) => `mflo\t${Consts.Registers[fields.rd]}`;
 
-function MTHI(rs) {
+function MTHI(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
+        ... read(fields.rs),
         ... write(REGS.HI)
     ];
 }
-MTHI.assembly = (rs) => `mthi\t${Consts.Registers[rs]}`;
+MTHI.assembly = (fields, pc) => `mthi\t${Consts.Registers[fields.rs]}`;
 
-function MTLO(rs) {
+function MTLO(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
+        ... read(fields.rs),
         ... write(REGS.LO)
     ];
 }
-MTLO.assembly = (rs) => `mtlo\t${Consts.Registers[rs]}`;
+MTLO.assembly = (fields, pc) => `mtlo\t${Consts.Registers[fields.rs]}`;
 
 /******
  ** Branching instructions
  ******/
 
-function J(pc, imm26, delay, escape) {
+function J(fields, pc, delayed, delay, escape) {
     return [
         ... delay(),
-        ... ((pc & 0xF0000000) | (imm26 * 4)) >>> 0,
+
+        ... pc,
+        { op: 'i32.const', value: 0xF0000000 },
+        { op: 'i32.and'},
+        ... fields.imm26,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.mul'},
+        { op: 'i32.or'},
+
         ... write(REGS.PC),
         ... escape()
     ];
 }
-J.assembly = (pc, imm26) => `j\t$${(((pc & 0xF0000000) | (imm26 * 4)) >>> 0).toString(16)}`;
+J.assembly = (fields, pc) => `j\t$${(((pc & 0xF0000000) | (fields.imm26 * 4)) >>> 0).toString(16)}`;
 
-function JAL(pc, imm26, delay, escape) {
+function JAL(fields, pc, delayed, delay, escape) {
     return [
         ... delay(),
         ... pc,
         { op: 'i32.const', value: 8 },
         { op: 'i32.add' },
         ... write(31),
-        ... ((pc & 0xF0000000) | (imm26 * 4)) >>> 0,
+        ... pc,
+        { op: 'i32.const', value: 0xF0000000 },
+        { op: 'i32.and'},
+        ... fields.imm26,
+        { op: 'i32.const', value: 4 },
+        { op: 'i32.mul'},
+        { op: 'i32.or'},
         ... write(REGS.PC),
         ... escape()
     ];
 }
-JAL.assembly = (pc, imm26) => `jal\t$${(((pc & 0xF0000000) | (imm26 * 4)) >>> 0).toString(16)}`;
+JAL.assembly = (fields, pc) => `jal\t$${(((pc & 0xF0000000) | (fields.imm26 * 4)) >>> 0).toString(16)}`;
 
-function JR(rs, pc, delay, escape) {
+function JR(fields, pc, delayed, delay, escape) {
     return [
         ... delay(),
-        ... read(rs),
+        ... read(fields.rs),
         { op: 'i32.const', value: 0xFFFFFFFC },
         { op: 'i32.and' },
         ... write(REGS.PC),
         ... escape()
     ];
 }
-JR.assembly = (rs) => `jr\t${Consts.Registers[rs]}`;
+JR.assembly = (fields, pc) => `jr\t${Consts.Registers[fields.rs]}`;
 
-function JALR(rs, rd, pc, delay, escape) {
+function JALR(fields, pc, delayed, delay, escape) {
     return [
         ... delay(),
         ... pc,
         { op: 'i32.const', value: 8 },
         { op: 'i32.add' },
-        ... write(rd),
-        ... read(rs),
+        ... write(fields.rd),
+        ... read(fields.rs),
         { op: 'i32.const', value: 0xFFFFFFFC },
         { op: 'i32.and' },
         ... write(REGS.PC),
         ... escape()
     ];
 }
-JALR.assembly = (rs, rd) => `jalr\t${Consts.Registers[rd]}, ${Consts.Registers[rs]}`;
+JALR.assembly = (fields, pc) => `jalr\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}`;
 
-function BEQ(pc, rs, rt, simm16, delay, escape) {
+function BEQ(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... read(rt),
+        ... read(fields.rs),
+        ... read(fields.rt),
         { op: 'i32.eq' },
         { op: 'br_if', relative_depth: 1 },
 
         ... delay(),
-        ... simm16,
+        ... fields.simm16,
         { op: 'i32.const', value: 4 },
         { op: 'i32.mul' },
         ... pc,
@@ -878,17 +892,17 @@ function BEQ(pc, rs, rt, simm16, delay, escape) {
         ... escape()
     ];
 }
-BEQ.assembly = (pc, rs, rt, simm16) => `beq\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
+BEQ.assembly = (fields, pc) => `beq\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
 
-function BNE(pc, rs, rt, simm16, delay, escape) {
+function BNE(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
-        ... read(rt),
+        ... read(fields.rs),
+        ... read(fields.rt),
         { op: 'i32.eq' },
         { op: 'br_if', relative_depth: 1 },
 
         ... delay(),
-        ... simm16,
+        ... fields.simm16,
         { op: 'i32.const', value: 4 },
         { op: 'i32.mul' },
         ... pc,
@@ -900,17 +914,17 @@ function BNE(pc, rs, rt, simm16, delay, escape) {
         ... escape()
     ];
 }
-BNE.assembly = (pc, rs, rt, simm16) => `bne\t${Consts.Registers[rs]}, ${Consts.Registers[rt]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
+BNE.assembly = (fields, pc) => `bne\t${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
 
-function BLTZ(pc, rs, simm16, delay, escape) {
+function BLTZ(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
+        ... read(fields.rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.ge_s' },
         { op: 'br_if', relative_depth: 1 },
 
         ... delay(),
-        ... simm16,
+        ... fields.simm16,
         { op: 'i32.const', value: 4 },
         { op: 'i32.mul' },
         ... pc,
@@ -921,17 +935,17 @@ function BLTZ(pc, rs, simm16, delay, escape) {
         ... escape()
     ];
 }
-BLTZ.assembly = (pc, rs, simm16) => `bltz\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
+BLTZ.assembly = (fields, pc) => `bltz\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
 
-function BGEZ(pc, rs, simm16, delay, escape) {
+function BGEZ(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
+        ... read(fields.rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.lt_s' },
         { op: 'br_if', relative_depth: 1 },
 
         ... delay(),
-        ... simm16,
+        ... fields.simm16,
         { op: 'i32.const', value: 4 },
         { op: 'i32.mul' },
         ... pc,
@@ -942,17 +956,17 @@ function BGEZ(pc, rs, simm16, delay, escape) {
         ... escape()
     ];
 }
-BGEZ.assembly = (pc, rs, simm16) => `bgez\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
+BGEZ.assembly = (fields, pc) => `bgez\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
 
-function BGTZ(pc, rs, simm16, delay, escape) {
+function BGTZ(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
+        ... read(fields.rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.le_s' },
         { op: 'br_if', relative_depth: 1 },
 
         ... delay(),
-        ... simm16,
+        ... fields.simm16,
         { op: 'i32.const', value: 4 },
         { op: 'i32.mul' },
         ... pc,
@@ -963,18 +977,18 @@ function BGTZ(pc, rs, simm16, delay, escape) {
         ... escape()
     ];
 }
-BGTZ.assembly = (pc, rs, simm16) => `bgtz\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
+BGTZ.assembly = (fields, pc) => `bgtz\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
 
-function BLEZ(pc, rs, simm16, delay, escape) {
+function BLEZ(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
+        ... read(fields.rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.gt_s' },
         { op: 'br_if', relative_depth: 1 },
 
         ... delay(),
 
-        ... simm16,
+        ... fields.simm16,
         { op: 'i32.const', value: 4 },
         { op: 'i32.mul' },
         ... pc,
@@ -986,11 +1000,11 @@ function BLEZ(pc, rs, simm16, delay, escape) {
         ... escape()
     ];
 }
-BLEZ.assembly = (pc, rs, simm16) => `blez\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
+BLEZ.assembly = (fields, pc) => `blez\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
 
-function BLTZAL(pc, rs, simm16, delay, escape) {
+function BLTZAL(fields, pc, delayed, delay, escape) {
     return [
-        ... read(rs),
+        ... read(fields.rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.ge_s' },
         { op: 'br_if', relative_depth: 1 },
@@ -1000,7 +1014,7 @@ function BLTZAL(pc, rs, simm16, delay, escape) {
         { op: 'i32.const', value: 8 },
         { op: 'i32.add' },
         ... write(31),
-        ... simm16,
+        ... fields.simm16,
         { op: 'i32.const', value: 4 },
         { op: 'i32.mul' },
         ... pc,
@@ -1011,12 +1025,12 @@ function BLTZAL(pc, rs, simm16, delay, escape) {
         ... escape()
     ];
 }
-BLTZAL.assembly = (pc, rs, simm16) => `bltzal\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
+BLTZAL.assembly = (fields, pc) => `bltzal\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
 
-function BGEZAL(pc, rs, simm16, delay, escape) {
+function BGEZAL(fields, pc, delayed, delay, escape) {
     return [
         { op: 'i32.const', value: 0 },
-        ... read(rs),
+        ... read(fields.rs),
         { op: 'i32.lt_s' },
         { op: 'br_if', relative_depth: 1 },
 
@@ -1027,7 +1041,7 @@ function BGEZAL(pc, rs, simm16, delay, escape) {
         { op: 'i32.add' },
 
         ... write(31),
-        ... simm16,
+        ... fields.simm16,
         { op: 'i32.const', value: 4 },
         { op: 'i32.mul' },
         ... pc,
@@ -1038,17 +1052,17 @@ function BGEZAL(pc, rs, simm16, delay, escape) {
         ... escape()
     ];
 }
-BGEZAL.assembly = (pc, rs, simm16) => `bgezal\t${Consts.Registers[rs]}, $${((pc + 4) + (simm16 * 4)).toString(16)}`;
+BGEZAL.assembly = (fields, pc) => `bgezal\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
 
-function SYSCALL(pc, delayed) {
+function SYSCALL(fields, pc, delayed, delay, escape) {
     return exception(Consts.Exceptions.SysCall, pc, delayed);
 }
-SYSCALL.assembly = (imm20) => `syscall\t$${imm20.toString(16)}`;
+SYSCALL.assembly = (fields, pc) => `syscall\t$${fields.imm20.toString(16)}`;
 
-function BREAK(pc, delayed) {
+function BREAK(fields, pc, delayed, delay, escape) {
     return exception(Consts.Exceptions.Breakpoint, pc, delayed);
 }
-BREAK.assembly = (imm20) => `break\t$${imm20.toString(16)}`;
+BREAK.assembly = (fields, pc) => `break\t$${fields.imm20.toString(16)}`;
 
 export default {
     field: "opcode",

@@ -6,99 +6,99 @@ import { read, write, call, exception, CALLS } from "./wast";
  ** Co-Processor Move registers
  ******/
 
-function MFC0(rt, rd, pc, delayed) {
+function MFC0(fields, pc, delayed, delay, escape) {
 	return [
-		... rd,
+		... fields.rd,
 		... pc,
 		... delayed,
 		{ op: 'call', function_index: CALLS.MFC0 },
-		... write(rt)
+		... write(fields.rt)
 	];
 }
-MFC0.assembly = (rt, rd) => `mfc0\t${Consts.Registers[rt]}, ${Consts.COP0Registers[rd]}`;
+MFC0.assembly = (fields, pc) => `mfc0\t${Consts.Registers[fields.rt]}, ${Consts.COP0Registers[fields.rd]}`;
 
-function MTC0(rt, rd, pc, delayed) {
+function MTC0(fields, pc, delayed, delay, escape) {
 	return [].concat(
-		... rd,
-		... read(rt),
+		... fields.rd,
+		... read(fields.rt),
 		... pc,
 		... delayed,
 		{ op: 'call', function_index: CALLS.MTC0 }
 	);
 }
-MTC0.assembly = (rt, rd) => `mtc0\t${Consts.Registers[rt]}, ${Consts.COP0Registers[rd]}`;
+MTC0.assembly = (fields, pc) => `mtc0\t${Consts.Registers[fields.rt]}, ${Consts.COP0Registers[fields.rd]}`;
 
 /******
  ** Co-Processor instructions
  ******/
 
-function RFE(pc, delayed) {
+function RFE(fields, pc, delayed, delay, escape) {
 	return [
 		... pc,
 		... delayed,
 		{ op: 'call', function_index: CALLS.RFE }
 	];
 }
-RFE.assembly = () => `cop0\trte`;
+RFE.assembly = (fields, pc) => `cop0\trte`;
 
-function TLBR(pc, delayed) {
+function TLBR(fields, pc, delayed, delay, escape) {
 	return [
 		... pc,
 		... delayed,
 		{ op: 'call', function_index: CALLS.TLBR }
 	];
 }
-TLBR.assembly = () => `cop0\ttlbr`;
+TLBR.assembly = (fields, pc) => `cop0\ttlbr`;
 
-function TLBWI(pc, delayed) {
+function TLBWI(fields, pc, delayed, delay, escape) {
 	return [
 		... pc,
 		... delayed,
 		{ op: 'call', function_index: CALLS.TLBWI }
 	];
 }
-TLBWI.assembly = () => `cop0\ttlbwi`;
+TLBWI.assembly = (fields, pc) => `cop0\ttlbwi`;
 
-function TLBWR(pc, delayed) {
+function TLBWR(fields, pc, delayed, delay, escape) {
 	return [
 		... pc,
 		... delayed,
 		{ op: 'call', function_index: CALLS.TLBWR }
 	];
 }
-TLBWR.assembly = () => `cop0\ttlbwr`;
+TLBWR.assembly = (fields, pc) => `cop0\ttlbwr`;
 
-function TLBP(pc, delayed) {
+function TLBP(fields, pc, delayed, delay, escape) {
 	return [
 		... pc,
 		... delayed,
 		{ op: 'call', function_index: CALLS.TLBP }
 	];
 }
-TLBP.assembly = () => `cop0\ttlbp`;
+TLBP.assembly = (fields, pc) => `cop0\ttlbp`;
 
 /***********
  ** Unused move instructions
  ***********/
-function CFC0(pc, delayed) {
+function CFC0(fields, pc, delayed, delay, escape) {
 	return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
 }
-CFC0.assembly = (rt, rd) => `cfc0\t${Consts.Registers[rt]}, cop0cnt${rd}`;
+CFC0.assembly = (fields, pc) => `cfc0\t${Consts.Registers[fields.rt]}, cop0cnt${fields.rd}`;
 
-function CTC0(pc, delayed) {
+function CTC0(fields, pc, delayed, delay, escape) {
 	return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
 }
-CTC0.assembly = (rt, rd) => `ctc0\t${Consts.Registers[rt]}, cop0cnt${rd}`;
+CTC0.assembly = (fields, pc) => `ctc0\t${Consts.Registers[fields.rt]}, cop0cnt${fields.rd}`;
 
-export function LWC0(pc, delayed) {
+export function LWC0(fields, pc, delayed, delay, escape) {
 	return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
 }
-LWC0.assembly = (rs, rt, imm16) => `lwc0\t${Consts.COP0Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`;
+LWC0.assembly = (fields, pc) => `lwc0\t${Consts.COP0Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`;
 
-export function SWC0(pc, delayed) {
+export function SWC0(fields, pc, delayed, delay, escape) {
 	return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
 }
-SWC0.assembly = (rs, rt, imm16) => `swc0\t${Consts.COP0Registers[rt]}, ${imm16}(${Consts.Registers[rs]})`;
+SWC0.assembly = (fields, pc) => `swc0\t${Consts.COP0Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`;
 
 export default {
 	field: "rs",
@@ -108,7 +108,7 @@ export default {
   	0x06: CTC0,
 	0x10: {
 		// Note: this does not match all the extra zeros
-		field: "function",
+		field: "funct",
 		0x01: TLBR,
 		0x02: TLBWI,
 		0x06: TLBWR,

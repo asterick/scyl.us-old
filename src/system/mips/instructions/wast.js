@@ -20,6 +20,14 @@ export const CALLS = {
 	TLBP: 10,
 };
 
+export const LOCAL_VARS = {
+	I64_TEMP: 0,
+	I32_TEMP: 1,
+	INSTRUCTION_WORD: 2,
+	INSTRUCTION_PC: 3,
+	INSTRUCTION_DELAYED: 4
+};
+
 export function read(index) {
 	return index ? [
 		{ op: 'i32.const', value: index * 4 },
@@ -38,9 +46,10 @@ export function write(index, value) {
 	];
 }
 
-export function exception(code, pc, delayed, cop = { op: 'i32.const', value: 0 } ) {
+export function exception(code, pc, delayed, cop = [{ op: 'i32.const', value: 0 }] ) {
+	console.log(cop)
 	return [
-        ... code,
+		{ op: 'i32.const', value: code },
         ... pc,
         ... delayed,
         ... cop,

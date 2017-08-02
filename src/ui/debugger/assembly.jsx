@@ -2,7 +2,7 @@ import Inferno from 'inferno';
 import Component from 'inferno-component';
 import style from "./style.css";
 
-import { hex, fields } from "../../util";
+import { hex } from "../../util";
 
 import locate from "../../system/mips/instructions";
 
@@ -13,16 +13,10 @@ export default class extends Component {
 			const op = locate(word);
 			const asm = op.instruction.assembly;
 
-			if (!asm.fields) {
-				asm.fields = fields(asm);
-			}
-
 			op.pc = pc;
 
 			// Generate assembly string
-			const code = asm(...asm.fields.map((f) => op[f]))
-				.split("\t")
-				.map((v) => <td>{v}</td>);
+			const code = asm(op, pc);
 
 			return <tr><td>{hex(pc)}</td> <td>{hex(word)}</td> {code}</tr>;
 		} catch(E) {
