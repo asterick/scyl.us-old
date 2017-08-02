@@ -38,12 +38,12 @@ export function write(index, value) {
 	];
 }
 
-export function exception(code, pc, delayed, cop = 0) {
+export function exception(code, pc, delayed, cop = { op: 'i32.const', value: 0 } ) {
 	return [
-        { op: 'i32.const', value: code },
-        { op: 'i32.const', value: pc },
-        { op: 'i32.const', value: delayed ? 1 : 0 },
-        { op: 'i32.const', value: cop },
+        ... code,
+        ... pc,
+        ... delayed,
+        ... cop,
         { op: "call", function_index: CALLS.EXCEPTION },
         { op: "unreachable" }
 	]
