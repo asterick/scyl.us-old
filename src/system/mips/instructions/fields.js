@@ -1,6 +1,6 @@
 import { LOCAL_VARS } from "./wast";
 
-export class NumericFields {
+export class FieldsNumeric {
     constructor(word) {
         this._word = word;
     }
