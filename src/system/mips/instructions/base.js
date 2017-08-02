@@ -45,7 +45,7 @@ LB.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         ... pc,
-        ... delayed ? 1 : 0,
+        ... delayed,
         { op: "call", function_index: CALLS.LOAD },
         { op: "i32.const", value: 24 },
         { op: "get_local", index: 0 },
@@ -78,7 +78,7 @@ LBU.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         ... pc,
-        ... delayed ? 1 : 0,
+        ... delayed,
         { op: "call", function_index: CALLS.LOAD },
         { op: "i32.const", value: 24 },
         { op: "get_local", index: 0 },
@@ -118,7 +118,7 @@ LH.wasm = function (rt, rs, imm16, pc, delayed) {
 
         { op: "get_local", index: 0 },
         ... pc,
-        ... delayed ? 1 : 0,
+        ... delayed,
         { op: "call", function_index: CALLS.LOAD },
 
         { op: "i32.const", value: 16 },
@@ -157,7 +157,7 @@ LHU.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
         { op: "get_local", index: 0 },
         ... pc,
-        ... delayed ? 1 : 0,
+        ... delayed,
         { op: "call", function_index: CALLS.LOAD },
         { op: "i32.const", value: 16 },
         { op: "get_local", index: 0 },
@@ -194,7 +194,7 @@ LW.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
         { op: "get_local", index: 0 },
         ... pc,
-        ... delayed ? 1 : 0,
+        ... delayed,
         { op: "call", function_index: CALLS.LOAD },
         ... write(rt)
     ];
@@ -225,7 +225,7 @@ SB.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "get_local", index: 0 },
         { op: "i32.shl" },
         ... pc,
-        ... delayed ? 1 : 0,
+        ... delayed,
         { op: "call", function_index: CALLS.STORE },
     ]
 }
@@ -261,7 +261,7 @@ SH.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "get_local", index: 0 },
         { op: "i32.shl" },
         ... pc,
-        ... delayed ? 1 : 0,
+        ... delayed,
         { op: "call", function_index: CALLS.STORE }
     ]
 }
@@ -287,7 +287,7 @@ SW.wasm = function (rt, rs, imm16, pc, delayed) {
         ... read(rt),
         { op: "i32.const", value: -1 },
         ... pc,
-        ... delayed ? 1 : 0,
+        ... delayed,
         { op: "call", function_index: CALLS.STORE }
     ]
 }
@@ -311,7 +311,7 @@ LWR.wasm = function (rt, rs, imm16, pc, delayed) {
 
         { op: "tee_local", index: 0 },
         ... pc,
-        ... delayed ? 1 : 0,
+        ... delayed,
         { op: "call", function_index: CALLS.LOAD },
 
         { op: "get_local", index: 0 },
@@ -368,7 +368,7 @@ LWL.wasm = function (rt, rs, imm16, pc, delayed, escape_depth) {
 
         { op: "get_local", index: 0 },
         ... pc,
-        ... delayed ? 1 : 0,
+        ... delayed,
         { op: "call", function_index: CALLS.LOAD },
 
         { op: "i32.const", value: 32 },
@@ -410,7 +410,7 @@ SWR.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "get_local", index: 0 },
         { op: "i32.shl" },
         ... pc,
-        ... delayed ? 1 : 0,
+        ... delayed,
         { op: "call", function_index: CALLS.STORE }
     ]
 }
@@ -452,7 +452,7 @@ SWL.wasm = function (rt, rs, imm16, pc, delayed, escape_depth) {
         { op: "get_local", index: 0 },
         { op: "i32.shr_u" },
         ... pc,
-        ... delayed ? 1 : 0,
+        ... delayed,
         { op: "call", function_index: CALLS.STORE }
     ];
 }
@@ -673,7 +673,7 @@ function SLTIU(rt, rs, simm16) {
 SLTIU.wasm = function (rt, rs, simm16) {
     return [
         ... read(rs),
-        { op: 'i32.const', value: simm16 },
+        ... simm16,
         { op: 'i32.lt_u'},
         ... write(rt)
     ]
@@ -1131,7 +1131,7 @@ function J (pc, imm26, delay) {
 J.wasm = function (pc, imm26, delay, escape_depth) {
     return [
         ... delay(pc+4, escape_depth),
-        { op: 'i32.const', value: ((pc & 0xF0000000) | (imm26 * 4)) >>> 0 },
+        ... ((pc & 0xF0000000) | (imm26 * 4)) >>> 0,
         ... write(REGS.PC),
         { op: 'br', relative_depth: escape_depth }
     ];
@@ -1146,9 +1146,9 @@ function JAL (pc, imm26, delay) {
 JAL.wasm = function (pc, imm26, delay, escape_depth) {
     return [
         ... delay(pc+4, escape_depth),
-        { op: 'i32.const', value: pc + 8 },
+        ... pc + 8,
         ... write(31),
-        { op: 'i32.const', value: ((pc & 0xF0000000) | (imm26 * 4)) >>> 0 },
+        ... ((pc & 0xF0000000) | (imm26 * 4)) >>> 0,
         ... write(REGS.PC),
         { op: 'br', relative_depth: escape_depth }
     ];
@@ -1182,7 +1182,7 @@ function JALR(rs, rd, pc, delay) {
 JALR.wasm = function (rs, rd, pc, delay, escape_depth) {
     return [
         ... delay(pc+4, escape_depth),
-        { op: 'i32.const', value: pc + 8 },
+        ... pc + 8,
         ... write(rd),
         ... read(rs),
         { op: 'i32.const', value: 0xFFFFFFFC },
@@ -1206,7 +1206,7 @@ BEQ.wasm = function (pc, rs, rt, simm16, delay, escape_depth) {
         { op: 'i32.eq' },
         { op: 'if', block: [
             ... delay(pc+4, escape_depth+1),
-            { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+            ... (pc + 4) + (simm16 * 4),
             ... write(REGS.PC),
             { op: 'br', relative_depth: escape_depth + 1 }
         ]},
@@ -1227,7 +1227,7 @@ BNE.wasm = function (pc, rs, rt, simm16, delay, escape_depth) {
         { op: 'i32.ne' },
         { op: 'if', block: [
             ... delay(pc+4, escape_depth+1),
-            { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+            ... (pc + 4) + (simm16 * 4),
             ... write(REGS.PC),
             { op: 'br', relative_depth: escape_depth + 1 }
         ]},
@@ -1248,7 +1248,7 @@ BLTZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
         { op: 'i32.lt_s' },
         { op: 'if', block: [
             ... delay(pc+4, escape_depth+1),
-            { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+            ... (pc + 4) + (simm16 * 4),
             ... write(REGS.PC),
             { op: 'br', relative_depth: escape_depth + 1 }
         ]},
@@ -1269,7 +1269,7 @@ BGEZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
         { op: 'i32.ge_s' },
         { op: 'if', block: [
             ... delay(pc+4, escape_depth+1),
-            { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+            ... (pc + 4) + (simm16 * 4),
             ... write(REGS.PC),
             { op: 'br', relative_depth: escape_depth + 1 }
         ]},
@@ -1290,7 +1290,7 @@ BGTZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
         { op: 'i32.gt_s' },
         { op: 'if', block: [
             ... delay(pc+4, escape_depth+1),
-            { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+            ... (pc + 4) + (simm16 * 4),
             ... write(REGS.PC),
             { op: 'br', relative_depth: escape_depth + 1 }
         ]},
@@ -1311,7 +1311,7 @@ BLEZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
         { op: 'i32.le_s' },
         { op: 'if', block: [
             ... delay(pc+4, escape_depth+1),
-            { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+            ... (pc + 4) + (simm16 * 4),
             ... write(REGS.PC),
             { op: 'br', relative_depth: escape_depth + 1 }
         ]},
@@ -1333,9 +1333,9 @@ BLTZAL.wasm = function (pc, rs, simm16, delay, escape_depth) {
         { op: 'i32.lt_s' },
         { op: 'if', block: [
             ... delay(pc+4, escape_depth+1),
-            { op: 'i32.const', value: pc + 8 },
+            ... pc + 8,
             ... write(31),
-            { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+            ... (pc + 4) + (simm16 * 4),
             ... write(REGS.PC),
             { op: 'br', relative_depth: escape_depth + 1 }
         ]},
@@ -1357,9 +1357,9 @@ BGEZAL.wasm = function (pc, rs, simm16, delay, escape_depth) {
         { op: 'i32.le_s' },
         { op: 'if', block: [
             ... delay(pc+4, escape_depth+1),
-            { op: 'i32.const', value: pc + 8 },
+            ... pc + 8,
             ... write(31),
-            { op: 'i32.const', value: (pc + 4) + (simm16 * 4) },
+            ... (pc + 4) + (simm16 * 4),
             ... write(REGS.PC),
             { op: 'br', relative_depth: escape_depth + 1 }
         ]},
