@@ -23,13 +23,13 @@ CopUnusable.assembly = (fields, pc) => `COP${fields.cop}\tunusable`;
 function LB(fields, pc, delayed, delay, escape) {
     return [
         ... read(fields.rs),
-
         ... fields.imm16,
         { op: "i32.add" },
         { op: "tee_local", index: LOCAL_VARS.I32_TEMP },
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.LOAD },
+
         { op: "i32.const", value: 24 },
         { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 3 },
@@ -38,6 +38,7 @@ function LB(fields, pc, delayed, delay, escape) {
         { op: "i32.mul" },
         { op: "i32.sub" },
         { op: "i32.shl" },
+        { op: "i32.const", value: 24 },
         { op: "i32.shr_s" },
 
         ... write(fields.rt)
@@ -54,15 +55,16 @@ function LBU(fields, pc, delayed, delay, escape) {
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.LOAD },
-        { op: "i32.const", value: 24 },
+
         { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
         { op: "i32.const", value: 8 },
         { op: "i32.mul" },
-        { op: "i32.sub" },
         { op: "i32.shl" },
-        { op: "i32.shr_u" },
+
+        { op: "i32.const", value: 0xFF },
+        { op: "i32.and" },
         ... write(fields.rt)
     ];
 }
@@ -94,7 +96,9 @@ function LH(fields, pc, delayed, delay, escape) {
 
         { op: "i32.sub" },
         { op: "i32.shl" },
+        { op: "i32.const", value: 16 },
         { op: "i32.shr_s" },
+
         ... write(fields.rt)
     ];
 }
@@ -113,15 +117,14 @@ function LHU(fields, pc, delayed, delay, escape) {
         ... pc,
         ... delayed,
         { op: "call", function_index: CALLS.LOAD },
-        { op: "i32.const", value: 16 },
         { op: "get_local", index: LOCAL_VARS.I32_TEMP },
         { op: "i32.const", value: 2 },
         { op: "i32.and" },
         { op: "i32.const", value: 8 },
         { op: "i32.mul" },
-        { op: "i32.sub" },
         { op: "i32.shl" },
-        { op: "i32.shr_u" },
+        { op: "i32.const", value: 0xFFFF },
+        { op: "i32.and" },
         ... write(fields.rt)
     ];
 }
@@ -1120,20 +1123,18 @@ export default {
     0x11: CopUnusable,
     0x13: CopUnusable,
     0x13: CopUnusable,
-    /*
     0x20: LB,
     0x21: LH,
-    0x22: LWL,
+    //0x22: LWL,
     0x23: LW,
     0x24: LBU,
     0x25: LHU,
     0x26: LWR,
     0x28: SB,
     0x29: SH,
-    0x2A: SWL,
+    // 0x2A: SWL,
     0x2B: SW,
     0x2E: SWR,
-    */
     0x30: COP0.LWC0,
     0x31: CopUnusable,
     0x13: CopUnusable,
