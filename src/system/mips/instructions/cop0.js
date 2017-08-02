@@ -17,13 +17,13 @@ function MFC0(fields, pc, delayed, delay, escape) {
 MFC0.assembly = (fields, pc) => `mfc0\t${Consts.Registers[fields.rt]}, ${Consts.COP0Registers[fields.rd]}`;
 
 function MTC0(fields, pc, delayed, delay, escape) {
-	return [].concat(
+	return [
 		... fields.rd,
 		... read(fields.rt),
 		... pc,
 		... delayed,
 		{ op: 'call', function_index: CALLS.MTC0 }
-	);
+	];
 }
 MTC0.assembly = (fields, pc) => `mtc0\t${Consts.Registers[fields.rt]}, ${Consts.COP0Registers[fields.rd]}`;
 

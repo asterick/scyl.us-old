@@ -809,7 +809,7 @@ function J(fields, pc, delayed, delay, escape) {
         ... delay(),
 
         ... pc,
-        { op: 'i32.const', value: 0xF0000000 },
+        { op: 'i32.const', value: 0xF0000000 >> 0 },
         { op: 'i32.and'},
         ... fields.imm26,
         { op: 'i32.const', value: 4 },
@@ -830,7 +830,7 @@ function JAL(fields, pc, delayed, delay, escape) {
         { op: 'i32.add' },
         ... write(31),
         ... pc,
-        { op: 'i32.const', value: 0xF0000000 },
+        { op: 'i32.const', value: 0xF0000000 >> 0 },
         { op: 'i32.and'},
         ... fields.imm26,
         { op: 'i32.const', value: 4 },
@@ -846,7 +846,7 @@ function JR(fields, pc, delayed, delay, escape) {
     return [
         ... delay(),
         ... read(fields.rs),
-        { op: 'i32.const', value: 0xFFFFFFFC },
+        { op: 'i32.const', value: 0xFFFFFFFC >> 0 },
         { op: 'i32.and' },
         ... write(REGS.PC),
         ... escape
@@ -862,7 +862,7 @@ function JALR(fields, pc, delayed, delay, escape) {
         { op: 'i32.add' },
         ... write(fields.rd),
         ... read(fields.rs),
-        { op: 'i32.const', value: 0xFFFFFFFC },
+        { op: 'i32.const', value: 0xFFFFFFFC >> 0 },
         { op: 'i32.and' },
         ... write(REGS.PC),
         ... escape
@@ -1120,6 +1120,7 @@ export default {
     0x11: CopUnusable,
     0x13: CopUnusable,
     0x13: CopUnusable,
+    /*
     0x20: LB,
     0x21: LH,
     0x22: LWL,
@@ -1132,6 +1133,7 @@ export default {
     0x2A: SWL,
     0x2B: SW,
     0x2E: SWR,
+    */
     0x30: COP0.LWC0,
     0x31: CopUnusable,
     0x13: CopUnusable,

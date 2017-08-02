@@ -42,7 +42,10 @@ function createDynamic(table) {
 	return module(walk(table));
 }
 
-console.log(createDynamic(Instructions));
+
+var data = createDynamic(Instructions);
+var url =  window.URL.createObjectURL(new Blob([data], {type: 'application/octet-stream'}));
+document.body.innerHTML = `<a download="temp.wasm" href='${url}'>download</a>`
 
 /*
 import Import from "../../../dynast/import";

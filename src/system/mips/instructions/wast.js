@@ -75,16 +75,15 @@ export function write(index) {
 
 	if (target === null) {
 		return [
+			{ op: 'i32.const', value: 0 },
 			... index,
 			{ op: 'i32.eqz' },
-			{ op: 'if', block: block([
-				{ op: 'drop' },
-			{ op: 'else' },
-				... index,
-				{ op: "i32.const", value: 4 },
-				{ op: 'i32.mul' },
-				{ op: "i32.store", "flags": 2, "offset": 0 },
-			])}
+			{ op: 'select' },
+
+			... index,
+			{ op: "i32.const", value: 4 },
+			{ op: 'i32.mul' },
+			{ op: "i32.store", "flags": 2, "offset": 0 },
 		];
 	}
 
@@ -257,7 +256,6 @@ export function module(functions) {
 	    ]
 	}
 
-	/*
 	Object.keys(functions).forEach((name, i) => {
 		result.function_section.push(functions[name]);
 		result.export_section.push({
@@ -266,7 +264,6 @@ export function module(functions) {
             "index": i + CALLS.EXPORT_BASE_INDEX
 		});
 	});
-	*/
 
 	return Export(result);
 }
