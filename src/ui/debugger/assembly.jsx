@@ -20,7 +20,7 @@ export default class extends Component {
 
 			return <tr><td>{hex(pc)}</td> <td>{hex(word)}</td> {code}</tr>;
 		} catch(E) {
-			return <tr><td>{hex(address)}</td> <td colSpan="3">Bus error</td></tr>;
+			return <tr><td>{hex(pc)}</td> <td colSpan="3">Bus error</td></tr>;
 		}
 	}
 
