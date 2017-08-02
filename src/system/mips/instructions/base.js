@@ -820,7 +820,7 @@ function J(fields, pc, delayed, delay, escape) {
         { op: 'i32.or'},
 
         ... write(REGS.PC),
-        ... escape()
+        ... escape
     ];
 }
 J.assembly = (fields, pc) => `j\t$${(((pc & 0xF0000000) | (fields.imm26 * 4)) >>> 0).toString(16)}`;
@@ -840,7 +840,7 @@ function JAL(fields, pc, delayed, delay, escape) {
         { op: 'i32.mul'},
         { op: 'i32.or'},
         ... write(REGS.PC),
-        ... escape()
+        ... escape
     ];
 }
 JAL.assembly = (fields, pc) => `jal\t$${(((pc & 0xF0000000) | (fields.imm26 * 4)) >>> 0).toString(16)}`;
@@ -852,7 +852,7 @@ function JR(fields, pc, delayed, delay, escape) {
         { op: 'i32.const', value: 0xFFFFFFFC },
         { op: 'i32.and' },
         ... write(REGS.PC),
-        ... escape()
+        ... escape
     ];
 }
 JR.assembly = (fields, pc) => `jr\t${Consts.Registers[fields.rs]}`;
@@ -868,7 +868,7 @@ function JALR(fields, pc, delayed, delay, escape) {
         { op: 'i32.const', value: 0xFFFFFFFC },
         { op: 'i32.and' },
         ... write(REGS.PC),
-        ... escape()
+        ... escape
     ];
 }
 JALR.assembly = (fields, pc) => `jalr\t${Consts.Registers[fields.rd]}, ${Consts.Registers[fields.rs]}`;
@@ -889,7 +889,7 @@ function BEQ(fields, pc, delayed, delay, escape) {
         { op: 'i32.add' },
         { op: 'i32.add' },
         ... write(REGS.PC),
-        ... escape()
+        ... escape
     ];
 }
 BEQ.assembly = (fields, pc) => `beq\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
@@ -911,7 +911,7 @@ function BNE(fields, pc, delayed, delay, escape) {
         { op: 'i32.add' },
         ... write(REGS.PC),
 
-        ... escape()
+        ... escape
     ];
 }
 BNE.assembly = (fields, pc) => `bne\t${Consts.Registers[fields.rs]}, ${Consts.Registers[fields.rt]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
@@ -932,7 +932,7 @@ function BLTZ(fields, pc, delayed, delay, escape) {
         { op: 'i32.add' },
         { op: 'i32.add' },
         ... write(REGS.PC),
-        ... escape()
+        ... escape
     ];
 }
 BLTZ.assembly = (fields, pc) => `bltz\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
@@ -953,7 +953,7 @@ function BGEZ(fields, pc, delayed, delay, escape) {
         { op: 'i32.add' },
         { op: 'i32.add' },
         ... write(REGS.PC),
-        ... escape()
+        ... escape
     ];
 }
 BGEZ.assembly = (fields, pc) => `bgez\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
@@ -974,7 +974,7 @@ function BGTZ(fields, pc, delayed, delay, escape) {
         { op: 'i32.add' },
         { op: 'i32.add' },
         ... write(REGS.PC),
-        ... escape()
+        ... escape
     ];
 }
 BGTZ.assembly = (fields, pc) => `bgtz\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
@@ -997,7 +997,7 @@ function BLEZ(fields, pc, delayed, delay, escape) {
         { op: 'i32.add' },
 
         ... write(REGS.PC),
-        ... escape()
+        ... escape
     ];
 }
 BLEZ.assembly = (fields, pc) => `blez\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
@@ -1022,7 +1022,7 @@ function BLTZAL(fields, pc, delayed, delay, escape) {
         { op: 'i32.add' },
         { op: 'i32.add' },
         ... write(REGS.PC),
-        ... escape()
+        ... escape
     ];
 }
 BLTZAL.assembly = (fields, pc) => `bltzal\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
@@ -1049,7 +1049,7 @@ function BGEZAL(fields, pc, delayed, delay, escape) {
         { op: 'i32.add' },
         { op: 'i32.add' },
         ... write(REGS.PC),
-        ... escape()
+        ... escape
     ];
 }
 BGEZAL.assembly = (fields, pc) => `bgezal\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;

@@ -28,6 +28,10 @@ export const LOCAL_VARS = {
 	INSTRUCTION_DELAYED: 4
 };
 
+export function local(index) {
+	return [{ op: 'get_local', index }];
+}
+
 export function read(index) {
 	if (Array.isArray(index)) {
 		return [
@@ -49,10 +53,9 @@ export function read(index) {
 	];
 }
 
-export function write(index, value) {
+export function write(index) {
 	if (Array.isArray(index)) {
 		return [
-			... value,
 			... index,
 			{ op: 'i32.eqz' },
 			{ op: 'if', block: [
@@ -75,7 +78,6 @@ export function write(index, value) {
 }
 
 export function exception(code, pc, delayed, cop = [{ op: 'i32.const', value: 0 }] ) {
-	console.log(cop)
 	return [
 		{ op: 'i32.const', value: code },
         ... pc,
