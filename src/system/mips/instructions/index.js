@@ -1,9 +1,7 @@
 import { NumericFields, FieldsWasm } from "./fields";
 import Instructions from "./base";
 
-// Field decode helper object
-
-export default function (word) {
+export default function locate(word) {
 	const fields = new NumericFields(word);
 	var entry = Instructions;
 	var fallback = null;
@@ -18,12 +16,19 @@ export default function (word) {
 	return fields;
 }
 
+export function disassemble(word, address) {
+	const op = locate(word);
+	const asm = op.instruction.assembly;
+
+	return asm(new NumericFields(word), address);
+}
+
 function walk(table) {
 	Object.keys(table).forEach((key) => {
 		const entry = table[key];
 		if (typeof entry === "function") {
-
-			console.log(entry.assembly(new Fields(0xCDCDCDCD)))
+// FIELDS, PC, DELAYED, DELAY, ESCAPE
+			console.log(entry)
 		} else if (typeof entry === 'object') {
 			walk(entry);
 		}
@@ -31,3 +36,5 @@ function walk(table) {
 }
 
 walk(Instructions);
+
+console.log(Instructions)

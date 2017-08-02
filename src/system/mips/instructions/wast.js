@@ -29,6 +29,18 @@ export const LOCAL_VARS = {
 };
 
 export function read(index) {
+	if (Array.isArray(index)) {
+		return [
+			... index,
+			{ op: "i32.const", value: 4 },
+			{ op: 'i32.mul' },
+			{ op: "i32.load", "flags": 2, "offset": 0 },
+			{ op: "i32.const", value: 0 },
+			... index,
+			{ op: "select" }
+		];
+	}
+
 	return index ? [
 		{ op: 'i32.const', value: index * 4 },
 		{ op: "i32.load", "flags": 2, "offset": 0 }
@@ -38,6 +50,22 @@ export function read(index) {
 }
 
 export function write(index, value) {
+	if (Array.isArray(index)) {
+		return [
+			... value,
+			... index,
+			{ op: 'i32.eqz' },
+			{ op: 'if', block: [
+				{ op: 'drop' },
+			{ op: 'else' },
+				... index,
+				{ op: "i32.const", value: 4 },
+				{ op: 'i32.mul' },
+				{ op: "i32.store", "flags": 2, "offset": 0 },
+			]}
+		];
+	}
+
 	return index ? [
 		{ op: 'i32.const', value: index * 4 },
 		{ op: "i32.store", "flags": 2, "offset": 0 }
@@ -66,19 +94,19 @@ export function module(functions) {
 	    "import_section": [
 	        {
 	            "module": "processor",
-	            "field": "exception",
+	            "field": "delay_execute",
 	            "type": {
 	                "type": "func_type",
-	                "parameters": [ "i32", "i32", "i32", "i32" ],
+	                "parameters": [ "i32" ],
 	                "returns": []
 	            }
 	        },
 	        {
 	            "module": "processor",
-	            "field": "execute",
+	            "field": "exception",
 	            "type": {
 	                "type": "func_type",
-	                "parameters": [ "i32", "i32" ],
+	                "parameters": [ "i32", "i32", "i32", "i32" ],
 	                "returns": []
 	            }
 	        },
@@ -91,6 +119,15 @@ export function module(functions) {
 	                "returns": [
 	                    "i32"
 	                ]
+	            }
+	        },
+	        {
+	            "module": "processor",
+	            "field": "store",
+	            "type": {
+	                "type": "func_type",
+	                "parameters": [ "i32", "i32", "i32", "i32", "i32" ],
+	                "returns": []
 	            }
 	        },
 	        {
@@ -122,24 +159,6 @@ export function module(functions) {
 	        },
 	        {
 	            "module": "processor",
-	            "field": "store",
-	            "type": {
-	                "type": "func_type",
-	                "parameters": [ "i32", "i32", "i32", "i32", "i32" ],
-	                "returns": []
-	            }
-	        },
-	        {
-	            "module": "processor",
-	            "field": "tlbp",
-	            "type": {
-	                "type": "func_type",
-	                "parameters": [ "i32", "i32" ],
-	                "returns": []
-	            }
-	        },
-	        {
-	            "module": "processor",
 	            "field": "tlbr",
 	            "type": {
 	                "type": "func_type",
@@ -159,6 +178,15 @@ export function module(functions) {
 	        {
 	            "module": "processor",
 	            "field": "tlbwr",
+	            "type": {
+	                "type": "func_type",
+	                "parameters": [ "i32", "i32" ],
+	                "returns": []
+	            }
+	        },
+	        {
+	            "module": "processor",
+	            "field": "tlbp",
 	            "type": {
 	                "type": "func_type",
 	                "parameters": [ "i32", "i32" ],
