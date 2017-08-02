@@ -349,7 +349,7 @@ function LWL(rt, rs, imm16, pc, delayed) {
         this.registers[rt] = (this.registers[rt] & mask) | (data << (32 - bit));
     }
 }
-LWL.wasm = function (rt, rs, imm16, pc, delayed, escape_depth) {
+LWL.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
         ... imm16,
@@ -364,7 +364,7 @@ LWL.wasm = function (rt, rs, imm16, pc, delayed, escape_depth) {
         { op: "tee_local", index: 0 },
         { op: "i32.const", value: 32 },
         { op: "i32.eq" },
-        { op: "br_if", relative_depth: escape_depth },
+        { op: "br_if", relative_depth: 1 },
 
         { op: "get_local", index: 0 },
         ... pc,
@@ -440,7 +440,7 @@ SWL.wasm = function (rt, rs, imm16, pc, delayed, escape_depth) {
         { op: "tee_local", index: 0 },
         { op: "i32.sub" },
         { op: "i32.eqz" },
-        { op: "br_if", relative_depth: escape_depth },
+        { op: "br_if", relative_depth: 1 },
 
         { op: "get_local", index: 0 },
 
@@ -1211,7 +1211,7 @@ BEQ.wasm = function (pc, rs, rt, simm16, delay, escape_depth) {
         ... read(rs),
         ... read(rt),
         { op: 'i32.eq' },
-        { op: 'br_if', escape_depth: 1 },
+        { op: 'br_if', relative_depth: 1 },
 
         ... delay(),
         ... simm16,
@@ -1238,7 +1238,7 @@ BNE.wasm = function (pc, rs, rt, simm16, delay, escape_depth) {
         ... read(rs),
         ... read(rt),
         { op: 'i32.eq' },
-        { op: 'br_if', escape_depth: 1 },
+        { op: 'br_if', relative_depth: 1 },
 
         ... delay(),
         ... simm16,
@@ -1266,7 +1266,7 @@ BLTZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
         ... read(rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.ge_s' },
-        { op: 'br_if', escape_depth: 1 },
+        { op: 'br_if', relative_depth: 1 },
 
         ... delay(),
         ... simm16,
@@ -1293,7 +1293,7 @@ BGEZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
         ... read(rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.lt_s' },
-        { op: 'br_if', escape_depth: 1 },
+        { op: 'br_if', relative_depth: 1 },
 
         ... delay(),
         ... simm16,
@@ -1320,7 +1320,7 @@ BGTZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
         ... read(rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.le_s' },
-        { op: 'br_if', escape_depth: 1 },
+        { op: 'br_if', relative_depth: 1 },
 
         ... delay(),
         ... simm16,
@@ -1347,7 +1347,7 @@ BLEZ.wasm = function (pc, rs, simm16, delay, escape_depth) {
         ... read(rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.gt_s' },
-        { op: 'br_if', escape_depth: 1 },
+        { op: 'br_if', relative_depth: 1 },
 
         ... delay(),
 
@@ -1377,7 +1377,7 @@ BLTZAL.wasm = function (pc, rs, simm16, delay, escape_depth) {
         ... read(rs),
         { op: 'i32.const', value: 0 },
         { op: 'i32.ge_s' },
-        { op: 'br_if', escape_depth: 1 },
+        { op: 'br_if', relative_depth: 1 },
 
         ... delay(),
         ... pc
@@ -1409,7 +1409,7 @@ BGEZAL.wasm = function (pc, rs, simm16, delay, escape_depth) {
         { op: 'i32.const', value: 0 },
         ... read(rs),
         { op: 'i32.lt_s' },
-        { op: 'br_if', escape_depth: 1 },
+        { op: 'br_if', relative_depth: 1 },
 
         ... delay(),
 
