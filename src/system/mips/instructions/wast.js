@@ -4,7 +4,11 @@ import { FieldsWasmDynamic } from "./fields";
 export const REGS = {
 	LO: 32,
 	HI: 33,
-	PC: 34
+	PC: 34,
+
+	INSTRUCTION_WORD: 35,
+	INSTRUCTION_PC: 36,
+	INSTRUCTION_DELAYED: 37
 };
 
 export const CALLS = {
@@ -25,10 +29,7 @@ export const CALLS = {
 
 export const LOCAL_VARS = {
 	I64_TEMP: 0,
-	I32_TEMP: 1,
-	INSTRUCTION_WORD: 2,
-	INSTRUCTION_PC: 3,
-	INSTRUCTION_DELAYED: 4
+	I32_TEMP: 1
 };
 
 export function block(body) {
@@ -108,22 +109,29 @@ export function exception(code, pc, delayed, cop = [{ op: 'i32.const', value: 0 
 
 export function dynamicCall(func) {
 	return {
-            "locals": [],
+            "locals": [
+        		{
+        			count: 1,
+        			type: 'i64'
+        		},
+        		{
+        			count: 1,
+        			type: 'i32'
+        		}
+            ],
             "type": {
                 "type": "func_type",
-                "parameters": [
-                	"i64", "i32", "i32", "i32", "i32"
-                ],
+                "parameters": [],
                 "returns": []
             },
             "code": [
 				{ op: 'block', block:
 					block(func(
 						FieldsWasmDynamic,
-						local(LOCAL_VARS.INSTRUCTION_PC),
-						local(LOCAL_VARS.INSTRUCTION_DELAYED),
+						read(REGS.INSTRUCTION_PC),
+						read(REGS.INSTRUCTION_DELAYED),
 						() => [
-							... local(LOCAL_VARS.INSTRUCTION_PC),
+							... read(REGS.INSTRUCTION_PC),
 							{ op: 'i32.const', value: 4 },
 							{ op: 'i32.add' },
 					        { op: "call", function_index: CALLS.EXECUTE },

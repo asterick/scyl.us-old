@@ -46,7 +46,7 @@ export default class MIPS {
 		// Base functionality
 		this.clock = 0;
 
-		this._wasmmem = new WebAssembly.Memory({initial:1, maximum:1});
+		this._wasmmem = new WebAssembly.Memory({ initial: 1, maximum: 1 });
 		this.registers = new Uint32Array(this._wasmmem.buffer);
 		this.signed_registers = new Int32Array(this._wasmmem.buffer);
 		this.reset();

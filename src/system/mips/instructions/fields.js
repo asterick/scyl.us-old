@@ -1,4 +1,4 @@
-import { LOCAL_VARS } from "./wast";
+import { read, REGS } from "./wast";
 
 export class FieldsNumeric {
     constructor(word) {
@@ -22,52 +22,52 @@ export class FieldsNumeric {
 
 export const FieldsWasmDynamic = {
     opcode: [
-        { op: 'get_local', index: LOCAL_VARS.INSTRUCTION_WORD },
+        ... read(REGS.INSTRUCTION_WORD),
         { op: 'i32.const', value: 26},
         { op: 'i32.shr_u'},
         { op: 'i32.const', value: 0b111111},
         { op: 'i32.and'}
     ],
     funct: [
-        { op: 'get_local', index: LOCAL_VARS.INSTRUCTION_WORD },
+        ... read(REGS.INSTRUCTION_WORD),
         { op: 'i32.const', value: 0b111111},
         { op: 'i32.and'}
     ],
     shamt: [
-        { op: 'get_local', index: LOCAL_VARS.INSTRUCTION_WORD },
+        ... read(REGS.INSTRUCTION_WORD),
         { op: 'i32.const', value: 6},
         { op: 'i32.shr_u'},
         { op: 'i32.const', value: 0b11111},
         { op: 'i32.and'}
     ],
     rd: [
-        { op: 'get_local', index: LOCAL_VARS.INSTRUCTION_WORD },
+        ... read(REGS.INSTRUCTION_WORD),
         { op: 'i32.const', value: 11},
         { op: 'i32.shr_u'},
         { op: 'i32.const', value: 0b11111},
         { op: 'i32.and'}
     ],
     rt: [
-        { op: 'get_local', index: LOCAL_VARS.INSTRUCTION_WORD },
+        ... read(REGS.INSTRUCTION_WORD),
         { op: 'i32.const', value: 16},
         { op: 'i32.shr_u'},
         { op: 'i32.const', value: 0b11111},
         { op: 'i32.and'}
     ],
     rs: [
-        { op: 'get_local', index: LOCAL_VARS.INSTRUCTION_WORD },
+        ... read(REGS.INSTRUCTION_WORD),
         { op: 'i32.const', value: 21},
         { op: 'i32.shr_u'},
         { op: 'i32.const', value: 0b11111},
         { op: 'i32.and'}
     ],
     imm16: [
-        { op: 'get_local', index: LOCAL_VARS.INSTRUCTION_WORD },
+        ... read(REGS.INSTRUCTION_WORD),
         { op: 'i32.const', value: 0xFFFF},
         { op: 'i32.and'}
     ],
     simm16: [
-        { op: 'get_local', index: LOCAL_VARS.INSTRUCTION_WORD },
+        ... read(REGS.INSTRUCTION_WORD),
         { op: 'i32.const', value: 16},
         { op: 'i32.shl'},
         { op: 'i32.const', value: 16},
@@ -75,24 +75,24 @@ export const FieldsWasmDynamic = {
 
     ],
     imm20: [
-        { op: 'get_local', index: LOCAL_VARS.INSTRUCTION_WORD },
+        ... read(REGS.INSTRUCTION_WORD),
         { op: 'i32.const', value: 6},
         { op: 'i32.shr_u'},
         { op: 'i32.const', value: 0xFFFFF},
         { op: 'i32.and'}
     ],
     imm25: [
-        { op: 'get_local', index: LOCAL_VARS.INSTRUCTION_WORD },
+        ... read(REGS.INSTRUCTION_WORD),
         { op: 'i32.const', value: 0x1FFFFFF},
         { op: 'i32.and'}
     ],
     imm26: [
-        { op: 'get_local', index: LOCAL_VARS.INSTRUCTION_WORD },
+        ... read(REGS.INSTRUCTION_WORD),
         { op: 'i32.const', value: 0x3FFFFFF},
         { op: 'i32.and'}
     ],
     cop: [
-        { op: 'get_local', index: LOCAL_VARS.INSTRUCTION_WORD },
+        ... read(REGS.INSTRUCTION_WORD),
         { op: 'i32.const', value: 26},
         { op: 'i32.shr_u'},
         { op: 'i32.const', value: 3},
