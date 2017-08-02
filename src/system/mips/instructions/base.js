@@ -41,11 +41,11 @@ LB.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
 
-        { op: "i32.const", value: imm16 },
+        ... imm16,
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
-        { op: "i32.const", value: pc },
-        { op: "i32.const", value: delayed ? 1 : 0 },
+        ... pc,
+        ... delayed ? 1 : 0,
         { op: "call", function_index: CALLS.LOAD },
         { op: "i32.const", value: 24 },
         { op: "get_local", index: 0 },
@@ -74,11 +74,11 @@ function LBU(rt, rs, imm16, pc, delayed) {
 LBU.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm16 },
+        ... imm16,
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
-        { op: "i32.const", value: pc },
-        { op: "i32.const", value: delayed ? 1 : 0 },
+        ... pc,
+        ... delayed ? 1 : 0,
         { op: "call", function_index: CALLS.LOAD },
         { op: "i32.const", value: 24 },
         { op: "get_local", index: 0 },
@@ -107,7 +107,7 @@ function LH(rt, rs, imm16, pc, delayed) {
 LH.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm16 },
+        ... imm16,
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
 
@@ -117,8 +117,8 @@ LH.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
 
         { op: "get_local", index: 0 },
-        { op: "i32.const", value: pc },
-        { op: "i32.const", value: delayed ? 1 : 0 },
+        ... pc,
+        ... delayed ? 1 : 0,
         { op: "call", function_index: CALLS.LOAD },
 
         { op: "i32.const", value: 16 },
@@ -149,15 +149,15 @@ function LHU(rt, rs, imm16, pc, delayed) {
 LHU.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm16 },
+        ... imm16,
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         { op: "i32.const", value: 1 },
         { op: "i32.and" },
         { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
         { op: "get_local", index: 0 },
-        { op: "i32.const", value: pc },
-        { op: "i32.const", value: delayed ? 1 : 0 },
+        ... pc,
+        ... delayed ? 1 : 0,
         { op: "call", function_index: CALLS.LOAD },
         { op: "i32.const", value: 16 },
         { op: "get_local", index: 0 },
@@ -186,15 +186,15 @@ function LW(rt, rs, imm16, pc, delayed) {
 LW.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm16 },
+        ... imm16,
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         { op: "i32.const", value: 3 },
         { op: "i32.and" },
         { op: "if", block: exception(Consts.Exceptions.AddressLoad, pc, delayed) },
         { op: "get_local", index: 0 },
-        { op: "i32.const", value: pc },
-        { op: "i32.const", value: delayed ? 1 : 0 },
+        ... pc,
+        ... delayed ? 1 : 0,
         { op: "call", function_index: CALLS.LOAD },
         ... write(rt)
     ];
@@ -210,7 +210,7 @@ function SB(rt, rs, imm16, pc, delayed) {
 SB.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm16 },
+        ... imm16,
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         ... read(rt),
@@ -224,8 +224,8 @@ SB.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "i32.const", value: 0xFF },
         { op: "get_local", index: 0 },
         { op: "i32.shl" },
-        { op: "i32.const", value: pc },
-        { op: "i32.const", value: delayed ? 1 : 0 },
+        ... pc,
+        ... delayed ? 1 : 0,
         { op: "call", function_index: CALLS.STORE },
     ]
 }
@@ -242,7 +242,7 @@ function SH(rt, rs, imm16, pc, delayed) {
 SH.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm16 },
+        ... imm16,
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         { op: "i32.const", value: 1 },
@@ -260,8 +260,8 @@ SH.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "i32.const", value: 0xFFFF },
         { op: "get_local", index: 0 },
         { op: "i32.shl" },
-        { op: "i32.const", value: pc },
-        { op: "i32.const", value: delayed ? 1 : 0 },
+        ... pc,
+        ... delayed ? 1 : 0,
         { op: "call", function_index: CALLS.STORE }
     ]
 }
@@ -277,7 +277,7 @@ function SW(rt, rs, imm16, pc, delayed) {
 SW.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm16 },
+        ... imm16,
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         { op: "i32.const", value: 3 },
@@ -286,8 +286,8 @@ SW.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "get_local", index: 0 },
         ... read(rt),
         { op: "i32.const", value: -1 },
-        { op: "i32.const", value: pc },
-        { op: "i32.const", value: delayed ? 1 : 0 },
+        ... pc,
+        ... delayed ? 1 : 0,
         { op: "call", function_index: CALLS.STORE }
     ]
 }
@@ -306,12 +306,12 @@ function LWR(rt, rs, imm16, pc, delayed) {
 LWR.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm16 },
+        ... imm16,
         { op: "i32.add" },
 
         { op: "tee_local", index: 0 },
-        { op: "i32.const", value: pc },
-        { op: "i32.const", value: delayed ? 1 : 0 },
+        ... pc,
+        ... delayed ? 1 : 0,
         { op: "call", function_index: CALLS.LOAD },
 
         { op: "get_local", index: 0 },
@@ -352,7 +352,7 @@ function LWL(rt, rs, imm16, pc, delayed) {
 LWL.wasm = function (rt, rs, imm16, pc, delayed, escape_depth) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm16 },
+        ... imm16,
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         { op: "i32.const", value: 3 },
@@ -367,8 +367,8 @@ LWL.wasm = function (rt, rs, imm16, pc, delayed, escape_depth) {
         { op: "br_if", relative_depth: escape_depth },
 
         { op: "get_local", index: 0 },
-        { op: "i32.const", value: pc },
-        { op: "i32.const", value: delayed ? 1 : 0 },
+        ... pc,
+        ... delayed ? 1 : 0,
         { op: "call", function_index: CALLS.LOAD },
 
         { op: "i32.const", value: 32 },
@@ -395,7 +395,7 @@ function SWR(rt, rs, imm16, pc, delayed) {
 SWR.wasm = function (rt, rs, imm16, pc, delayed) {
     return [
         ... read(rs),
-        { op: "i32.const", value: imm16 },
+        ... imm16,
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
         ... read(rt),
@@ -409,8 +409,8 @@ SWR.wasm = function (rt, rs, imm16, pc, delayed) {
         { op: "i32.const", value: -1 },
         { op: "get_local", index: 0 },
         { op: "i32.shl" },
-        { op: "i32.const", value: pc },
-        { op: "i32.const", value: delayed ? 1 : 0 },
+        ... pc,
+        ... delayed ? 1 : 0,
         { op: "call", function_index: CALLS.STORE }
     ]
 }
@@ -426,7 +426,7 @@ function SWL(rt, rs, imm16, pc, delayed) {
 }
 SWL.wasm = function (rt, rs, imm16, pc, delayed, escape_depth) {
     return [
-        { op: "i32.const", value: imm16 },
+        ... imm16,
         { op: "i32.add" },
         { op: "tee_local", index: 0 },
 
@@ -451,8 +451,8 @@ SWL.wasm = function (rt, rs, imm16, pc, delayed, escape_depth) {
         { op: "i32.const", value: -1 },
         { op: "get_local", index: 0 },
         { op: "i32.shr_u" },
-        { op: "i32.const", value: pc },
-        { op: "i32.const", value: delayed ? 1 : 0 },
+        ... pc,
+        ... delayed ? 1 : 0,
         { op: "call", function_index: CALLS.STORE }
     ];
 }
@@ -609,7 +609,7 @@ function ADDIU(rt, rs, simm16) {
 ADDIU.wasm = function (rt, rs, simm16) {
     return [
         ... read(rs),
-        { op: "i32.const", value: simm16 },
+        ... simm16,
         { op: "i32.add" },
         ... write(rt)
     ];
@@ -658,7 +658,7 @@ function SLTI(rt, rs, simm16) {
 SLTI.wasm = function (rt, rs, simm16) {
     return [
         ... read(rs),
-        { op: 'i32.const', value: simm16 },
+        ... simm16,
         { op: 'i32.lt_s'},
         ... write(rt)
     ]
@@ -855,7 +855,7 @@ function SLL(rd, rt, shamt) {
 SLL.wasm = function (rd, rt, shamt) {
     return [
         ... read(rt),
-        { op: "i32.const", value: shamt },
+        ... shamt,
         { op: "i32.shl" },
         ... write(rd)
     ]
@@ -870,7 +870,7 @@ function SRL(rd, rt, shamt) {
 SRL.wasm = function (rd, rt, shamt) {
     return [
         ... read(rt),
-        { op: "i32.const", value: shamt },
+        ... shamt,
         { op: "i32.shr_u" },
         ... write(rd)
     ]
@@ -885,7 +885,7 @@ function SRA(rd, rt, shamt) {
 SRA.wasm = function (rd, rt, shamt) {
     return [
         ... read(rt),
-        { op: "i32.const", value: shamt },
+        ... shamt,
         { op: "i32.shr_s" },
         ... write(rd)
     ]
@@ -899,7 +899,7 @@ function LUI(rt, imm16) {
 }
 LUI.wasm = function (rt, imm16) {
     return [
-        { op: "i32.const", value: imm16 << 16 },
+        ... imm16 << 16,
         ... write(rt)
     ]
 }

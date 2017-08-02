@@ -1,14 +1,5 @@
 import Export from "../../../dynast/export";
 
-/*
-import Import from "../../../dynast/import";
-fetch("test.wasm")
-	.then((v) => v.arrayBuffer())
-	.then((ab) => {
-		console.log(JSON.stringify(Import(ab), null, 4))
-	});
-*/
-
 export const REGS = {
 	LO: 32,
 	HI: 33,
@@ -168,9 +159,7 @@ export function module(functions) {
 	    ],
 	}
 
-	// TODO: PACK IN FUNCTIONS
+	// TODO: PACK OUT FUNCTIONS
 
 	return Export(result);
 }
-
-console.log(module())

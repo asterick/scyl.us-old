@@ -113,40 +113,7 @@ export default class MIPS {
 		var funct = this._cache[physical];
 
 		if (funct === undefined || !funct.code || funct.logical !== logical) {
-			const build = (op, pc, fields, delayed) => {
-				if ((pc & block_mask) >>> 0 === logical) {
-					return ((delayed) ? `that.clock += ${pc} - last_pc + 1 >>> 2;` : "") + op.instruction.template(... fields)
-				} else {
-					return `{
-						// We ignore branches in cross-page delay slots (undefined behavior)
-						that.clock += ${pc} - last_pc;
-						that._tailDelay(${pc});
-					}`;
-				}
-			};
-			const exception = (e, pc, delayed) => `that.clock += ${pc} - last_pc + 1 >>> 2; throw new Exception(${e}, ${pc}, ${delayed})`
-			const lines = [];
-
-			for (var i = 0; i < block_size; i += 4) {
-				lines.push(`case 0x${(logical + i).toString(16)}: ${this._evaluate(logical + i, physical + i, false, build, exception)}`);
-			}
-
-			funct = {
-				code: new Function("Exception", "that", "time", `
-					// Can only run in a hard loop for 1ms (virtual)
-					while (that.clock < time) {
-						const last_pc = that.pc;
-
-						switch (last_pc) {
-							${lines.join("\n")}
-							that.clock += (that.pc = 0x${(logical + block_size).toString(16)}) - last_pc;
-						default:
-							return ;
-						}
-					}
-					`),
-				logical: logical
-			};
+			// TODO: BUILD FUNCTION HERE
 
 			for (let start = physical; start < physical + block_size; start += MIN_COMPILE_SIZE) {
 				this._cache[start] = funct;
