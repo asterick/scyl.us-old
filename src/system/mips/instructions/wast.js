@@ -179,9 +179,7 @@ export function module(functions) {
 	            "type": {
 	                "type": "func_type",
 	                "parameters": [ "i32", "i32", "i32" ],
-	                "returns": [
-	                    "i32"
-	                ]
+	                "returns": [ "i32" ]
 	            }
 	        },
 	        {
@@ -256,9 +254,10 @@ export function module(functions) {
 	                "returns": []
 	            }
 	        }
-	    ],
+	    ]
 	}
 
+	/*
 	Object.keys(functions).forEach((name, i) => {
 		result.function_section.push(functions[name]);
 		result.export_section.push({
@@ -266,7 +265,8 @@ export function module(functions) {
             "kind": "func_type",
             "index": i + CALLS.EXPORT_BASE_INDEX
 		});
-	})
+	});
+	*/
 
 	return Export(result);
 }

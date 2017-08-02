@@ -147,10 +147,10 @@ export class WriteStream {
 		var bytes = [];
 
 		do {
-			var byte = value % 0x7F;
-			value = (value - byte) / 128;
+			var byte = value % 0x80;
+			value = (value - byte) / 0x80;
 			this._bytes.push(value ? (byte | 0x80) : byte);
-		} while (value >= 1);
+		} while (value > 0);
 	}
 
 	varint(value) {
@@ -161,7 +161,7 @@ export class WriteStream {
 
 		do {
 			var more = value >= 0x40;
-			var byte = value % 0x7F;
+			var byte = value % 0x80;
 			value = (value - byte) / 0x80;
 
 			this._bytes.push((byte ^ (neg ? 0x7F : 0)) | (more ? 0x80 : 0));

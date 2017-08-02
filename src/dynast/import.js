@@ -232,7 +232,7 @@ function decode_import_section(payload) {
 				imports.push({ module, field, type: decode_global_type(payload) });
 				break ;
 			default:
-				throw new Error("illegal external_kind ${kind}");
+				throw new Error(`illegal external_kind ${kind}`);
 
 		}
 	}
