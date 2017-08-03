@@ -44,12 +44,12 @@ function createDynamic(table) {
 
 // Create our step through functions
 const memory = new WebAssembly.Memory({ initial: 1 });
-const regs = new Uint32Array(memory.buffer, 0, 40);
+const regs = new Uint32Array(memory.buffer, 0, 38);
 
 WebAssembly.instantiate(createDynamic(Instructions), {
 	processor: {
 		memory: memory,
-		delay_execute: (pc) => { console.log(pc) },
+		delay_execute: (pc) => { console.log("EXECUTE", pc) },
         exception: (code, pc, delayed, cop) => { throw new Error("Farts") },
     	load: (address, pc, delayed) => 0xDEADFACE,
     	store: (address, value, mask, pc, delayed) => null,
@@ -62,17 +62,6 @@ WebAssembly.instantiate(createDynamic(Instructions), {
     	tlbp: (pc, delayed) => null,
 	}
 }).then((result) => {
-	regs[REGS.INSTRUCTION_WORD] 	= 0xFFFFFACE;
-	regs[REGS.INSTRUCTION_PC] 		= 0xCAFEBABE;
-	regs[REGS.INSTRUCTION_DELAYED] 	= 1;
-
-	//result.instance.exports.CopUnusable();
+	result.instance.exports.LUI(0xDEADFACE,0,0);
+	console.log(regs);
 });
-
-/*
-import Import from "../../../dynast/import";
-fetch("test.wasm").then((blob) => blob.arrayBuffer())
-	.then((ab) => {
-		console.log(JSON.stringify(Import(ab), null, 4))
-	})
-*/
