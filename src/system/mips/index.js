@@ -129,34 +129,31 @@ export default class MIPS {
 	}
 
 	// Execute a single frame
-	_executeBlock (time) {
-		const block_size = this._blockSize(this.pc);
-		const block_mask = ~(block_size - 1);
-		const physical = (this._translate(this.pc, false) & block_mask) >>> 0;
-		const logical = (this.pc & block_mask) >>> 0;
-
-		var funct = this._cache[physical];
-
-		if (funct === undefined || !funct.code || funct.logical !== logical) {
-			// TODO: BUILD FUNCTION HERE
-
-			for (let start = physical; start < physical + block_size; start += MIN_COMPILE_SIZE) {
-				this._cache[start] = funct;
-			}
-		}
-
-		try {
-			this._interrupt();
-			funct.code(Exception, this, time);
-		} catch (e) {
-			this._trap(e);
-		}
-	}
-
 	_tick (ticks) {
 		const time = ticks * CLOCK_BLOCK;
-		while (this.clock < time)
-			this._executeBlock(time);
+		while (this.clock < time) {
+			const block_size = this._blockSize(this.pc);
+			const block_mask = ~(block_size - 1);
+			const physical = (this._translate(this.pc, false) & block_mask) >>> 0;
+			const logical = (this.pc & block_mask) >>> 0;
+
+			var funct = this._cache[physical];
+
+			if (funct === undefined || !funct.code || funct.logical !== logical) {
+				// TODO: BUILD FUNCTION HERE
+
+				for (let start = physical; start < physical + block_size; start += MIN_COMPILE_SIZE) {
+					this._cache[start] = funct;
+				}
+			}
+
+			try {
+				this._interrupt();
+				funct.code(Exception, this, time);
+			} catch (e) {
+				this._trap(e);
+			}
+		}
 
 		// Advance our clock
 		this.clock -= CLOCK_BLOCK;
