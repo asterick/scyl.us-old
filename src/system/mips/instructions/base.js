@@ -1,6 +1,6 @@
-import * as COP0 from "./cop0";
 import { block, value, read, write, exception, REGS, CALLS, LOCAL_VARS } from "./wast";
 import * as Consts from "../consts";
+import * as COP0 from "./cop0";
 
 /******
  ** Trap Instructions

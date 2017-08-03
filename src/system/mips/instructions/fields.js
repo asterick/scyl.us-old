@@ -1,4 +1,4 @@
-import { read, local, LOCAL_VARS } from "./wast";
+import { local, LOCAL_VARS } from "./wast";
 
 export class FieldsNumeric {
     constructor(word) {

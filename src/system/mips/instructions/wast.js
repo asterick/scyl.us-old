@@ -125,43 +125,6 @@ export function exception(code, pc, delayed, cop = [{ op: 'i32.const', value: 0 
 	]
 }
 
-export function dynamicCall(func) {
-	return {
-            "locals": [
-            	{ count: 1, type: 'i32' },
-            	{ count: 1, type: 'i64' }
-            ],
-            "type": {
-                "type": "func_type",
-                "parameters": ['i32', 'i32', 'i32'],
-                "returns": []
-            },
-            "code": [
-				{ op: 'block', block:
-					block(func(
-						FieldsWasmDynamic,
-						local(LOCAL_VARS.INSTRUCTION_PC),
-						local(LOCAL_VARS.INSTRUCTION_DELAYED),
-						() => [
-							... local(LOCAL_VARS.INSTRUCTION_PC),
-							{ op: 'i32.const', value: 4 },
-							{ op: 'i32.add' },
-					        { op: "call", function_index: CALLS.EXECUTE },
-					        { op: 'br', relative_depth: 0 }
-						]
-					))
-				},
-
-				// Increment our clock once every time we step
-				... write(REGS.CLOCKS, [
-					... read(REGS.CLOCKS),
-					... value(1),
-					{ op: 'i32.add' },
-				])
-			]
-        };
-}
-
 export function module(functions) {
 	const result = {
 	    "magicNumber": 1836278016,
@@ -284,7 +247,18 @@ export function module(functions) {
 	}
 
 	Object.keys(functions).forEach((name, i) => {
-		result.function_section.push(functions[name]);
+		result.function_section.push({
+            "locals": [
+            	{ count: 1, type: 'i32' },
+            	{ count: 1, type: 'i64' }
+            ],
+            "type": {
+                "type": "func_type",
+                "parameters": ['i32', 'i32', 'i32'],
+                "returns": []
+            },
+            "code": functions[name]
+        });
 		result.export_section.push({
             "field": name,
             "kind": "func_type",
@@ -293,4 +267,109 @@ export function module(functions) {
 	});
 
 	return Export(result);
+}
+
+export function dynamicCall(func) {
+	return [
+		{ op: 'block', block:
+			block(func(
+				FieldsWasmDynamic,
+				local(LOCAL_VARS.INSTRUCTION_PC),
+				local(LOCAL_VARS.INSTRUCTION_DELAYED),
+				() => [
+					... local(LOCAL_VARS.INSTRUCTION_PC),
+					{ op: 'i32.const', value: 4 },
+					{ op: 'i32.add' },
+			        { op: "call", function_index: CALLS.EXECUTE },
+			        { op: 'br', relative_depth: 0 }
+				]
+			))
+		},
+
+		// Increment our clock once every time we step
+		... write(REGS.CLOCKS, [
+			... read(REGS.CLOCKS),
+			... value(1),
+			{ op: 'i32.sub' },
+		])
+	];
+}
+
+export function staticBlock(start, length, locate) {
+	const end = start + length * 4;
+	const escapeTable = [];
+
+	var code = { op: 'block', block: block([
+		// Calculate current PC table offset
+		... read(REGS.PC),
+		{ op: 'i32.const', value: start },
+		{ op: 'i32.sub' },
+		{ op: 'i32.const', value: 4 },
+		{ op: 'i32.div_u' },
+
+		{ op: 'br_table', target_table: escapeTable, default_target: length }
+	])};
+
+	function func(pc, delayed, escape_depth) {
+		var op = locate(pc);
+
+		return op.instruction(op, value(pc), value(delayed), () => [
+			... func(pc + 4, 1, escape_depth),
+
+			... read(REGS.CLOCKS),
+			{ op: 'i32.const', value: pc + 8 },
+			... read(REGS.PC),
+			{ op: 'i32.sub' },
+			{ op: 'i32.const', value: 4 },
+			{ op: 'i32.div_u' },
+			{ op: 'i32.sub' },
+			... write(REGS.CLOCKS),
+
+			{ op: 'br', relative_depth: "QQQ" }
+		]);
+	}
+
+	for (var i = 0; i < length; i++) {
+		const pc = start + length * 4;
+		escapeTable.push(i);
+
+		code = { op: 'block', block: block([
+			code,
+			... func(pc, 0, length - i)
+		])}
+	}
+
+	return [
+		{ op: 'loop', block: block([
+			// Break when our clock runs out
+			... read(REGS.CLOCKS),
+			{ op: 'i32.const', value: 0 },
+			{ op: 'i32.le_s' },
+			{ op: 'br_if', relative_depth: 0 },
+
+			// Switch table begin
+			{ op: 'block', block: block([
+				code,
+
+				// Eat some cycles (based on PC)
+				... write(REGS.CLOCKS, [
+					... read(REGS.CLOCKS),
+					{ op: 'i32.const', value: end },
+					... read(REGS.PC),
+					{ op: 'i32.sub' },
+					{ op: 'i32.const', value: 4 },
+					{ op: 'i32.div_u' },
+					{ op: 'i32.sub' }
+				]),
+
+				// Update PC
+				... write(REGS.PC, [
+					{ op: 'i32.const', value: end }
+				]),
+
+				// Return from result
+				{ op: 'return' }
+			])}
+		])}
+	]
 }

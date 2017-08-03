@@ -1,6 +1,6 @@
 import { FieldsNumeric } from "./fields";
 import Instructions from "./base";
-import { module, dynamicCall, REGS, CALLS } from "./wast";
+import { module, dynamicCall, staticBlock } from "./wast";
 
 export default function locate(word) {
 	const fields = new FieldsNumeric(word);
@@ -19,9 +19,12 @@ export default function locate(word) {
 
 export function disassemble(word, address) {
 	const op = locate(word);
-	const asm = op.instruction.assembly;
 
-	return asm(new FieldsNumeric(word), address);
+	return op.instruction.assembly(op, address);
+}
+
+export function assembleBlock(start, length, read) {
+	return module(staticBlock(start, length, read));
 }
 
 // Start generating steppable intructions

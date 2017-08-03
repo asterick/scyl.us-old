@@ -84,6 +84,7 @@ export default class MIPS {
 	    	tlbwr: (pc, delayed) => this._tlbwr(pc, delayed),
 	    	tlbp: (pc, delayed) => this._tlbp(pc, delayed),
 		};
+
 		this._setupStepper();
 	}
 
