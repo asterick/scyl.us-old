@@ -7,7 +7,7 @@ export default function locate(word) {
 	var entry = Instructions;
 	var fallback = null;
 
-	while (entry.type !== "object") {
+	while (typeof entry === "object") {
 		fallback = entry.fallback || fallback;
 		entry = entry[fields[entry.field]];
 	}
@@ -66,8 +66,7 @@ WebAssembly.instantiate(createDynamic(Instructions), {
 	regs[REGS.INSTRUCTION_PC] 		= 0xCAFEBABE;
 	regs[REGS.INSTRUCTION_DELAYED] 	= 1;
 
-	result.instance.exports.CopUnusable();
-	console.log(regs);
+	//result.instance.exports.CopUnusable();
 });
 
 /*
