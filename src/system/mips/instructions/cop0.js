@@ -5,7 +5,7 @@ import * as Consts from "../consts";
  ** Co-Processor Move registers
  ******/
 
-function MFC0(fields, pc, delayed, delay, escape) {
+function MFC0(fields, pc, delayed, delay) {
 	return write(fields.rt, [
 		... fields.rd,
 		... pc,
@@ -15,7 +15,7 @@ function MFC0(fields, pc, delayed, delay, escape) {
 }
 MFC0.assembly = (fields, pc) => `mfc0\t${Consts.Registers[fields.rt]}, ${Consts.COP0Registers[fields.rd]}`;
 
-function MTC0(fields, pc, delayed, delay, escape) {
+function MTC0(fields, pc, delayed, delay) {
 	return [
 		... fields.rd,
 		... read(fields.rt),
@@ -30,7 +30,7 @@ MTC0.assembly = (fields, pc) => `mtc0\t${Consts.Registers[fields.rt]}, ${Consts.
  ** Co-Processor instructions
  ******/
 
-function RFE(fields, pc, delayed, delay, escape) {
+function RFE(fields, pc, delayed, delay) {
 	return [
 		... pc,
 		... delayed,
@@ -39,7 +39,7 @@ function RFE(fields, pc, delayed, delay, escape) {
 }
 RFE.assembly = (fields, pc) => `cop0\trte`;
 
-function TLBR(fields, pc, delayed, delay, escape) {
+function TLBR(fields, pc, delayed, delay) {
 	return [
 		... pc,
 		... delayed,
@@ -48,7 +48,7 @@ function TLBR(fields, pc, delayed, delay, escape) {
 }
 TLBR.assembly = (fields, pc) => `cop0\ttlbr`;
 
-function TLBWI(fields, pc, delayed, delay, escape) {
+function TLBWI(fields, pc, delayed, delay) {
 	return [
 		... pc,
 		... delayed,
@@ -57,7 +57,7 @@ function TLBWI(fields, pc, delayed, delay, escape) {
 }
 TLBWI.assembly = (fields, pc) => `cop0\ttlbwi`;
 
-function TLBWR(fields, pc, delayed, delay, escape) {
+function TLBWR(fields, pc, delayed, delay) {
 	return [
 		... pc,
 		... delayed,
@@ -66,7 +66,7 @@ function TLBWR(fields, pc, delayed, delay, escape) {
 }
 TLBWR.assembly = (fields, pc) => `cop0\ttlbwr`;
 
-function TLBP(fields, pc, delayed, delay, escape) {
+function TLBP(fields, pc, delayed, delay) {
 	return [
 		... pc,
 		... delayed,
@@ -78,22 +78,22 @@ TLBP.assembly = (fields, pc) => `cop0\ttlbp`;
 /***********
  ** Unused move instructions
  ***********/
-function CFC0(fields, pc, delayed, delay, escape) {
+function CFC0(fields, pc, delayed, delay) {
 	return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
 }
 CFC0.assembly = (fields, pc) => `cfc0\t${Consts.Registers[fields.rt]}, cop0cnt${fields.rd}`;
 
-function CTC0(fields, pc, delayed, delay, escape) {
+function CTC0(fields, pc, delayed, delay) {
 	return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
 }
 CTC0.assembly = (fields, pc) => `ctc0\t${Consts.Registers[fields.rt]}, cop0cnt${fields.rd}`;
 
-export function LWC0(fields, pc, delayed, delay, escape) {
+export function LWC0(fields, pc, delayed, delay) {
 	return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
 }
 LWC0.assembly = (fields, pc) => `lwc0\t${Consts.COP0Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`;
 
-export function SWC0(fields, pc, delayed, delay, escape) {
+export function SWC0(fields, pc, delayed, delay) {
 	return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed);
 }
 SWC0.assembly = (fields, pc) => `swc0\t${Consts.COP0Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`;

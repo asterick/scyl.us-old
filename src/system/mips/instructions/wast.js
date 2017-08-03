@@ -2,6 +2,7 @@ import Export from "../../../dynast/export";
 import { FieldsWasmDynamic } from "./fields";
 
 export const REGS = {
+	LR: 31,
 	LO: 32,
 	HI: 33,
 	PC: 34,
@@ -48,27 +49,27 @@ function indexValue(index) {
 	return index[0].value;
 }
 
-export function read(index) {
-	var target = typeof index === "number" ? index : indexValue(index);
-
-	if (target === null) {
+export function read(target) {
+	if (typeof target === "object") {
 		return [
-			... index,
+			... target,
 			{ op: "i32.const", value: 4 },
 			{ op: 'i32.mul' },
 			{ op: "i32.load", "flags": 2, "offset": 0 },
 			{ op: "i32.const", value: 0 },
-			... index,
+			... target,
 			{ op: "select" }
 		];
+	} else if (target > 0) {
+		return [
+			{ op: 'i32.const', value: target * 4 },
+			{ op: "i32.load", "flags": 2, "offset": 0 }
+		];
+	} else {
+		return [
+			{ op: 'i32.const', value: 0 }
+		];
 	}
-
-	return target ? [
-		{ op: 'i32.const', value: target * 4 },
-		{ op: "i32.load", "flags": 2, "offset": 0 }
-	] : [
-		{ op: 'i32.const', value: 0 }
-	];
 }
 
 export function write(target, value) {
@@ -80,23 +81,25 @@ export function write(target, value) {
 
 			... value,
 			{ op: "i32.const", value: 0 },
-			{ op: 'i32.eqz' },
 
 			... target,
+			{ op: 'i32.eqz' },
 			{ op: 'select' },
 
 			{ op: "i32.store", "flags": 2, "offset": 0 },
 		];
+	} else if (target > 0) {
+		return [
+			{ op: 'i32.const', value: target * 4 },
+			... value,
+			{ op: "i32.store", "flags": 2, "offset": 0 }
+		]
+	} else {
+		return [
+			... value,
+			{ op: "drop" }
+		];
 	}
-
-	return target ? [
-		{ op: 'i32.const', value: target * 4 },
-		... value,
-		{ op: "i32.store", "flags": 2, "offset": 0 }
-	] : [
-		... value,
-		{ op: "drop" }
-	];
 }
 
 export function exception(code, pc, delayed, cop = [{ op: 'i32.const', value: 0 }] ) {
@@ -138,8 +141,8 @@ export function dynamicCall(func) {
 							{ op: 'i32.const', value: 4 },
 							{ op: 'i32.add' },
 					        { op: "call", function_index: CALLS.EXECUTE },
-						],
-						[{ op: 'return' }]
+					        { op: 'return' }
+						]
 					))
 				}
 			]
