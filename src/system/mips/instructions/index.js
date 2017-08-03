@@ -19,12 +19,11 @@ export default function locate(word) {
 
 export function disassemble(word, address) {
 	const op = locate(word);
-
 	return op.instruction.assembly(op, address);
 }
 
 export function assembleBlock(start, length, read) {
-	return module(staticBlock(start, length, read));
+	return module({ block: staticBlock(start, length, read) });
 }
 
 // Start generating steppable intructions

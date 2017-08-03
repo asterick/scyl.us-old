@@ -13,11 +13,12 @@ export default class extends MIPS {
 
 		// Copy in our bios (and discard it)
 		this._rom.set(new Uint32Array(bios));
+
+		this._tick(1);
 	}
 
 	start () {
 		this._adjust_clock = +new Date();
-		this._requestFrame = () => this.tick();
 		this.running = true;
 	}
 
@@ -31,7 +32,7 @@ export default class extends MIPS {
 		const ticks = Math.min(20, newClock - this._adjust_clock);
 		this._adjust_clock = newClock;
 
-		//this._tick(ticks);
+		this._tick(ticks);
 	}
 
 	attach (canvas) {

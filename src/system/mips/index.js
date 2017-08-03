@@ -1,7 +1,7 @@
 import Exception from "./exception";
 import locate from "./instructions";
 import { REGS } from "./instructions/wast";
-import { StepperDefintion } from "./instructions";
+import { StepperDefintion, assembleBlock } from "./instructions";
 
 import { params } from "../../util";
 import { MAX_COMPILE_SIZE, CLOCK_BLOCK, MIN_COMPILE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
@@ -138,12 +138,9 @@ export default class MIPS {
 
 	// Execute a single frame
 	_tick (ticks) {
-		const time = ticks * CLOCK_BLOCK;
+		this.clocks += ticks;
 
-		throw new Error("BUILD FUNCTION HERE");
-
-		/*
-		while (this.clock < time) {
+		while (this.clocks > 0) {
 			const block_size = this._blockSize(this.pc);
 			const block_mask = ~(block_size - 1);
 			const physical = (this._translate(this.pc, false) & block_mask) >>> 0;
@@ -152,23 +149,37 @@ export default class MIPS {
 			var funct = this._cache[physical];
 
 			if (funct === undefined || !funct.code || funct.logical !== logical) {
+				const block_size = 256;
+				var x = +new Date;
+				const defs = assembleBlock(logical, block_size / 4, (address) => locate(address - logical + physical))
+				console.log((+new Date) - x);
 
-				for (let start = physical; start < physical + block_size; start += MIN_COMPILE_SIZE) {
-					this._cache[start] = funct;
-				}
+				WebAssembly.instantiate(defs, {
+					processor: this._wasmImports
+				}).then((result) => {
+					const funct = result.instance.exports.block;
+
+					for (let start = physical; start < physical + block_size; start += MIN_COMPILE_SIZE) {
+						this._cache[start] = funct;
+					}
+
+					// Resume execution after the JIT core completes
+					this._tick(0);
+				});
+
+				return false;
 			}
 
 			try {
 				this._interrupt();
-				funct.code(Exception, this, time);
+				funct();
+				// TODO: TRACK ROOT CLOCK HERE
 			} catch (e) {
 				this._trap(e);
 			}
 		}
-		*/
 
-		// Advance our clock
-		this.clock -= CLOCK_BLOCK;
+		return true;
 	}
 
 	step () {
@@ -182,6 +193,7 @@ export default class MIPS {
 		} catch (e) {
 			this._trap(e);
 		}
+		// TODO: TRACK ROOT CLOCK HERE
 	}
 
 	load (logical, pc, delayed) {

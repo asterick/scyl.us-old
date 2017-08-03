@@ -302,7 +302,7 @@ export function staticBlock(start, length, locate) {
 	var code = { op: 'block', block: block([
 		// Calculate current PC table offset
 		... read(REGS.PC),
-		{ op: 'i32.const', value: start },
+		{ op: 'i32.const', value: (start) >> 0 },
 		{ op: 'i32.sub' },
 		{ op: 'i32.const', value: 4 },
 		{ op: 'i32.div_u' },
@@ -313,19 +313,20 @@ export function staticBlock(start, length, locate) {
 	function func(pc, delayed, escape_depth) {
 		var op = locate(pc);
 
-		return op.instruction(op, value(pc), value(delayed), () => [
+		return op.instruction(op, value(pc >> 0), value(delayed), () => delayed ? [{ op: 'unreachable' }] : [
 			... func(pc + 4, 1, escape_depth),
 
-			... read(REGS.CLOCKS),
-			{ op: 'i32.const', value: pc + 8 },
-			... read(REGS.PC),
-			{ op: 'i32.sub' },
-			{ op: 'i32.const', value: 4 },
-			{ op: 'i32.div_u' },
-			{ op: 'i32.sub' },
-			... write(REGS.CLOCKS),
+			... write(REGS.CLOCKS, [
+				... read(REGS.CLOCKS),
+				{ op: 'i32.const', value: (pc + 8) >> 0 },
+				... read(REGS.PC),
+				{ op: 'i32.sub' },
+				{ op: 'i32.const', value: 4 },
+				{ op: 'i32.div_u' },
+				{ op: 'i32.sub' }
+			]),
 
-			{ op: 'br', relative_depth: "QQQ" }
+			{ op: 'br', relative_depth: escape_depth }
 		]);
 	}
 
@@ -354,7 +355,7 @@ export function staticBlock(start, length, locate) {
 				// Eat some cycles (based on PC)
 				... write(REGS.CLOCKS, [
 					... read(REGS.CLOCKS),
-					{ op: 'i32.const', value: end },
+					{ op: 'i32.const', value: end >> 0 },
 					... read(REGS.PC),
 					{ op: 'i32.sub' },
 					{ op: 'i32.const', value: 4 },
@@ -364,7 +365,7 @@ export function staticBlock(start, length, locate) {
 
 				// Update PC
 				... write(REGS.PC, [
-					{ op: 'i32.const', value: end }
+					{ op: 'i32.const', value: end >> 0 }
 				]),
 
 				// Return from result
