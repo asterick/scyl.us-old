@@ -45,8 +45,6 @@ export default class MIPS {
 	 *******/
 	constructor() {
 		// Base functionality
-		this.clock = 0;
-
 		this._memory = new WebAssembly.Memory({ initial: 1, maximum: 1 });
 		this.registers = new Uint32Array(this._memory.buffer);
 		this.signed_registers = new Int32Array(this._memory.buffer);
@@ -72,6 +70,20 @@ export default class MIPS {
 		this._cache = [];
 
 		// Load in WASM definitions for step through memory
+		this._wasmImports = {
+			memory: this._memory,
+	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop) },
+			delay_execute: (pc) => this._execute(pc, true),
+	    	load: (address, pc, delayed) => this.load(address, pc, delayed),
+	    	store: (address, value, mask, pc, delayed) => this.store(address, value, mask, pc, delayed),
+	    	mfc0: (reg, pc, delayed) => this._mfc0(reg, pc, delayed),
+	    	mtc0: (reg, word, pc, delayed) => this._mtc0(reg, word, pc, delayed),
+	    	rfe: (pc, delayed) => this._rfe(pc, delayed),
+	    	tlbr: (pc, delayed) => this._tlbr(pc, delayed),
+	    	tlbwi: (pc, delayed) => this._tlbwi(pc, delayed),
+	    	tlbwr: (pc, delayed) => this._tlbwr(pc, delayed),
+	    	tlbp: (pc, delayed) => this._tlbp(pc, delayed),
+		};
 		this._setupStepper();
 	}
 
@@ -100,6 +112,14 @@ export default class MIPS {
 		this.registers[REGS.HI] = v;
 	}
 
+	get clocks() {
+		return this.registers[REGS.CLOCKS];
+	}
+
+	set clocks(v) {
+		this.registers[REGS.CLOCKS] = v;
+	}
+
 	reset() {
 		this.pc = 0xBFC00000;
 		this._status = STATUS_KUc | STATUS_BEV;
@@ -109,20 +129,7 @@ export default class MIPS {
 	// Setup WebAssembly for stepper
 	_setupStepper () {
 		WebAssembly.instantiate(StepperDefintion, {
-			processor: {
-				memory: this._memory,
-		        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop) },
-				delay_execute: (pc) => this._execute(pc, true),
-		    	load: (address, pc, delayed) => this.load(address, pc, delayed),
-		    	store: (address, value, mask, pc, delayed) => this.store(address, value, mask, pc, delayed),
-		    	mfc0: (reg, pc, delayed) => this._mfc0(reg, pc, delayed),
-		    	mtc0: (reg, word, pc, delayed) => this._mtc0(reg, word, pc, delayed),
-		    	rfe: (pc, delayed) => this._rfe(pc, delayed),
-		    	tlbr: (pc, delayed) => this._tlbr(pc, delayed),
-		    	tlbwi: (pc, delayed) => this._tlbwi(pc, delayed),
-		    	tlbwr: (pc, delayed) => this._tlbwr(pc, delayed),
-		    	tlbp: (pc, delayed) => this._tlbp(pc, delayed),
-			}
+			processor: this._wasmImports
 		}).then((result) => {
 			this._wasmDefs = result.instance.exports;
 		});
@@ -131,6 +138,10 @@ export default class MIPS {
 	// Execute a single frame
 	_tick (ticks) {
 		const time = ticks * CLOCK_BLOCK;
+
+		throw new Error("BUILD FUNCTION HERE");
+
+		/*
 		while (this.clock < time) {
 			const block_size = this._blockSize(this.pc);
 			const block_mask = ~(block_size - 1);
@@ -140,7 +151,6 @@ export default class MIPS {
 			var funct = this._cache[physical];
 
 			if (funct === undefined || !funct.code || funct.logical !== logical) {
-				throw new Error("BUILD FUNCTION HERE");
 
 				for (let start = physical; start < physical + block_size; start += MIN_COMPILE_SIZE) {
 					this._cache[start] = funct;
@@ -154,6 +164,7 @@ export default class MIPS {
 				this._trap(e);
 			}
 		}
+		*/
 
 		// Advance our clock
 		this.clock -= CLOCK_BLOCK;
@@ -220,7 +231,7 @@ export default class MIPS {
 		const data = this.load(physical, pc, delayed);
 		const call = locate(data);
 
-		this._wasmDefs[call.name](data, pc, delayed);
+		this._wasmDefs[call.instruction.name](data, pc, delayed);
 	}
 
 	_blockSize(address) {

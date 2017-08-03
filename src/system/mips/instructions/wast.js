@@ -6,6 +6,7 @@ export const REGS = {
 	LO: 32,
 	HI: 33,
 	PC: 34,
+	CLOCKS: 35
 };
 
 export const CALLS = {
@@ -146,10 +147,15 @@ export function dynamicCall(func) {
 							{ op: 'i32.const', value: 4 },
 							{ op: 'i32.add' },
 					        { op: "call", function_index: CALLS.EXECUTE },
-					        { op: 'return' }
+					        { op: 'br', relative_depth: 0 }
 						]
 					))
-				}
+				},
+				... write(REGS.CLOCKS, [
+					... read(REGS.CLOCKS),
+					... value(1),
+					{ op: 'i32.sub' },
+				])
 			]
         };
 }
