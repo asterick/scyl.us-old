@@ -37,7 +37,9 @@ for (var i = 0; i < 0x10000; i++) {
 }
 
 export default class {
-	constructor () {
+	constructor (parent) {
+		this._parent = parent;
+
 		// SETUP DEFAULT REGIONS
 		this.setViewport(0, 0, 256, 240);
 		this.setClip(0, 0, 256, 240);

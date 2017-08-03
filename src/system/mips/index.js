@@ -138,7 +138,8 @@ export default class MIPS {
 
 	// Execute a single frame
 	_tick (ticks) {
-		this.clocks += ticks;
+		// Advance clock, with 0.1 sec a max 'lag' time
+		const _prev = this.clocks = Math.max(100 * CLOCK_BLOCK, this.clocks + ticks * CLOCK_BLOCK);
 
 		while (this.clocks > 0) {
 			const block_size = this._blockSize(this.pc);
@@ -149,7 +150,6 @@ export default class MIPS {
 			var funct = this._cache[physical];
 
 			if (funct === undefined || !funct.code || funct.logical !== logical) {
-				const block_size = 256;
 				var x = +new Date;
 				const defs = assembleBlock(logical, block_size / 4, (address) => locate(address - logical + physical))
 				console.log((+new Date) - x);
@@ -157,29 +157,35 @@ export default class MIPS {
 				WebAssembly.instantiate(defs, {
 					processor: this._wasmImports
 				}).then((result) => {
-					const funct = result.instance.exports.block;
+					const funct = {
+						code: result.instance.exports.block,
+						logical: logical
+					};
 
 					for (let start = physical; start < physical + block_size; start += MIN_COMPILE_SIZE) {
 						this._cache[start] = funct;
 					}
 
 					// Resume execution after the JIT core completes
-					this._tick(0);
+					this.tick();
 				});
 
-				return false;
+				// Execution has paused, waiting for compiler to finish
+				break ;
 			}
+
+			throw new Error("JIT execution currently untrusted");
 
 			try {
 				this._interrupt();
-				funct();
-				// TODO: TRACK ROOT CLOCK HERE
+				funct.code();
 			} catch (e) {
 				this._trap(e);
 			}
 		}
 
-		return true;
+		this.timer += _prev - this.clocks;
+		return this.clocks <= 0;
 	}
 
 	step () {
@@ -210,11 +216,13 @@ export default class MIPS {
 			this.write(physical, value, mask);
 
 			// Invalidate cache line
-			const entry = this._cache[physical & ~(this._blockSize(logical) - 1)];
+			const cache_line = physical & ~(this._blockSize(logical) - 1);
+			const entry = this._cache[cache_line];
 
+			// Clear this row out (de-reference the function so we don't leak)
 			if (entry) {
-				// Clear this row out (de-reference the function so we don't leak)
 				entry.code = null;
+				this._cache[cache_line] = null;
 			}
 		} catch (e) {
 			throw new Exception(e, pc, delayed, 0);

@@ -14,25 +14,28 @@ export default class extends MIPS {
 		// Copy in our bios (and discard it)
 		this._rom.set(new Uint32Array(bios));
 
-		this._tick(1);
+		this.tick = this.tick.bind(this);
 	}
 
 	start () {
 		this._adjust_clock = +new Date();
 		this.running = true;
+		this.tick();
 	}
 
 	stop () {
-		this._animationFrame = null;
 		this.running = false;
 	}
 
 	tick () {
 		const newClock = +new Date();
-		const ticks = Math.min(20, newClock - this._adjust_clock);
+		const cycles = newClock - this._adjust_clock;
 		this._adjust_clock = newClock;
 
-		this._tick(ticks);
+		if (this.running && this._tick(cycles)) {
+			// Schedule next tick when the CPU is free
+			this.setTimeout(this.tick, 0);
+		}
 	}
 
 	attach (canvas) {
