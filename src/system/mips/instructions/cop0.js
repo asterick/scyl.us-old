@@ -1,4 +1,4 @@
-import { read, write, call, exception, CALLS } from "./wast";
+import { value, read, write, call, exception, CALLS } from "./wast";
 import * as Consts from "../consts";
 
 /******
@@ -7,7 +7,7 @@ import * as Consts from "../consts";
 
 function MFC0(fields, pc, delayed, delay) {
 	return write(fields.rt, [
-		... fields.rd,
+		... value(fields.rd),
 		... pc,
 		... delayed,
 		{ op: 'call', function_index: CALLS.MFC0 },
@@ -17,7 +17,7 @@ MFC0.assembly = (fields, pc) => `mfc0\t${Consts.Registers[fields.rt]}, ${Consts.
 
 function MTC0(fields, pc, delayed, delay) {
 	return [
-		... fields.rd,
+		... value(fields.rd),
 		... read(fields.rt),
 		... pc,
 		... delayed,

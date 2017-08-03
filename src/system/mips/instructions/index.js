@@ -50,7 +50,7 @@ WebAssembly.instantiate(createDynamic(Instructions), {
 	processor: {
 		memory: memory,
 		delay_execute: (pc) => { console.log(pc) },
-        exception: (code, pc, delayed, cop) => null,
+        exception: (code, pc, delayed, cop) => { throw new Error("Farts") },
     	load: (address, pc, delayed) => 0xDEADFACE,
     	store: (address, value, mask, pc, delayed) => null,
     	mfc0: (reg, pc, delayed) => 0xDEADFACE,
@@ -62,11 +62,11 @@ WebAssembly.instantiate(createDynamic(Instructions), {
     	tlbp: (pc, delayed) => null,
 	}
 }).then((result) => {
-	regs[REGS.INSTRUCTION_WORD] 	= 0xDEADFACE;
+	regs[REGS.INSTRUCTION_WORD] 	= 0xFFFFFACE;
 	regs[REGS.INSTRUCTION_PC] 		= 0xCAFEBABE;
 	regs[REGS.INSTRUCTION_DELAYED] 	= 1;
 
-	result.instance.exports.LUI();
+	result.instance.exports.CopUnusable();
 	console.log(regs);
 });
 

@@ -49,15 +49,27 @@ function indexValue(index) {
 	return index[0].value;
 }
 
+export function value(target) {
+	if (typeof target === "number") {
+		return [{ op: "i32.const", value: target }];
+	} else {
+		return target;
+	}
+}
+
 export function read(target) {
 	if (typeof target === "object") {
 		return [
+			{ op: "i32.const", value: 0 },
+
 			... target,
 			{ op: "i32.const", value: 4 },
 			{ op: 'i32.mul' },
 			{ op: "i32.load", "flags": 2, "offset": 0 },
-			{ op: "i32.const", value: 0 },
+
 			... target,
+			{ op: 'i32.eqz' },
+
 			{ op: "select" }
 		];
 	} else if (target > 0) {
@@ -79,11 +91,11 @@ export function write(target, value) {
 			{ op: "i32.const", value: 4 },
 			{ op: 'i32.mul' },
 
-			... value,
 			{ op: "i32.const", value: 0 },
-
+			... value,
 			... target,
 			{ op: 'i32.eqz' },
+
 			{ op: 'select' },
 
 			{ op: "i32.store", "flags": 2, "offset": 0 },
