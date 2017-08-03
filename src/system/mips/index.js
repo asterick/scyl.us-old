@@ -140,7 +140,7 @@ export default class MIPS {
 			var funct = this._cache[physical];
 
 			if (funct === undefined || !funct.code || funct.logical !== logical) {
-				// TODO: BUILD FUNCTION HERE
+				throw new Error("BUILD FUNCTION HERE");
 
 				for (let start = physical; start < physical + block_size; start += MIN_COMPILE_SIZE) {
 					this._cache[start] = funct;
