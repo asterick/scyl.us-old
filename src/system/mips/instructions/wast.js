@@ -151,10 +151,12 @@ export function dynamicCall(func) {
 						]
 					))
 				},
+
+				// Increment our clock once every time we step
 				... write(REGS.CLOCKS, [
 					... read(REGS.CLOCKS),
 					... value(1),
-					{ op: 'i32.sub' },
+					{ op: 'i32.add' },
 				])
 			]
         };
