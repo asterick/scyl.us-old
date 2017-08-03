@@ -71,7 +71,9 @@ export function read(index) {
 	];
 }
 
-export function write(index) {
+export function write(index, value) {
+	if (value === undefined) throw null;
+
 	var target = typeof index === "number" ? index : indexValue(index);
 
 	if (target === null) {
@@ -84,14 +86,17 @@ export function write(index) {
 			... index,
 			{ op: "i32.const", value: 4 },
 			{ op: 'i32.mul' },
+			... value,
 			{ op: "i32.store", "flags": 2, "offset": 0 },
 		];
 	}
 
 	return target ? [
 		{ op: 'i32.const', value: target * 4 },
+		... value,
 		{ op: "i32.store", "flags": 2, "offset": 0 }
 	] : [
+		... value,
 		{ op: "drop" }
 	];
 }

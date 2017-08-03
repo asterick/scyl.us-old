@@ -6,13 +6,12 @@ import * as Consts from "../consts";
  ******/
 
 function MFC0(fields, pc, delayed, delay, escape) {
-	return [
+	return write(fields.rt, [
 		... fields.rd,
 		... pc,
 		... delayed,
 		{ op: 'call', function_index: CALLS.MFC0 },
-		... write(fields.rt)
-	];
+	]);
 }
 MFC0.assembly = (fields, pc) => `mfc0\t${Consts.Registers[fields.rt]}, ${Consts.COP0Registers[fields.rd]}`;
 

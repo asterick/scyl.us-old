@@ -44,7 +44,7 @@ function createDynamic(table) {
 
 // Create our step through functions
 const memory = new WebAssembly.Memory({ initial: 1 });
-const regs = new Uint32Array(memory.buffer);
+const regs = new Uint32Array(memory.buffer, 0, 40);
 
 WebAssembly.instantiate(createDynamic(Instructions), {
 	processor: {
@@ -66,9 +66,9 @@ WebAssembly.instantiate(createDynamic(Instructions), {
 	regs[REGS.INSTRUCTION_PC] 		= 0xCAFEBABE;
 	regs[REGS.INSTRUCTION_DELAYED] 	= 1;
 
-	debugger ;
 	result.instance.exports.LUI();
-})
+	console.log(regs);
+});
 
 /*
 import Import from "../../../dynast/import";
