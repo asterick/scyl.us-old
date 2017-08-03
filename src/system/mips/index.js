@@ -1,6 +1,7 @@
 import Exception from "./exception";
 import locate from "./instructions";
 import { REGS } from "./instructions/wast";
+import { StepperDefintion } from "./instructions";
 
 import { params } from "../../util";
 import { MAX_COMPILE_SIZE, CLOCK_BLOCK, MIN_COMPILE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
@@ -46,9 +47,9 @@ export default class MIPS {
 		// Base functionality
 		this.clock = 0;
 
-		this._wasmmem = new WebAssembly.Memory({ initial: 1, maximum: 1 });
-		this.registers = new Uint32Array(this._wasmmem.buffer);
-		this.signed_registers = new Int32Array(this._wasmmem.buffer);
+		this._memory = new WebAssembly.Memory({ initial: 1, maximum: 1 });
+		this.registers = new Uint32Array(this._memory.buffer);
+		this.signed_registers = new Int32Array(this._memory.buffer);
 		this.reset();
 
 		// Status values
@@ -69,10 +70,12 @@ export default class MIPS {
 
 		// Compiler cache
 		this._cache = [];
+
+		// Load in WASM definitions for step through memory
+		this._setupStepper();
 	}
 
 	// Helper values for the magic registers
-
 	get pc() {
 		return this.registers[REGS.PC];
 	}
@@ -101,6 +104,28 @@ export default class MIPS {
 		this.pc = 0xBFC00000;
 		this._status = STATUS_KUc | STATUS_BEV;
 		this._cause = 0;
+	}
+
+	// Setup WebAssembly for stepper
+	_setupStepper () {
+		WebAssembly.instantiate(StepperDefintion, {
+			processor: {
+				memory: this._memory,
+		        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop) },
+				delay_execute: (pc) => this._execute(pc, true),
+		    	load: (address, pc, delayed) => this.load(address, pc, delayed),
+		    	store: (address, value, mask, pc, delayed) => this.store(address, value, mask, pc, delayed),
+		    	mfc0: (reg, pc, delayed) => this._mfc0(reg, pc, delayed),
+		    	mtc0: (reg, word, pc, delayed) => this._mtc0(reg, word, pc, delayed),
+		    	rfe: (pc, delayed) => this._rfe(pc, delayed),
+		    	tlbr: (pc, delayed) => this._tlbr(pc, delayed),
+		    	tlbwi: (pc, delayed) => this._tlbwi(pc, delayed),
+		    	tlbwr: (pc, delayed) => this._tlbwr(pc, delayed),
+		    	tlbp: (pc, delayed) => this._tlbp(pc, delayed),
+			}
+		}).then((result) => {
+			this._wasmDefs = result.instance.exports;
+		});
 	}
 
 	// Execute a single frame
@@ -141,16 +166,10 @@ export default class MIPS {
 		this._interrupt();
 
 		try {
-			const physical = this._translate(this.pc, false);
-			const ret_addr = this._evaluate(this.pc, physical, false,
-				(op, pc, fields) => op.instruction.apply(this, fields),
-				(e, pc, delayed) => { throw new Exception(e, pc, delayed) });
+			var pc = this.pc;
+			this.pc += 4;
 
-			if (ret_addr !== undefined) {
-				this.pc = ret_addr;
-			} else {
-				this.pc = (this.pc + 4) >>> 0;
-			}
+			this._execute(pc, false);
 		} catch (e) {
 			this._trap(e);
 		}
@@ -196,30 +215,15 @@ export default class MIPS {
 		}
 	}
 
-	/****
-	 ** Begin private methods
-	 ****/
-	_evaluate (logical, physical, delayed, execute, exception) {
-		try {
-			const op = Object.assign(locate(this.read(true, physical)), {
-				pc: logical,
-				delayed: delayed,
-				delay: () => this._evaluate(logical + 4, physical + 4, true, execute, exception)
-			});
-
-			return execute(op, logical, op.instruction.fields.map((f) => op[f]), delayed);
-		} catch (e) {
-			return exception(e, logical, delayed);
-		}
-	}
-
 	// This forces delay slots at the end of a page to
 	// be software interpreted so TLB changes don't
 	// cause cache failures
-	_tailDelay(pc) {
-		this._evaluate(pc, this._translate(pc, false), true,
-			(op, pc, fields) => op.instruction.apply(this, fields),
-			(e, pc, delayed) => { throw new Exception(e, pc, delayed) });
+	_execute(pc, delayed) {
+		const physical = this._translate(pc, false);
+		const data = this.load(physical, pc, delayed);
+		const call = locate(data);
+
+		this._wasmDefs[call.name](data, pc, delayed);
 	}
 
 	_blockSize(address) {
