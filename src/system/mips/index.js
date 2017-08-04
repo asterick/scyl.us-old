@@ -150,9 +150,7 @@ export default class MIPS {
 			var funct = this._cache[physical];
 
 			if (funct === undefined || !funct.code || funct.logical !== logical) {
-				var x = +new Date;
 				const defs = assembleBlock(logical, block_size / 4, (address) => locate(address - logical + physical))
-				console.log((+new Date) - x);
 
 				WebAssembly.instantiate(defs, {
 					processor: this._wasmImports
