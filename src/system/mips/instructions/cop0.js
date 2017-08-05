@@ -100,17 +100,17 @@ SWC0.assembly = (fields, pc) => `swc0\t${Consts.COP0Registers[fields.rt]}, ${fie
 
 export default {
 	field: "rs",
-  	0x00: MFC0,			// UNVERIFIED
+  	0x00: MFC0,
   	0x02: CFC0,
-  	0x04: MTC0,			// UNVERIFIED
+  	0x04: MTC0,
   	0x06: CTC0,
 	0x10: {
 		// Note: this does not match all the extra zeros
 		field: "funct",
-		0x01: TLBR,		// UNVERIFIED
-		0x02: TLBWI,	// UNVERIFIED
-		0x06: TLBWR,	// UNVERIFIED
-		0x08: TLBP,		// UNVERIFIED
-		0x10: RFE		// UNVERIFIED
+		0x01: TLBR,
+		0x02: TLBWI,
+		0x06: TLBWR,
+		0x08: TLBP,
+		0x10: RFE
 	},
 };

@@ -1012,6 +1012,7 @@ function BGEZAL(fields, pc, delayed, delay) {
     ];
 }
 BGEZAL.assembly = (fields, pc) => `bgezal\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
+
 /******
  ** Trap Instructions
  ******/
