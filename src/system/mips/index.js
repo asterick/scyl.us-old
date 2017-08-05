@@ -47,7 +47,6 @@ export default class MIPS {
 		// Base functionality
 		this._memory = new WebAssembly.Memory({ initial: 1, maximum: 1 });
 		this.registers = new Uint32Array(this._memory.buffer);
-		this.signed_registers = new Int32Array(this._memory.buffer);
 		this.reset();
 
 		// Status values
@@ -85,7 +84,12 @@ export default class MIPS {
 	    	tlbp: (pc, delayed) => this._tlbp(pc, delayed),
 		};
 
-		this._setupStepper();
+		// Create our web assembly stepper
+		WebAssembly.instantiate(StepperDefintion, {
+			processor: this._wasmImports
+		}).then((result) => {
+			this._wasmDefs = result.instance.exports;
+		});
 	}
 
 	// Helper values for the magic registers
@@ -125,15 +129,6 @@ export default class MIPS {
 		this.pc = 0xBFC00000;
 		this._status = STATUS_KUc | STATUS_BEV;
 		this._cause = 0;
-	}
-
-	// Setup WebAssembly for stepper
-	_setupStepper () {
-		WebAssembly.instantiate(StepperDefintion, {
-			processor: this._wasmImports
-		}).then((result) => {
-			this._wasmDefs = result.instance.exports;
-		});
 	}
 
 	// Execute a single frame
@@ -187,6 +182,7 @@ export default class MIPS {
 	}
 
 	step () {
+		const _prev = this.clocks;
 		this._interrupt();
 
 		try {
@@ -195,9 +191,10 @@ export default class MIPS {
 
 			this._execute(pc, false);
 		} catch (e) {
+			debugger ;	// TODO: REMOVE AFTER DEBUGGING INSTRUCTIONS
 			this._trap(e);
 		}
-		// TODO: TRACK ROOT CLOCK HERE
+		this.timer += _prev - this.clocks;
 	}
 
 	load (logical, pc, delayed) {

@@ -1050,8 +1050,8 @@ export default {
         0x13: MTLO,
         0x18: MULT,
         0x19: MULTU,
-        0x1A: DIV,
-        0x1B: DIVU,
+        0x1A: DIV,     // UNVERIFIED
+        0x1B: DIVU,     // UNVERIFIED
         0x20: ADD,
         0x21: ADDU,
         0x22: SUB,
@@ -1065,21 +1065,21 @@ export default {
     },
     0x01: {
         field: "rt",
-        0x00: BLTZ,
-        0x01: BGEZ,
-        0x10: BLTZAL,
-        0x11: BGEZAL
+        0x00: BLTZ,     // UNVERIFIED
+        0x01: BGEZ,     // UNVERIFIED
+        0x10: BLTZAL,     // UNVERIFIED
+        0x11: BGEZAL     // UNVERIFIED
     },
     0x02: J,
     0x03: JAL,
-    0x04: BEQ,
-    0x05: BNE,
-    0x06: BLEZ,
-    0x07: BGTZ,
+    0x04: BEQ,     // UNVERIFIED
+    0x05: BNE,     // UNVERIFIED
+    0x06: BLEZ,     // UNVERIFIED
+    0x07: BGTZ,     // UNVERIFIED
     0x08: ADDI,
     0x09: ADDIU,
-    0x0A: SLTI,
-    0x0B: SLTIU,
+    0x0A: SLTI,     // UNVERIFIED
+    0x0B: SLTIU,     // UNVERIFIED
     0x0C: ANDI,
     0x0D: ORI,
     0x0E: XORI,
@@ -1088,18 +1088,18 @@ export default {
     0x11: CopUnusable,
     0x13: CopUnusable,
     0x13: CopUnusable,
-    0x20: LB,
-    0x21: LH,
-    0x22: LWL,
-    0x23: LW,
-    0x24: LBU,
-    0x25: LHU,
-    0x26: LWR,
-    0x28: SB,
-    0x29: SH,
-    0x2A: SWL,
-    0x2B: SW,
-    0x2E: SWR,
+    0x20: LB,     // UNVERIFIED
+    0x21: LH,     // UNVERIFIED
+    0x22: LWL,     // UNVERIFIED
+    0x23: LW,     // UNVERIFIED
+    0x24: LBU,     // UNVERIFIED
+    0x25: LHU,     // UNVERIFIED
+    0x26: LWR,     // UNVERIFIED
+    0x28: SB,     // UNVERIFIED
+    0x29: SH,     // UNVERIFIED
+    0x2A: SWL,     // UNVERIFIED
+    0x2B: SW,     // UNVERIFIED
+    0x2E: SWR,     // UNVERIFIED
     0x30: COP0.LWC0,
     0x31: CopUnusable,
     0x13: CopUnusable,
