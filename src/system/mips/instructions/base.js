@@ -40,8 +40,6 @@ function LB(fields, pc, delayed, delay) {
         { op: "i32.shl" },
         { op: "i32.const", value: 24 },
         { op: "i32.shr_s" },
-        { op: "i32.const", value: 0xFF },
-        { op: "i32.and" },
     ]);
 }
 LB.assembly = (fields, pc) => `lb\t${Consts.Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
@@ -61,7 +59,7 @@ function LBU(fields, pc, delayed, delay) {
         { op: "i32.and" },
         { op: "i32.const", value: 8 },
         { op: "i32.mul" },
-        { op: "i32.shl" },
+        { op: "i32.shr_u" },
 
         { op: "i32.const", value: 0xFF },
         { op: "i32.and" },
@@ -120,7 +118,7 @@ function LHU(fields, pc, delayed, delay) {
         { op: "i32.and" },
         { op: "i32.const", value: 8 },
         { op: "i32.mul" },
-        { op: "i32.shl" },
+        { op: "i32.shr_u" },
         { op: "i32.const", value: 0xFFFF },
         { op: "i32.and" },
     ]);
@@ -1093,11 +1091,11 @@ export default {
     0x13: CopUnusable,
     0x13: CopUnusable,
     0x20: LB,
-    0x21: LH,       // UNVERIFIED
+    0x21: LH,
     0x22: LWL,      // UNVERIFIED
-    0x23: LW,       // UNVERIFIED
-    0x24: LBU,      // UNVERIFIED
-    0x25: LHU,      // UNVERIFIED
+    0x23: LW,
+    0x24: LBU,
+    0x25: LHU,
     0x26: LWR,      // UNVERIFIED
     0x28: SB,       // UNVERIFIED
     0x29: SH,       // UNVERIFIED

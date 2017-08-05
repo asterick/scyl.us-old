@@ -158,7 +158,7 @@ export default class MIPS {
 						// There was a loading error, fallback to interpret
 						return null;
 					}
-				})
+				});
 
 				WebAssembly.instantiate(defs, {
 					processor: this._wasmImports
@@ -257,13 +257,13 @@ export default class MIPS {
 	// cause cache failures
 	_execute(pc, delayed) {
 		try {
-			const data = this.read(false, this._translate(pc, false));
-			const call = locate(data);
-
-			this._wasmDefs[call.instruction.name](data, pc, delayed);
+			var data = this.read(true, this._translate(pc, false));
 		} catch(e) {
 			throw new Exception(e, pc, delayed, 0);
 		}
+
+		const call = locate(data);
+		this._wasmDefs[call.instruction.name](data, pc, delayed);
 	}
 
 	_blockSize(address) {
