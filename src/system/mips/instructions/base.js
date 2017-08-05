@@ -40,6 +40,8 @@ function LB(fields, pc, delayed, delay) {
         { op: "i32.shl" },
         { op: "i32.const", value: 24 },
         { op: "i32.shr_s" },
+        { op: "i32.const", value: 0xFF },
+        { op: "i32.and" },
     ]);
 }
 LB.assembly = (fields, pc) => `lb\t${Consts.Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
@@ -1090,18 +1092,18 @@ export default {
     0x11: CopUnusable,
     0x13: CopUnusable,
     0x13: CopUnusable,
-    0x20: LB,     // UNVERIFIED
-    0x21: LH,     // UNVERIFIED
-    0x22: LWL,     // UNVERIFIED
-    0x23: LW,     // UNVERIFIED
-    0x24: LBU,     // UNVERIFIED
-    0x25: LHU,     // UNVERIFIED
-    0x26: LWR,     // UNVERIFIED
-    0x28: SB,     // UNVERIFIED
-    0x29: SH,     // UNVERIFIED
-    0x2A: SWL,     // UNVERIFIED
-    0x2B: SW,     // UNVERIFIED
-    0x2E: SWR,     // UNVERIFIED
+    0x20: LB,
+    0x21: LH,       // UNVERIFIED
+    0x22: LWL,      // UNVERIFIED
+    0x23: LW,       // UNVERIFIED
+    0x24: LBU,      // UNVERIFIED
+    0x25: LHU,      // UNVERIFIED
+    0x26: LWR,      // UNVERIFIED
+    0x28: SB,       // UNVERIFIED
+    0x29: SH,       // UNVERIFIED
+    0x2A: SWL,      // UNVERIFIED
+    0x2B: SW,       // UNVERIFIED
+    0x2E: SWR,      // UNVERIFIED
     0x30: COP0.LWC0,
     0x31: CopUnusable,
     0x13: CopUnusable,

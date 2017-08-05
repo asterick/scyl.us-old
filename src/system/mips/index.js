@@ -145,7 +145,20 @@ export default class MIPS {
 			var funct = this._cache[physical];
 
 			if (funct === undefined || !funct.code || funct.logical !== logical) {
-				const defs = assembleBlock(logical, block_size / 4, (address) => locate(address - logical + physical))
+				const defs = assembleBlock(logical, block_size / 4, (address) => {
+					// Do not assemble past block end (fallback to intepret)
+					if (address >= logical + block_size) {
+						return null;
+					}
+
+					try {
+						var word = this.read(true, address - logical + physical);
+						return locate(word);
+					} catch(e) {
+						// There was a loading error, fallback to interpret
+						return null;
+					}
+				})
 
 				WebAssembly.instantiate(defs, {
 					processor: this._wasmImports
@@ -225,7 +238,7 @@ export default class MIPS {
 	}
 
 	readSafe(address) {
-		if (address & 0xC0000000 !== 0x80000000) {
+		if ((address & 0xC0000000) !== (0x80000000 >> 0)) {
 			let page = address & 0xFFFFF000;
 			let result = this._tlb[page | (this._entryHi & 0xFC0)] || this._tlb[page | 0xFFF];
 
@@ -243,15 +256,18 @@ export default class MIPS {
 	// be software interpreted so TLB changes don't
 	// cause cache failures
 	_execute(pc, delayed) {
-		const physical = this._translate(pc, false);
-		const data = this.load(physical, pc, delayed);
-		const call = locate(data);
+		try {
+			const data = this.read(false, this._translate(pc, false));
+			const call = locate(data);
 
-		this._wasmDefs[call.instruction.name](data, pc, delayed);
+			this._wasmDefs[call.instruction.name](data, pc, delayed);
+		} catch(e) {
+			throw new Exception(e, pc, delayed, 0);
+		}
 	}
 
 	_blockSize(address) {
-		if (address & 0xC0000000 !== 0x80000000) {
+		if ((address & 0xC0000000) !== (0x80000000 >> 0)) {
 			return MIN_COMPILE_SIZE;
 		} else {
 			return Math.min(MAX_COMPILE_SIZE, this.blockSize(address & 0x1FFFFFFC) || MIN_COMPILE_SIZE);
@@ -349,11 +365,11 @@ export default class MIPS {
 			throw Exceptions.CoprocessorUnusable;
 		}
 
-		if (address & 0xE0000000 === 0xA0000000) {
+		if ((address & 0xE0000000) === (0xA0000000 >> 0)) {
 			cached = false;
 		}
 
-		if (address & 0xC0000000 !== 0x80000000) {
+		if ((address & 0xC0000000) !== (0x80000000 >> 0)) {
 			let page = address & 0xFFFFF000;
 			let result = this._tlb[page | (this._entryHi & 0xFC0)] || this._tlb[page | 0xFFF];
 

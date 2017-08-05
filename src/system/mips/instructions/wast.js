@@ -313,6 +313,16 @@ export function staticBlock(start, length, locate) {
 	function func(pc, delayed, escape_depth) {
 		var op = locate(pc);
 
+		if (op === null) {
+			return [
+				... local(LOCAL_VARS.INSTRUCTION_PC),
+				{ op: 'i32.const', value: 4 },
+				{ op: 'i32.add' },
+		        { op: "call", function_index: CALLS.EXECUTE },
+				{ op: 'br', relative_depth: escape_depth }
+			];
+		}
+
 		return op.instruction(op, value(pc >> 0), value(delayed), () => delayed ? [{ op: 'unreachable' }] : [
 			... func(pc + 4, 1, escape_depth),
 
@@ -331,12 +341,11 @@ export function staticBlock(start, length, locate) {
 	}
 
 	for (var i = 0; i < length; i++) {
-		const pc = start + length * 4;
 		escapeTable.push(i);
 
 		code = { op: 'block', block: block([
 			code,
-			... func(pc, 0, length - i)
+			... func(start + i * 4, 0, length - i)
 		])}
 	}
 
