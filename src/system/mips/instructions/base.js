@@ -3,20 +3,6 @@ import * as Consts from "../consts";
 import * as COP0 from "./cop0";
 
 /******
- ** Trap Instructions
- ******/
-
-function ReservedInstruction(fields, pc, delayed, delay) {
-    return exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
-}
-ReservedInstruction.assembly = (fields, pc) => `---`;
-
-function CopUnusable(fields, pc, delayed, delay) {
-    return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, fields.cop);
-}
-CopUnusable.assembly = (fields, pc) => `COP${fields.cop}\tunusable`;
-
-/******
  ** Load/Store instructions
  ******/
 
@@ -1026,6 +1012,19 @@ function BGEZAL(fields, pc, delayed, delay) {
     ];
 }
 BGEZAL.assembly = (fields, pc) => `bgezal\t${Consts.Registers[fields.rs]}, $${((pc + 4) + (fields.simm16 * 4)).toString(16)}`;
+/******
+ ** Trap Instructions
+ ******/
+
+function ReservedInstruction(fields, pc, delayed, delay) {
+    return exception(Consts.Exceptions.ReservedInstruction, pc, delayed);
+}
+ReservedInstruction.assembly = (fields, pc) => `---`;
+
+function CopUnusable(fields, pc, delayed, delay) {
+    return exception(Consts.Exceptions.CoprocessorUnusable, pc, delayed, fields.cop);
+}
+CopUnusable.assembly = (fields, pc) => `COP${fields.cop}\tunusable`;
 
 function SYSCALL(fields, pc, delayed, delay) {
     return exception(Consts.Exceptions.SysCall, pc, delayed);
