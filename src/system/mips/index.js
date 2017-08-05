@@ -204,7 +204,6 @@ export default class MIPS {
 
 			this._execute(pc, false);
 		} catch (e) {
-			debugger ;	// TODO: REMOVE AFTER DEBUGGING INSTRUCTIONS
 			this._trap(e);
 		}
 		this.timer += _prev - this.clocks;

@@ -1097,10 +1097,10 @@ export default {
     0x24: LBU,
     0x25: LHU,
     0x26: LWR,      // UNVERIFIED
-    0x28: SB,       // UNVERIFIED
-    0x29: SH,       // UNVERIFIED
+    0x28: SB,
+    0x29: SH,
     0x2A: SWL,      // UNVERIFIED
-    0x2B: SW,       // UNVERIFIED
+    0x2B: SW,
     0x2E: SWR,      // UNVERIFIED
     0x30: COP0.LWC0,
     0x31: CopUnusable,
