@@ -694,8 +694,8 @@ function DIV(fields, pc, delayed, delay) {
         { op: "i32.eq" },
         { op: "i32.and" },
         { op: "if", block: block([
-            ... write(REGS.HI, [{ op: "i32.const", value: -0x80000000 }]),
-            ... write(REGS.LO, [{ op: "i32.const", value: 0 }]),
+            ... write(REGS.HI, [{ op: "i32.const", value: 0 }]),
+            ... write(REGS.LO, [{ op: "i32.const", value: -0x80000000 }]),
         { op: "else" },
         ... read(fields.rt),
         { op: "i32.eqz" },
@@ -703,11 +703,13 @@ function DIV(fields, pc, delayed, delay) {
             ... write(REGS.HI, read(fields.rs)),
 
             ... write(REGS.LO, [
+                { op: 'i32.const', value: -1 },
                 ... read(fields.rs),
-                { op: "i32.const", value: -1 },
-                { op: "i32.xor"},
-                { op: "i32.const", value: 31 },
-                { op: "i32.shr_s"},
+                { op: "i32.const", value: 0 },
+                { op: 'i32.lt_s' },
+                { op: 'i32.const', value: 2 },
+                { op: 'i32.mul' },
+                { op: 'i32.add' }
             ]),
 
         { op: "else" },
@@ -844,7 +846,7 @@ function BEQ(fields, pc, delayed, delay) {
     return [
         ... read(fields.rs),
         ... read(fields.rt),
-        { op: 'i32.eq' },
+        { op: 'i32.ne' },
         { op: 'br_if', relative_depth: 0 },
 
         ... write(REGS.PC, [
@@ -891,12 +893,12 @@ function BLTZ(fields, pc, delayed, delay) {
         { op: 'br_if', relative_depth: 0 },
 
         ... write(REGS.PC, [
-            ... value(fields.simm16),
-            { op: 'i32.const', value: 4 },
-            { op: 'i32.mul' },
             ... pc,
             { op: 'i32.const', value: 4 },
             { op: 'i32.add' },
+            ... value(fields.simm16),
+            { op: 'i32.const', value: 4 },
+            { op: 'i32.mul' },
             { op: 'i32.add' },
         ]),
         ... delay()
@@ -995,8 +997,8 @@ BLTZAL.assembly = (fields, pc) => `bltzal\t${Consts.Registers[fields.rs]}, $${((
 
 function BGEZAL(fields, pc, delayed, delay) {
     return [
-        { op: 'i32.const', value: 0 },
         ... read(fields.rs),
+        { op: 'i32.const', value: 0 },
         { op: 'i32.lt_s' },
         { op: 'br_if', relative_depth: 0 },
 
@@ -1050,8 +1052,8 @@ export default {
         0x13: MTLO,
         0x18: MULT,
         0x19: MULTU,
-        0x1A: DIV,     // UNVERIFIED
-        0x1B: DIVU,     // UNVERIFIED
+        0x1A: DIV,
+        0x1B: DIVU,
         0x20: ADD,
         0x21: ADDU,
         0x22: SUB,
@@ -1065,21 +1067,21 @@ export default {
     },
     0x01: {
         field: "rt",
-        0x00: BLTZ,     // UNVERIFIED
-        0x01: BGEZ,     // UNVERIFIED
-        0x10: BLTZAL,     // UNVERIFIED
-        0x11: BGEZAL     // UNVERIFIED
+        0x00: BLTZ,
+        0x01: BGEZ,
+        0x10: BLTZAL,
+        0x11: BGEZAL
     },
     0x02: J,
     0x03: JAL,
-    0x04: BEQ,     // UNVERIFIED
-    0x05: BNE,     // UNVERIFIED
-    0x06: BLEZ,     // UNVERIFIED
-    0x07: BGTZ,     // UNVERIFIED
+    0x04: BEQ,
+    0x05: BNE,
+    0x06: BLEZ,
+    0x07: BGTZ,
     0x08: ADDI,
     0x09: ADDIU,
-    0x0A: SLTI,     // UNVERIFIED
-    0x0B: SLTIU,     // UNVERIFIED
+    0x0A: SLTI,
+    0x0B: SLTIU,
     0x0C: ANDI,
     0x0D: ORI,
     0x0E: XORI,
