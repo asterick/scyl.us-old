@@ -3,7 +3,7 @@ import {
 	MAGIC_NUMBER,
 	PAYLOAD_TYPES, VALUE_TYPES, KIND_TYPES,
 	FLAG_RESIZABLE_LIMIT_PRESENT, FLAG_GLOBAL_MUTABLE,
-	ByteCode, ReverseByteCode
+	ByteCode
 } from "./const";
 
 /************
@@ -87,7 +87,7 @@ function encode_code_expr(payload, codes) {
 
 		while (copy.length > 0) {
 			const code = copy.shift();
-			const op = code.op;
+			const op = typeof code === 'string' ? code : code.op;
 
 			if (ByteCode[op] === undefined) {
 				throw new Error(`illegal byte-code ${op}`);

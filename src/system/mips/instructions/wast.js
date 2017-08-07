@@ -66,13 +66,13 @@ export function read(target) {
 
 			... target,
 			{ op: "i32.const", value: 4 },
-			{ op: 'i32.mul' },
+			'i32.mul',
 			{ op: "i32.load", "flags": 2, "offset": 0 },
 
 			... target,
-			{ op: 'i32.eqz' },
+			"i32.eqz",
 
-			{ op: "select" }
+			"select"
 		];
 	} else if (target > 0) {
 		return [
@@ -91,14 +91,14 @@ export function write(target, value) {
 		return [
 			... target,
 			{ op: "i32.const", value: 4 },
-			{ op: 'i32.mul' },
+			"i32.mul",
 
 			{ op: "i32.const", value: 0 },
 			... value,
 			... target,
-			{ op: 'i32.eqz' },
+			"i32.eqz",
 
-			{ op: 'select' },
+			"select",
 
 			{ op: "i32.store", "flags": 2, "offset": 0 },
 		];
@@ -111,7 +111,7 @@ export function write(target, value) {
 	} else {
 		return [
 			... value,
-			{ op: "drop" }
+			"drop"
 		];
 	}
 }
@@ -123,7 +123,7 @@ export function exception(code, pc, delayed, cop = [{ op: 'i32.const', value: 0 
         ... delayed,
         ... cop,
         { op: "call", function_index: CALLS.EXCEPTION },
-        { op: "unreachable" }
+        "unreachable"
 	]
 }
 
@@ -290,7 +290,7 @@ export function dynamicCall(func) {
 				() => [
 					... local(LOCAL_VARS.INSTRUCTION_PC),
 					{ op: 'i32.const', value: 4 },
-					{ op: 'i32.add' },
+					"i32.add",
 			        { op: 'i32.const', value: 1 },
 			        { op: "call", function_index: CALLS.EXECUTE },
 			        { op: 'br', relative_depth: 0 }
@@ -302,7 +302,7 @@ export function dynamicCall(func) {
 		... write(REGS.CLOCKS, [
 			... read(REGS.CLOCKS),
 			... value(1),
-			{ op: 'i32.sub' },
+			"i32.sub",
 		])
 	];
 }
@@ -315,9 +315,9 @@ export function staticBlock(start, length, locate) {
 		// Calculate current PC table offset
 		... read(REGS.PC),
 		{ op: 'i32.const', value: (start) >> 0 },
-		{ op: 'i32.sub' },
+		"i32.sub",
 		{ op: 'i32.const', value: 2 },
-		{ op: 'i32.shr_u' },
+		"i32.shr_u",
 
 		{ op: 'br_table', target_table: escapeTable, default_target: length }
 	])};
@@ -334,17 +334,17 @@ export function staticBlock(start, length, locate) {
 			];
 		}
 
-		return op.instruction(op, value(pc >> 0), value(delayed), () => delayed ? [{ op: 'unreachable' }] : [
+		return op.instruction(op, value(pc >> 0), value(delayed), () => delayed ? ["unreachable"] : [
 			... func(pc + 4, 1, escape_depth),
 
 			... write(REGS.CLOCKS, [
 				... read(REGS.CLOCKS),
 				{ op: 'i32.const', value: (pc + 8) >> 0 },
 				... local(LOCAL_VARS.START_PC),
-				{ op: 'i32.sub' },
+				"i32.sub",
 				{ op: 'i32.const', value: 4 },
-				{ op: 'i32.div_u' },
-				{ op: 'i32.sub' }
+				"i32.div_u",
+				"i32.sub"
 			]),
 
 			{ op: 'br', relative_depth: escape_depth }
@@ -372,10 +372,10 @@ export function staticBlock(start, length, locate) {
 			... read(REGS.CLOCKS),
 			{ op: 'i32.const', value: end >> 0 },
 			... local(LOCAL_VARS.START_PC),
-			{ op: 'i32.sub' },
+			"i32.sub",
 			{ op: 'i32.const', value: 2 },
-			{ op: 'i32.shr_u' },
-			{ op: 'i32.sub' }
+			"i32.shr_u",
+			"i32.sub"
 		])
 	]);
 
@@ -389,7 +389,7 @@ export function staticBlock(start, length, locate) {
 				// Break when our clock runs out
 				... read(REGS.CLOCKS),
 				{ op: 'i32.const', value: 0 },
-				{ op: 'i32.le_s' },
+				"i32.le_s",
 				{ op: 'br_if', relative_depth: 1 },
 
 				// Default section
@@ -397,7 +397,7 @@ export function staticBlock(start, length, locate) {
 					code,
 
 					// Escape from execution block
-					{ op: 'return' }
+					"return"
 				])},
 
 				{ op: 'br', relative_depth: 0 }

@@ -167,7 +167,7 @@ function decode_code_expr(payload) {
 			codes.push({ op: ReverseByteCode[byte], flags: payload.varuint(), offset: payload.varuint() });
 			break ;
 		default:
-			codes.push({ op: ReverseByteCode[byte] });
+			codes.push(ReverseByteCode[byte]);
 			break ;
 		}
 
