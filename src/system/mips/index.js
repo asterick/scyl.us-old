@@ -181,10 +181,8 @@ export default class MIPS {
 				});
 
 				// Execution has paused, waiting for compiler to finish
-				break ;
+				return false;
 			}
-
-			throw new Error("JIT execution currently untrusted");
 
 			try {
 				this._interrupt();
@@ -195,7 +193,7 @@ export default class MIPS {
 		}
 
 		this.timer += _prev - this.clocks;
-		return this.clocks <= 0;
+		return true;
 	}
 
 	step () {

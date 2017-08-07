@@ -18,6 +18,8 @@ export default class extends MIPS {
 	}
 
 	start () {
+		if (this.running) return ;
+
 		this._adjust_clock = +new Date();
 		this.running = true;
 		this.tick();
@@ -34,7 +36,7 @@ export default class extends MIPS {
 
 		if (this.running && this._tick(cycles)) {
 			// Schedule next tick when the CPU is free
-			this.setTimeout(this.tick, 0);
+			setTimeout(this.tick, 0);
 		}
 	}
 
