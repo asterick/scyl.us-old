@@ -72,7 +72,7 @@ export default class MIPS {
 		this._wasmImports = {
 			memory: this._memory,
 	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop) },
-			delay_execute: (pc) => this._execute(pc, true),
+			delay_execute: (pc, delayed) => this._execute(pc, delayed),
 	    	load: (address, pc, delayed) => this.load(address, pc, delayed),
 	    	store: (address, value, mask, pc, delayed) => this.store(address, value, mask, pc, delayed),
 	    	mfc0: (reg, pc, delayed) => this._mfc0(reg, pc, delayed),
@@ -82,6 +82,7 @@ export default class MIPS {
 	    	tlbwi: (pc, delayed) => this._tlbwi(pc, delayed),
 	    	tlbwr: (pc, delayed) => this._tlbwr(pc, delayed),
 	    	tlbp: (pc, delayed) => this._tlbp(pc, delayed),
+	    	debug: (value) => console.log((value >>> 0).toString(16))
 		};
 
 		// Create our web assembly stepper
@@ -126,6 +127,9 @@ export default class MIPS {
 	}
 
 	reset() {
+		this.clocks = 0;
+		this.timer = 0;
+
 		this.pc = 0xBFC00000;
 		this._status = STATUS_KUc | STATUS_BEV;
 		this._cause = 0;

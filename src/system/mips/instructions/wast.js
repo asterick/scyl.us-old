@@ -21,8 +21,9 @@ export const CALLS = {
 	TLBWI: 8,
 	TLBWR: 9,
 	TLBP: 10,
+	DEBUG: 11,
 
-	EXPORT_BASE_INDEX: 11
+	EXPORT_BASE_INDEX: 12
 };
 
 export const LOCAL_VARS = {
@@ -30,7 +31,8 @@ export const LOCAL_VARS = {
 	INSTRUCTION_PC: 1,
 	INSTRUCTION_DELAYED: 2,
 	I32_TEMP: 3,
-	I64_TEMP: 4
+	START_PC: 4,
+	I64_TEMP: 5
 };
 
 export function block(body) {
@@ -149,7 +151,7 @@ export function module(functions) {
 	            "field": "delay_execute",
 	            "type": {
 	                "type": "func_type",
-	                "parameters": [ "i32" ],
+	                "parameters": [ "i32", "i32" ],
 	                "returns": []
 	            }
 	        },
@@ -242,21 +244,30 @@ export function module(functions) {
 	                "parameters": [ "i32", "i32" ],
 	                "returns": []
 	            }
+	        },
+	        {
+	        	"module": "processor",
+	        	"field": "debug",
+	            "type": {
+	                "type": "func_type",
+	                "parameters": [ "i32" ],
+	                "returns": []
+	            }
 	        }
 	    ]
 	}
 
 	Object.keys(functions).forEach((name, i) => {
 		result.function_section.push({
-            "locals": [
-            	{ count: 1, type: 'i32' },
-            	{ count: 1, type: 'i64' }
-            ],
             "type": {
                 "type": "func_type",
                 "parameters": ['i32', 'i32', 'i32'],
                 "returns": []
             },
+            "locals": [
+            	{ count: 2, type: 'i32' },
+            	{ count: 1, type: 'i64' }
+            ],
             "code": functions[name]
         });
 		result.export_section.push({
@@ -280,6 +291,7 @@ export function dynamicCall(func) {
 					... local(LOCAL_VARS.INSTRUCTION_PC),
 					{ op: 'i32.const', value: 4 },
 					{ op: 'i32.add' },
+			        { op: 'i32.const', value: 1 },
 			        { op: "call", function_index: CALLS.EXECUTE },
 			        { op: 'br', relative_depth: 0 }
 				]
@@ -304,22 +316,21 @@ export function staticBlock(start, length, locate) {
 		... read(REGS.PC),
 		{ op: 'i32.const', value: (start) >> 0 },
 		{ op: 'i32.sub' },
-		{ op: 'i32.const', value: 4 },
-		{ op: 'i32.div_u' },
+		{ op: 'i32.const', value: 2 },
+		{ op: 'i32.shr_u' },
 
 		{ op: 'br_table', target_table: escapeTable, default_target: length }
 	])};
 
 	function func(pc, delayed, escape_depth) {
 		var op = locate(pc);
+		var call;
 
 		if (op === null) {
 			return [
-				... local(LOCAL_VARS.INSTRUCTION_PC),
-				{ op: 'i32.const', value: 4 },
-				{ op: 'i32.add' },
+				{ op: 'i32.const', value: pc >> 0 },
+				... value(delayed ? 1 : 0),
 		        { op: "call", function_index: CALLS.EXECUTE },
-				{ op: 'br', relative_depth: escape_depth }
 			];
 		}
 
@@ -329,7 +340,7 @@ export function staticBlock(start, length, locate) {
 			... write(REGS.CLOCKS, [
 				... read(REGS.CLOCKS),
 				{ op: 'i32.const', value: (pc + 8) >> 0 },
-				... read(REGS.PC),
+				... local(LOCAL_VARS.START_PC),
 				{ op: 'i32.sub' },
 				{ op: 'i32.const', value: 4 },
 				{ op: 'i32.div_u' },
@@ -349,37 +360,48 @@ export function staticBlock(start, length, locate) {
 		])}
 	}
 
-	return [
-		{ op: 'loop', block: block([
-			// Break when our clock runs out
+	// Fall through trap (continue to next execution cell)
+	code.block.body.concat([
+		// Update PC
+		... write(REGS.PC, [
+			{ op: 'i32.const', value: end >> 0 }
+		]),
+
+		// Eat some cycles (based on PC)
+		... write(REGS.CLOCKS, [
 			... read(REGS.CLOCKS),
-			{ op: 'i32.const', value: 0 },
-			{ op: 'i32.le_s' },
-			{ op: 'br_if', relative_depth: 0 },
+			{ op: 'i32.const', value: end >> 0 },
+			... local(LOCAL_VARS.START_PC),
+			{ op: 'i32.sub' },
+			{ op: 'i32.const', value: 2 },
+			{ op: 'i32.shr_u' },
+			{ op: 'i32.sub' }
+		])
+	]);
 
-			// Switch table begin
-			{ op: 'block', block: block([
-				code,
+	return [
+		{ op: 'block', block: block([
+			{ op: 'loop', block: block([
+				// Log our beginning PC
+				... read(REGS.PC),
+				{ op: 'set_local', index: LOCAL_VARS.START_PC },
 
-				// Eat some cycles (based on PC)
-				... write(REGS.CLOCKS, [
-					... read(REGS.CLOCKS),
-					{ op: 'i32.const', value: end >> 0 },
-					... read(REGS.PC),
-					{ op: 'i32.sub' },
-					{ op: 'i32.const', value: 4 },
-					{ op: 'i32.div_u' },
-					{ op: 'i32.sub' }
-				]),
+				// Break when our clock runs out
+				... read(REGS.CLOCKS),
+				{ op: 'i32.const', value: 0 },
+				{ op: 'i32.le_s' },
+				{ op: 'br_if', relative_depth: 1 },
 
-				// Update PC
-				... write(REGS.PC, [
-					{ op: 'i32.const', value: end >> 0 }
-				]),
+				// Default section
+				{ op: 'block', block: block([
+					code,
 
-				// Return from result
-				{ op: 'return' }
-			])}
+					// Escape from execution block
+					{ op: 'return' }
+				])},
+
+				{ op: 'br', relative_depth: 0 }
+			])},
 		])}
-	]
+	];
 }
