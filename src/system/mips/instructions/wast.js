@@ -1,41 +1,14 @@
 import Export from "../../../dynast/export";
 import Import from "../../../dynast/import";
-//import { FieldsWasmDynamic } from "./fields";
 
-export const REGS = {
-	LR: 31,
-	LO: 32,
-	HI: 33,
-	PC: 34,
-	CLOCKS: 35
-};
+export function process(ab) {
+	return Import(ab);
+}
 
-export const CALLS = {
-	EXECUTE: 0,
-	EXCEPTION: 1,
-	LOAD: 2,
-	STORE: 3,
-	MFC0: 4,
-	MTC0: 5,
-	RFE: 6,
-	TLBR: 7,
-	TLBWI: 8,
-	TLBWR: 9,
-	TLBP: 10,
-	DEBUG: 11,
-
-	EXPORT_BASE_INDEX: 12
-};
-
-export const LOCAL_VARS = {
-	INSTRUCTION_WORD: 0,
-	INSTRUCTION_PC: 1,
-	INSTRUCTION_DELAYED: 2,
-	I32_TEMP: 3,
-	START_PC: 4,
-	I64_TEMP: 5
-};
-
+export function compile(template, start, length, locate) {
+	return new Promise(() => {});
+}
+/*
 export function block(body) {
 	return { type: "null_block", body: body }
 }
@@ -406,3 +379,4 @@ export function staticBlock(start, length, locate) {
 		])}
 	];
 }
+*/

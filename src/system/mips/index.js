@@ -1,5 +1,5 @@
 import Exception from "./exception";
-import locate from "./instructions";
+import { locate, processModule, buildBlock } from "./instructions";
 
 import { params } from "../../util";
 import { MAX_COMPILE_SIZE, CLOCK_BLOCK, MIN_COMPILE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
@@ -61,27 +61,33 @@ export default class MIPS {
 		// Compiler cache
 		this._cache = [];
 
+		this._environment = {
+			debug: (v) => console.log((v >>> 0).toString(16)),
+	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop) },
+			execute: (pc, delayed) => this._execute(pc, delayed),
+	    	load: (address, pc, delayed) => this.load(address, pc, delayed),
+	    	store: (address, value, mask, pc, delayed) => this.store(address, value, mask, pc, delayed),
+	    	mfc0: (reg, pc, delayed) => this._mfc0(reg, pc, delayed),
+	    	mtc0: (reg, word, pc, delayed) => this._mtc0(reg, word, pc, delayed),
+	    	rfe: (pc, delayed) => this._rfe(pc, delayed),
+	    	tlbr: (pc, delayed) => this._tlbr(pc, delayed),
+	    	tlbwi: (pc, delayed) => this._tlbwi(pc, delayed),
+	    	tlbwr: (pc, delayed) => this._tlbwr(pc, delayed),
+	    	tlbp: (pc, delayed) => this._tlbp(pc, delayed),
+    	};
+
 		// Load in WASM definitions for step through memory
 		fetch("core.wasm")
 			.then((blob) => blob.arrayBuffer())
-			.then((ab) => WebAssembly.instantiate(ab, {
-				env: {
-					debug: (v) => console.log((v >>> 0).toString(16)),
-			        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop) },
-					execute: (pc, delayed) => this._execute(pc, delayed),
-			    	load: (address, pc, delayed) => this.load(address, pc, delayed),
-			    	store: (address, value, mask, pc, delayed) => this.store(address, value, mask, pc, delayed),
-			    	mfc0: (reg, pc, delayed) => this._mfc0(reg, pc, delayed),
-			    	mtc0: (reg, word, pc, delayed) => this._mtc0(reg, word, pc, delayed),
-			    	rfe: (pc, delayed) => this._rfe(pc, delayed),
-			    	tlbr: (pc, delayed) => this._tlbr(pc, delayed),
-			    	tlbwi: (pc, delayed) => this._tlbwi(pc, delayed),
-			    	tlbwr: (pc, delayed) => this._tlbwr(pc, delayed),
-			    	tlbp: (pc, delayed) => this._tlbp(pc, delayed),
-		    	}
-			}))
+			.then((ab) => {
+				this._moduleFrame = processModule(ab);
+
+				return WebAssembly.instantiate(ab, {
+					env: this._environment
+				})
+			})
 			.then((module) => {
-				this._coreModule = module;
+				this._coreModule = module.module;
 				this._exports =  module.instance.exports;
 				this.reset();
 				this.onReady && this.onReady();
@@ -109,6 +115,10 @@ export default class MIPS {
 		return this._exports.getClocks() >>> 0;
 	}
 
+	set clocks(v) {
+		this._exports.setClocks(v);
+	}
+
 	register(i) {
 		return this._exports.getRegister(i) >>> 0;
 	}
@@ -124,10 +134,8 @@ export default class MIPS {
 
 	// Execute a single frame
 	_tick (ticks) {
-		return false;
-
 		// Advance clock, with 0.1 sec a max 'lag' time
-		const _prev = this.clocks = Math.max(100 * CLOCK_BLOCK, this.clocks + ticks * CLOCK_BLOCK);
+		const _prev = this.clocks = Math.max(100 * CLOCK_BLOCK, this.clocks + CLOCK_BLOCK * ticks);
 
 		while (this.clocks > 0) {
 			const block_size = this._blockSize(this.pc);
@@ -138,7 +146,7 @@ export default class MIPS {
 			var funct = this._cache[physical];
 
 			if (funct === undefined || !funct.code || funct.logical !== logical) {
-				const defs = assembleBlock(logical, block_size / 4, (address) => {
+				const defs = buildBlock(this._moduleFramelogical, block_size / 4, (address) => {
 					// Do not assemble past block end (fallback to intepret)
 					if (address >= logical + block_size) {
 						return null;
@@ -151,10 +159,11 @@ export default class MIPS {
 						// There was a loading error, fallback to interpret
 						return null;
 					}
-				});
+				})
 
 				WebAssembly.instantiate(defs, {
-					processor: this._wasmImports
+					env: this._environment,
+					core: this._coreModule
 				}).then((result) => {
 					const funct = {
 						code: result.instance.exports.block,
