@@ -1,7 +1,7 @@
 import { FieldsNumeric } from "./fields";
 import Disassemble from "./disassemble";
 import Instructions from "./base";
-import { process } from "./wast";
+export { Compiler } from "./wast";
 
 export function locate(word) {
 	const fields = new FieldsNumeric(word);
@@ -21,12 +21,4 @@ export function locate(word) {
 export function disassemble(word, address) {
 	const op = locate(word);
 	return Disassemble[op.name](op, address);
-}
-
-export function processModule(ab) {
-	return process(ab);
-}
-
-export function buildBlock() {
-
 }

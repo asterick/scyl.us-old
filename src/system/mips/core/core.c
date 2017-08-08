@@ -20,13 +20,11 @@ uint32_t ram[1024*1024];	// 4MB of RAM
 uint32_t rom[128*1024];		// 512kB of ROM
 
 // These are the functions that get inlined
-__attribute__((noinline))
-uint32_t read_reg(reg) {
+STATIC_FUNCTION uint32_t read_reg(int reg) {
 	return reg ? registers[reg] : 0;
 }
 
-__attribute__((noinline))
-void write_reg(reg, value) {
+STATIC_FUNCTION void write_reg(int reg, uint32_t value) {
 	if (reg) registers[reg] = value;
 }
 

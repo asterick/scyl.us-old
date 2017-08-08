@@ -1,5 +1,5 @@
 import Exception from "./exception";
-import { locate, processModule, buildBlock } from "./instructions";
+import { locate, Compiler } from "./instructions";
 
 import { params } from "../../util";
 import { MAX_COMPILE_SIZE, CLOCK_BLOCK, MIN_COMPILE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
@@ -82,7 +82,7 @@ export default class MIPS {
 		fetch("core.wasm")
 			.then((blob) => blob.arrayBuffer())
 			.then((ab) => {
-				this._moduleFrame = processModule(ab);
+				this._compiler = new Compiler(ab);
 
 				return WebAssembly.instantiate(ab, {
 					env: this._environment
@@ -148,7 +148,7 @@ export default class MIPS {
 			var funct = this._cache[physical];
 
 			if (funct === undefined || !funct.code || funct.logical !== logical) {
-				const defs = buildBlock(this._moduleFramelogical, block_size / 4, (address) => {
+				const defs = this._compiler.compile(logical, block_size / 4, (address) => {
 					// Do not assemble past block end (fallback to intepret)
 					if (address >= logical + block_size) {
 						return null;
@@ -212,18 +212,14 @@ export default class MIPS {
 	}
 
 	load (logical, pc, delayed) {
-		console.log("LOAD", Array.prototype.map.call(arguments, (v) => (v >>> 0).toString(16)))
 		try {
-			const v = this.read(false, this._translate(logical, false));
-			console.log((v >>> 0).toString(16))
-			return v;
+			return this.read(false, this._translate(logical, false));
 		} catch (e) {
 			throw new Exception(e, pc, delayed, 0);
 		}
 	}
 
 	store (logical, value, mask, pc, delayed) {
-		console.log("STORE", Array.prototype.map.call(arguments, (v) => (v >>> 0).toString(16)))
 		try {
 			const physical = this._translate(logical, true);
 			this.write(physical, value, mask);

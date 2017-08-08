@@ -16,7 +16,7 @@ function encode_value_type(payload, type) {
 	case "i64": payload.varint(VALUE_TYPES.i64); break ;
 	case "f32": payload.varint(VALUE_TYPES.f32); break ;
 	case "f64": payload.varint(VALUE_TYPES.f64); break ;
-	case "null_block": payload.varint(VALUE_TYPES.null_block); break ;
+	case "void": payload.varint(VALUE_TYPES.void); break ;
 	default: throw new Error(`Illegal value_type ${type}`);
 	}
 }
@@ -99,9 +99,9 @@ function encode_code_expr(payload, codes) {
 			case "block":
 			case "loop":
 			case "if":
-				encode_value_type(payload, code.block.type);
+				encode_value_type(payload, code.kind);
 				block_stack.push(copy);
-				copy = code.block.body.concat();
+				copy = code.body.concat();
 				break ;
 			case "br":
 			case "br_if":

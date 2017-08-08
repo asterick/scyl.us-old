@@ -23,7 +23,7 @@ export const VALUE_TYPES = {
 	"f64": -0x04,
 	"anyfunc": -0x10,
 	"func_type": -0x20,
-	"null_block": -0x40,
+	"void": -0x40,
 };
 
 export const KIND_TYPES = {

@@ -3,7 +3,7 @@ LLVM_ROOT = ~/llvmwasm/bin
 BINARYEN_ROOT = ~/binaryen/bin
 WABT_ROOT = ~/wabt
 
-CFLAGS = -O2
+CFLAGS = -O3
 
 TARGET = "../../../../assets/core.wasm"
 

@@ -17,7 +17,7 @@ function decode_value_type(payload) {
 	case VALUE_TYPES.i64: return "i64";
 	case VALUE_TYPES.f32: return "f32";
 	case VALUE_TYPES.f64: return "f64";
-	case VALUE_TYPES.null_block: return "null_block";
+	case VALUE_TYPES.void: return "void";
 	}
 
 	throw new Error(`Illegal value_type ${type}`);
@@ -69,13 +69,6 @@ function decode_global_type(payload) {
 	}
 }
 
-function decode_block_type(payload) {
-	const type = decode_value_type(payload);
-	const body = decode_code_expr(payload);
-
-	return { type: "block_type", type, body }
-}
-
 function decode_code_expr(payload) {
 	var codes = [];
 	var byte;
@@ -95,7 +88,10 @@ function decode_code_expr(payload) {
 		case ByteCode["block"]:
 		case ByteCode["loop"]:
 		case ByteCode["if"]:
-			codes.push({ op: ReverseByteCode[byte], block: decode_block_type(payload) });
+			const kind = decode_value_type(payload);
+			const body = decode_code_expr(payload);
+
+			codes.push({ op: ReverseByteCode[byte], kind, body });
 			break ;
 		case ByteCode["br"]:
 		case ByteCode["br_if"]:
