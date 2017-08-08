@@ -80,99 +80,95 @@ function encode_global_type(payload, ast) {
 }
 
 function encode_code_expr(payload, codes) {
-	var block_stack = [codes.concat()];
+	const copy = codes.concat();
+	var depth = 1;
 
-	while (block_stack.length > 0) {
-		var copy = block_stack.pop();
+	while (depth > 0) {
+		const code = copy.shift();
+		const op = typeof code === 'string' ? code : code.op;
 
-		while (copy.length > 0) {
-			const code = copy.shift();
-			const op = typeof code === 'string' ? code : code.op;
-
-			if (ByteCode[op] === undefined) {
-				throw new Error(`illegal byte-code ${op}`);
-			}
-
-			payload.uint8(ByteCode[op]);
-
-			switch (op) {
-			case "block":
-			case "loop":
-			case "if":
-				encode_value_type(payload, code.kind);
-				block_stack.push(copy);
-				copy = code.body.concat();
-				break ;
-			case "br":
-			case "br_if":
-				payload.varuint(code.relative_depth);
-				break ;
-
-			case "br_table":
-				payload.varuint(code.target_table.length);
-				code.target_table.forEach((v) => payload.varuint(v));
-				payload.varuint(code.default_target);
-				break ;
-
-			case "call":
-				payload.varuint(code.function_index)
-				break ;
-			case "call_indirect":
-				payload.varuint(code.type_index)
-				payload.varuint(code.reserved);
-				break ;
-
-			case "get_local":
-			case "set_local":
-			case "tee_local":
-			case "get_global":
-			case "set_global":
-				payload.varuint(code.index);
-				break ;
-			case "current_memory":
-			case "grow_memory":
-				payload.varuint(code.memory);
-				break ;
-			case "i64.const":
-			case "i32.const":
-				payload.varint(code.value);
-				break ;
-			case "f32.const":
-				payload.float32(code.value);
-				break ;
-			case "f64.const":
-				payload.float64(code.value);
-				break ;
-			case "i32.load":
-			case "i32.load8_s":
-			case "i32.load8_u":
-			case "i32.load16_s":
-			case "i32.load16_u":
-			case "i32.store":
-			case "i32.store8":
-			case "i32.store16":
-			case "i64.load":
-			case "i64.load8_s":
-			case "i64.load8_u":
-			case "i64.load16_s":
-			case "i64.load16_u":
-			case "i64.load32_s":
-			case "i64.load32_u":
-			case "i64.store":
-			case "i64.store8":
-			case "i64.store16":
-			case "i64.store32":
-			case "f32.load":
-			case "f32.store":
-			case "f64.load":
-			case "f64.store":
-				payload.varuint(code.flags);
-				payload.varuint(code.offset);
-				break ;
-			}
+		if (ByteCode[op] === undefined) {
+			throw new Error(`illegal byte-code ${op}`);
 		}
 
-		payload.uint8(ByteCode.end);
+		payload.uint8(ByteCode[op]);
+
+		switch (op) {
+		case "block":
+		case "loop":
+		case "if":
+			encode_value_type(payload, code.kind);
+			depth++;
+			break ;
+		case "br":
+		case "br_if":
+			payload.varuint(code.relative_depth);
+			break ;
+
+		case "br_table":
+			payload.varuint(code.target_table.length);
+			code.target_table.forEach((v) => payload.varuint(v));
+			payload.varuint(code.default_target);
+			break ;
+
+		case "call":
+			payload.varuint(code.function_index)
+			break ;
+		case "call_indirect":
+			payload.varuint(code.type_index)
+			payload.varuint(code.reserved);
+			break ;
+
+		case "get_local":
+		case "set_local":
+		case "tee_local":
+		case "get_global":
+		case "set_global":
+			payload.varuint(code.index);
+			break ;
+		case "current_memory":
+		case "grow_memory":
+			payload.varuint(code.memory);
+			break ;
+		case "i64.const":
+		case "i32.const":
+			payload.varint(code.value);
+			break ;
+		case "f32.const":
+			payload.float32(code.value);
+			break ;
+		case "f64.const":
+			payload.float64(code.value);
+			break ;
+		case "i32.load":
+		case "i32.load8_s":
+		case "i32.load8_u":
+		case "i32.load16_s":
+		case "i32.load16_u":
+		case "i32.store":
+		case "i32.store8":
+		case "i32.store16":
+		case "i64.load":
+		case "i64.load8_s":
+		case "i64.load8_u":
+		case "i64.load16_s":
+		case "i64.load16_u":
+		case "i64.load32_s":
+		case "i64.load32_u":
+		case "i64.store":
+		case "i64.store8":
+		case "i64.store16":
+		case "i64.store32":
+		case "f32.load":
+		case "f32.store":
+		case "f64.load":
+		case "f64.store":
+			payload.varuint(code.flags);
+			payload.varuint(code.offset);
+			break ;
+		case "end":
+			depth--;
+		}
 	}
 }
 

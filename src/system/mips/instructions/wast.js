@@ -3,14 +3,17 @@ import Import from "../../../dynast/import";
 
 import Instructions from "./base";
 
-function template(func) {
-	// TODO
-	return func;
-}
-
 class Registers {
 	constructor() {
 		this._set = {};
+	}
+
+	push() {
+
+	}
+
+	pop() {
+
 	}
 
 	get(type) {
@@ -42,6 +45,47 @@ class Registers {
 			return { count: group.length, type: type }
 		})
 	}
+}
+
+function template(func) {
+	const locals = func.type.parameters.concat();
+	const parameters = func.type.parameters.length;
+	const modified = [];
+
+	// Unroll locals
+	func.locals.forEach((group) => {
+		for (var i = 0; i < group.count; i++) locals.push(group.type);
+	});
+
+	// Process backwards
+	const code = func.code;
+	var i = code.length - 1;
+	var depth = -1;
+
+	while (i >= 0) {
+		const term = code[i];
+		const op = (typeof term === 'string') ? term : term.op;
+
+		switch (op) {
+		case "end":
+			depth++;
+			break ;
+		case "if":
+		case "loop":
+		case "block":
+			depth--;
+			break ;
+		case "set_local":
+			if (term.index < parameters) console.error("Cannot assign to parameter");
+		}
+
+		modified.unshift(term);
+		i--;
+	}
+
+	//console.log(modified);
+
+	return { parameters, locals, modified };
 }
 
 export class Compiler {
@@ -111,8 +155,10 @@ export class Compiler {
 
 		this._templates = {};
 		defs.export_section.forEach((exp) => {
-			if (exp.kind !== 'func_type') return ;
+			if (exp.index < imported_functions || exp.kind !== 'func_type') return ;
 			const func = defs.function_section[exp.index - imported_functions];
+
+			console.log(exp.field);
 			this._templates[exp.field] = template(func);
 		});
 	}
@@ -126,22 +172,22 @@ export class Compiler {
 
 		const START_PC = allocator.get('i32');
 
-		var code = {
-			op: 'block',
-			kind: 'void',
-			body: [
-				// Calculate current PC table offset
-				{ op: 'call', function_index: this._imports.getPC },
-				{ op: 'i32.const', value: (start) >> 0 },
-				"i32.sub",
-				{ op: 'i32.const', value: 2 },
-				"i32.shr_u",
+		var code = [
+			// Calculate current PC table offset
+			{ op: 'call', function_index: this._imports.getPC },
+			{ op: 'i32.const', value: (start) >> 0 },
+			"i32.sub",
+			{ op: 'i32.const', value: 2 },
+			"i32.shr_u",
 
-				{ op: 'br_table', target_table: escapeTable, default_target: length }
-			]
-		};
+			{ op: 'br_table', target_table: escapeTable, default_target: length }
+		];
 
-		function func(pc, delayed, escape_depth) {
+		const process = (pc, word, delayed, execute) => {
+
+		}
+
+		const func = (pc, delayed, escape_depth) => {
 			var op = locate(pc);
 
 			if (op === null) {
@@ -152,9 +198,10 @@ export class Compiler {
 				];
 			}
 
-			console.log(op);
+			allocator.push();
+			const result = [];
 			/*
-			return op.instruction(op, value(pc >> 0), value(delayed), () => delayed ? ["unreachable"] : [
+			op.instruction(op, value(pc >> 0), value(delayed), () => delayed ? ["unreachable"] : [
 				... func(pc + 4, 1, escape_depth),
 
 				{ op: 'call', function_index: this._imports.getClocks },
@@ -169,24 +216,25 @@ export class Compiler {
 				{ op: 'br', relative_depth: escape_depth }
 			]);
 			*/
-			return [];
+			allocator.pop();
+
+			return result;
 		}
 
 		for (var i = 0; i < length; i++) {
 			escapeTable.push(i);
 
-			code = {
-				op: 'block',
-				kind: 'void',
-				body: [
-					code,
-					... func(start + i * 4, 0, length - i)
-				]
-			};
+			code = [
+				{ op: 'block', kind: 'void' },
+				... code,
+				"end",
+
+				... func(start + i * 4, 0, length - i)
+			];
 		}
 
 		// Fall through trap (continue to next execution cell)
-		code.body.push(
+		code.push(
 			// Update PC
 			{ op: 'i32.const', value: end >> 0 },
 			{ op: 'call', function_index: this._imports.setPC },
@@ -203,41 +251,31 @@ export class Compiler {
 		);
 
 		const function_body = [
-			{
-				op: 'block',
-				kind: 'void',
-				body: [
-					{
-						op: 'loop',
-						kind: 'void',
-						body: [
-							// Log our beginning PC
-							{ op: 'call', function_index: this._imports.getPC },
-							START_PC.set,
+			{ op: 'block', kind: 'void' },
+				{ op: 'loop', kind: 'void' },
+					// Log our beginning PC
+					{ op: 'call', function_index: this._imports.getPC },
+					START_PC.set,
 
-							// Break when our clock runs out
-							{ op: 'call', function_index: this._imports.getClocks },
-							{ op: 'i32.const', value: 0 },
-							"i32.le_s",
-							{ op: 'br_if', relative_depth: 1 },
+					// Break when our clock runs out
+					{ op: 'call', function_index: this._imports.getClocks },
+					{ op: 'i32.const', value: 0 },
+					"i32.le_s",
+					{ op: 'br_if', relative_depth: 1 },
 
-							// Default section
-							{
-								op: 'block',
-								kind: 'void',
-								body: [
-									code,
+					// Default section
+					{ op: 'block', kind: 'void' },
+						{ op: 'block', kind: 'void' },
+							... code,
+						"end",
 
-									// Escape from execution block
-									"return"
-								]
-							},
-
-							{ op: 'br', relative_depth: 0 }
-						]
-					},
-				]
-			}
+						// Escape from execution block
+						"return",
+					"end",
+					{ op: 'br', relative_depth: 0 },
+				"end",
+			"end",
+		    "end"	// End of function
 		];
 
 		const result = {

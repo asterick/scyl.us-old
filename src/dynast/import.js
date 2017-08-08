@@ -71,14 +71,11 @@ function decode_global_type(payload) {
 
 function decode_code_expr(payload) {
 	var codes = [];
+	var depth = 1;
 	var byte;
 
-	for (;;) {
+	while (depth > 0) {
 		byte = payload.uint8();
-
-		if (byte === ByteCode.end) {
-			break ;
-		}
 
 		if (ReverseByteCode[byte] === undefined) {
 			throw new Error(`illegal byte-code ${byte.toString(16)}`);
@@ -89,9 +86,9 @@ function decode_code_expr(payload) {
 		case ByteCode["loop"]:
 		case ByteCode["if"]:
 			const kind = decode_value_type(payload);
-			const body = decode_code_expr(payload);
 
-			codes.push({ op: ReverseByteCode[byte], kind, body });
+			codes.push({ op: ReverseByteCode[byte], kind });
+			depth++;
 			break ;
 		case ByteCode["br"]:
 		case ByteCode["br_if"]:
@@ -162,6 +159,8 @@ function decode_code_expr(payload) {
 		case ByteCode["f64.store"]:
 			codes.push({ op: ReverseByteCode[byte], flags: payload.varuint(), offset: payload.varuint() });
 			break ;
+		case ByteCode["end"]:
+			depth--;
 		default:
 			codes.push(ReverseByteCode[byte]);
 			break ;
