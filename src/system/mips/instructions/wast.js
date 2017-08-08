@@ -3,6 +3,8 @@ import Import from "../../../dynast/import";
 
 import Instructions from "./base";
 
+const START_PC = 0;
+
 function names(table) {
 	return Object.keys(table).reduce((acc, key) => {
 		const entry = table[key];
@@ -87,13 +89,15 @@ export class Compiler {
 	}
 
 	compile(start, length, locate) {
+		length = 8;
+
 		const end = start + length * 4;
 		const escapeTable = [];
 
 		var code = {
 			op: 'block',
 			block: {
-				type: 'null_block',
+				type: 'void',
 				body: [
 					// Calculate current PC table offset
 					{ op: 'call', function_index: this._imports.getPC },
@@ -107,25 +111,24 @@ export class Compiler {
 			}
 		};
 
-/*
 		function func(pc, delayed, escape_depth) {
 			var op = locate(pc);
-			var call;
 
 			if (op === null) {
 				return [
 					{ op: 'i32.const', value: pc >> 0 },
-					... value(delayed ? 1 : 0),
-			        { op: "call", function_index: CALLS.EXECUTE },
+					{ op: 'i32.const', value: delayed ? 1 : 0 },
+			        { op: "call", function_index: this._imports.execute }
 				];
 			}
 
+			/*
 			return op.instruction(op, value(pc >> 0), value(delayed), () => delayed ? ["unreachable"] : [
 				... func(pc + 4, 1, escape_depth),
 
 				{ op: 'call', function_index: this._imports.getClocks },
 				{ op: 'i32.const', value: (pc + 8) >> 0 },
-				... local(LOCAL_VARS.START_PC),
+				{ op: 'get_local', index: START_PC },
 				"i32.sub",
 				{ op: 'i32.const', value: 4 },
 				"i32.div_u",
@@ -134,46 +137,52 @@ export class Compiler {
 
 				{ op: 'br', relative_depth: escape_depth }
 			]);
+			*/
+			return [];
 		}
 
 		for (var i = 0; i < length; i++) {
 			escapeTable.push(i);
 
-			code = { op: 'block', block: block([
-				code,
-				... func(start + i * 4, 0, length - i)
-			])}
+			code = {
+				op: 'block',
+				kind: 'void',
+				body: [
+					code,
+					... func(start + i * 4, 0, length - i)
+				]
+			};
 		}
 
 		// Fall through trap (continue to next execution cell)
-		code.block.body.concat([
+		code.body.concat([
 			// Update PC
-			... write(REGS.PC, [
-				{ op: 'i32.const', value: end >> 0 }
-			]),
+			{ op: 'i32.const', value: end >> 0 },
+			{ op: 'call', function_index: this._imports.setPC },
 
 			// Eat some cycles (based on PC)
 			{ op: 'call', function_index: this._imports.getClocks },
 			{ op: 'i32.const', value: end >> 0 },
-			... local(LOCAL_VARS.START_PC),
+			{ op: 'get_local', index: START_PC },
 			"i32.sub",
 			{ op: 'i32.const', value: 2 },
 			"i32.shr_u",
-			"i32.sub"
+			"i32.sub",
 			{ op: 'call', function_index: this._imports.setClocks }
 		]);
+
 		const function_body = [
 			{
 				op: 'block',
-				kind: 'null_block',
+				kind: 'void',
 				body: [
 					{
 						op: 'loop',
-						kind: 'null_block',
+						kind: 'void',
 						body: [
 							// Log our beginning PC
 							{ op: 'call', function_index: this._imports.getPC },
-							{ op: 'set_local', index: LOCAL_VARS.START_PC },
+							{ op: 'set_local', index: START_PC },
 
 							// Break when our clock runs out
 							{ op: 'call', function_index: this._imports.getClocks },
@@ -184,7 +193,7 @@ export class Compiler {
 							// Default section
 							{
 								op: 'block',
-								kind: 'null_block',
+								kind: 'void',
 								body: [
 									code,
 
@@ -199,6 +208,5 @@ export class Compiler {
 				]
 			}
 		];
-*/
 	}
 }
