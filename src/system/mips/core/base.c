@@ -75,15 +75,15 @@ void SW(uint32_t address, uint32_t word, uint32_t delayed) {
     store(target, read_reg(FIELD_RT(word)), ~0, address, delayed);
 }
 
-/* THESE ARE PROBABLY WRONG */
 void LWR(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
-    int shift = (target & 3) * 8;
-
-    uint32_t rt = read_reg(FIELD_RT(word));
     uint32_t data = load(target, address, delayed);
+    uint32_t rt = read_reg(FIELD_RT(word));
 
-    write_reg(FIELD_RT(word), (data >> shift) | (rt & ~(~0 >> shift)));
+    int shift = (target & 3) * 8;
+    uint32_t mask = ~0 >> shift;
+
+    write_reg(FIELD_RT(word), ((data >> shift) & mask) | (rt & ~mask));
 }
 
 void LWL(uint32_t address, uint32_t word, uint32_t delayed) {
@@ -92,9 +92,12 @@ void LWL(uint32_t address, uint32_t word, uint32_t delayed) {
     if ((target & 3) == 3) return ;
 
     uint32_t data = load(target, address, delayed);
-    int shift = ((target & 3) + 1) * 8;
+    uint32_t rt = read_reg(FIELD_RT(word));
 
-    write_reg(FIELD_RT(word), (data >> (32 - shift)) | ((~0 >> shift) & read_reg(FIELD_RT(word))));
+    int shift = 24 - (target & 3) * 8;
+    uint32_t mask = ~0 << shift;
+
+    write_reg(FIELD_RT(word), ((data << shift) & mask) | (rt & ~mask));
 }
 
 void SWR(uint32_t address, uint32_t word, uint32_t delayed) {
@@ -109,9 +112,9 @@ void SWL(uint32_t address, uint32_t word, uint32_t delayed) {
 
     if ((target & 3) == 3) return ;
 
-    int shift = 32 - ((target & 3) + 1) * 8;
+    int shift = 24 - (target & 3) * 8;
 
-    store(target, read_reg(FIELD_RT(word)) >> shift, ~0 << shift, address, delayed);
+    store(target, read_reg(FIELD_RT(word)) >> shift, ~0 >> shift, address, delayed);
 }
 
 // ******
@@ -173,11 +176,11 @@ void SLTU(uint32_t address, uint32_t word, uint32_t delayed) {
 }
 
 void SLTI(uint32_t address, uint32_t word, uint32_t delayed) {
-    write_reg(FIELD_RD(word), (int32_t)read_reg(FIELD_RS(word)) < FIELD_SIMM16(word));
+    write_reg(FIELD_RT(word), (int32_t)read_reg(FIELD_RS(word)) < FIELD_SIMM16(word));
 }
 
 void SLTIU(uint32_t address, uint32_t word, uint32_t delayed) {
-    write_reg(FIELD_RD(word), read_reg(FIELD_RS(word)) < (uint32_t)FIELD_SIMM16(word));
+    write_reg(FIELD_RT(word), read_reg(FIELD_RS(word)) < (uint32_t)FIELD_SIMM16(word));
 }
 
 // ******
@@ -185,19 +188,19 @@ void SLTIU(uint32_t address, uint32_t word, uint32_t delayed) {
 // ******
 
 void AND(uint32_t address, uint32_t word, uint32_t delayed) {
-    write_reg(FIELD_RT(word), read_reg(FIELD_RS(word)) & read_reg(FIELD_RT(word)));
+    write_reg(FIELD_RD(word), read_reg(FIELD_RS(word)) & read_reg(FIELD_RT(word)));
 }
 
 void OR(uint32_t address, uint32_t word, uint32_t delayed) {
-    write_reg(FIELD_RT(word), read_reg(FIELD_RS(word)) | read_reg(FIELD_RT(word)));
+    write_reg(FIELD_RD(word), read_reg(FIELD_RS(word)) | read_reg(FIELD_RT(word)));
 }
 
 void XOR(uint32_t address, uint32_t word, uint32_t delayed) {
-    write_reg(FIELD_RT(word), read_reg(FIELD_RS(word)) ^ read_reg(FIELD_RT(word)));
+    write_reg(FIELD_RD(word), read_reg(FIELD_RS(word)) ^ read_reg(FIELD_RT(word)));
 }
 
 void NOR(uint32_t address, uint32_t word, uint32_t delayed) {
-    write_reg(FIELD_RT(word), ~(read_reg(FIELD_RS(word)) | read_reg(FIELD_RT(word))));
+    write_reg(FIELD_RD(word), ~(read_reg(FIELD_RS(word)) | read_reg(FIELD_RT(word))));
 }
 
 void ANDI(uint32_t address, uint32_t word, uint32_t delayed) {

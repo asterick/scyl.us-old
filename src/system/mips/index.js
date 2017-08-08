@@ -212,14 +212,18 @@ export default class MIPS {
 	}
 
 	load (logical, pc, delayed) {
+		console.log("LOAD", Array.prototype.map.call(arguments, (v) => (v >>> 0).toString(16)))
 		try {
-			return this.read(false, this._translate(logical, false));
+			const v = this.read(false, this._translate(logical, false));
+			console.log((v >>> 0).toString(16))
+			return v;
 		} catch (e) {
 			throw new Exception(e, pc, delayed, 0);
 		}
 	}
 
 	store (logical, value, mask, pc, delayed) {
+		console.log("STORE", Array.prototype.map.call(arguments, (v) => (v >>> 0).toString(16)))
 		try {
 			const physical = this._translate(logical, true);
 			this.write(physical, value, mask);

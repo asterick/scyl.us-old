@@ -4,7 +4,6 @@ import Import from "../../../dynast/import";
 export function process(ab) {
 	const defs = Import(ab);
 
-debugger ;
 	return
 }
 
