@@ -1,5 +1,6 @@
 import Export from "../../../dynast/export";
-import { FieldsWasmDynamic } from "./fields";
+import Import from "../../../dynast/import";
+//import { FieldsWasmDynamic } from "./fields";
 
 export const REGS = {
 	LR: 31,

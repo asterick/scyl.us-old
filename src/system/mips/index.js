@@ -1,7 +1,5 @@
 import Exception from "./exception";
 import locate from "./instructions";
-import { REGS } from "./instructions/wast";
-import { StepperDefintion, assembleBlock } from "./instructions";
 
 import { params } from "../../util";
 import { MAX_COMPILE_SIZE, CLOCK_BLOCK, MIN_COMPILE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
@@ -255,7 +253,7 @@ export default class MIPS {
 		}
 
 		const call = locate(data);
-		this._exports[call.instruction.name](pc, data, delayed);
+		this._exports[call.name](pc, data, delayed);
 	}
 
 	_blockSize(address) {

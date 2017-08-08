@@ -1,6 +1,7 @@
 import { FieldsNumeric } from "./fields";
+import Disassemble from "./disassemble";
 import Instructions from "./base";
-import { module, dynamicCall, staticBlock } from "./wast";
+//import { module, dynamicCall, staticBlock } from "./wast";
 
 export default function locate(word) {
 	const fields = new FieldsNumeric(word);
@@ -12,36 +13,18 @@ export default function locate(word) {
 		entry = entry[fields[entry.field]];
 	}
 
-	fields.instruction = entry || fallback;
+	fields.name = entry || fallback;
 
 	return fields;
 }
 
 export function disassemble(word, address) {
 	const op = locate(word);
-	return op.instruction.assembly(op, address);
+	return Disassemble[op.name](op, address);
 }
 
+/*
 export function assembleBlock(start, length, read) {
 	return module({ block: staticBlock(start, length, read) });
 }
-
-// Start generating steppable intructions
-function createDynamic(table) {
-	function walk(table, acc = {}) {
-		return Object.keys(table).reduce((acc, key) => {
-			const entry = table[key];
-			if (typeof entry === "function") {
-				acc[entry.name] = dynamicCall(entry);
-			} else if (typeof entry === 'object') {
-				walk(entry, acc);
-			}
-
-			return acc;
-		}, acc);
-	}
-
-	return module(walk(table));
-}
-
-export const StepperDefintion = createDynamic(Instructions);
+*/

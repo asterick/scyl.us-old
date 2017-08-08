@@ -35,9 +35,8 @@ void write_reg(reg, value) {
 // *******
 
 void reset() {
-    registers[0] = 0xDEADFACE;
-    clocks = 0;
     pc = 0xBFC00000;
+    clocks = 0;
 }
 
 uint32_t getRegister(uint32_t i) {
