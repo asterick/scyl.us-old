@@ -9,11 +9,11 @@
 // ******
 
 void MFC0(uint32_t address, uint32_t word, uint32_t delayed) {
-	write_reg(FIELD_RT, mfc0(FIELD_RD, address, delayed));
+	write_reg(FIELD_RT(word), mfc0(FIELD_RD(word), address, delayed));
 }
 
 void MTC0(uint32_t address, uint32_t word, uint32_t delayed) {
-	mtc0(FIELD_RD, read_reg(FIELD_RT), address, delayed);
+	mtc0(FIELD_RD(word), read_reg(FIELD_RT(word)), address, delayed);
 }
 
 // ******

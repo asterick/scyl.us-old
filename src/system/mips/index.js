@@ -44,11 +44,6 @@ export default class MIPS {
 	 ** Runtime section
 	 *******/
 	constructor() {
-		// Base functionality
-		this._memory = new WebAssembly.Memory({ initial: 1, maximum: 1 });
-		this.registers = new Uint32Array(this._memory.buffer);
-		this.reset();
-
 		// Status values
 		this._status = STATUS_KUc | STATUS_BEV;
 		this._cause = 0;
@@ -69,74 +64,70 @@ export default class MIPS {
 		this._cache = [];
 
 		// Load in WASM definitions for step through memory
-		this._wasmImports = {
-			memory: this._memory,
-	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop) },
-			delay_execute: (pc, delayed) => this._execute(pc, delayed),
-	    	load: (address, pc, delayed) => this.load(address, pc, delayed),
-	    	store: (address, value, mask, pc, delayed) => this.store(address, value, mask, pc, delayed),
-	    	mfc0: (reg, pc, delayed) => this._mfc0(reg, pc, delayed),
-	    	mtc0: (reg, word, pc, delayed) => this._mtc0(reg, word, pc, delayed),
-	    	rfe: (pc, delayed) => this._rfe(pc, delayed),
-	    	tlbr: (pc, delayed) => this._tlbr(pc, delayed),
-	    	tlbwi: (pc, delayed) => this._tlbwi(pc, delayed),
-	    	tlbwr: (pc, delayed) => this._tlbwr(pc, delayed),
-	    	tlbp: (pc, delayed) => this._tlbp(pc, delayed),
-	    	debug: (value) => console.log((value >>> 0).toString(16))
-		};
-
-		// Create our web assembly stepper
-		WebAssembly.instantiate(StepperDefintion, {
-			processor: this._wasmImports
-		}).then((result) => {
-			this._wasmDefs = result.instance.exports;
-		});
+		fetch("core.wasm")
+			.then((blob) => blob.arrayBuffer())
+			.then((ab) => WebAssembly.instantiate(ab, {
+				env: {
+					debug: (v) => console.log((v >>> 0).toString(16)),
+			        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop) },
+					execute: (pc, delayed) => this._execute(pc, delayed),
+			    	load: (address, pc, delayed) => this.load(address, pc, delayed),
+			    	store: (address, value, mask, pc, delayed) => this.store(address, value, mask, pc, delayed),
+			    	mfc0: (reg, pc, delayed) => this._mfc0(reg, pc, delayed),
+			    	mtc0: (reg, word, pc, delayed) => this._mtc0(reg, word, pc, delayed),
+			    	rfe: (pc, delayed) => this._rfe(pc, delayed),
+			    	tlbr: (pc, delayed) => this._tlbr(pc, delayed),
+			    	tlbwi: (pc, delayed) => this._tlbwi(pc, delayed),
+			    	tlbwr: (pc, delayed) => this._tlbwr(pc, delayed),
+			    	tlbp: (pc, delayed) => this._tlbp(pc, delayed),
+		    	}
+			}))
+			.then((module) => {
+				this._coreModule = module;
+				this._exports =  module.instance.exports;
+				this.reset();
+				this.onReady && this.onReady();
+			});
 	}
 
 	// Helper values for the magic registers
 	get pc() {
-		return this.registers[REGS.PC];
+		return this._exports.getPC() >>> 0;
 	}
 
 	set pc(v) {
-		this.registers[REGS.PC] = v;
+		this._exports.setPC(v);
 	}
 
 	get lo() {
-		return this.registers[REGS.LO];
-	}
-
-	set lo(v) {
-		this.registers[REGS.LO] = v;
+		return this._exports.getLO() >>> 0;
 	}
 
 	get hi() {
-		return this.registers[REGS.HI];
-	}
-
-	set hi(v) {
-		this.registers[REGS.HI] = v;
+		return this._exports.getHI() >>> 0
 	}
 
 	get clocks() {
-		return this.registers[REGS.CLOCKS];
+		return this._exports.getClocks() >>> 0;
 	}
 
-	set clocks(v) {
-		this.registers[REGS.CLOCKS] = v;
+	register(i) {
+		return this._exports.getRegister(i) >>> 0;
 	}
 
+	// Execution core
 	reset() {
-		this.clocks = 0;
 		this.timer = 0;
-
-		this.pc = 0xBFC00000;
 		this._status = STATUS_KUc | STATUS_BEV;
 		this._cause = 0;
+
+		this._exports.reset();
 	}
 
 	// Execute a single frame
 	_tick (ticks) {
+		return false;
+
 		// Advance clock, with 0.1 sec a max 'lag' time
 		const _prev = this.clocks = Math.max(100 * CLOCK_BLOCK, this.clocks + ticks * CLOCK_BLOCK);
 
@@ -264,7 +255,7 @@ export default class MIPS {
 		}
 
 		const call = locate(data);
-		this._wasmDefs[call.instruction.name](data, pc, delayed);
+		this._exports[call.instruction.name](pc, data, delayed);
 	}
 
 	_blockSize(address) {

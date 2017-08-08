@@ -6,7 +6,7 @@ uint32_t store(uint32_t address, uint32_t value, uint32_t mask, uint32_t pc, uin
 
 uint32_t exception(uint32_t code, uint32_t pc, uint32_t delayed, uint32_t cop);
 
-void delay(uint32_t);
+void execute(uint32_t, uint32_t);
 void debug(uint32_t);
 
 // COP0 functions
