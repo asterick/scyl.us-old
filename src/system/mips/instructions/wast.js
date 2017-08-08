@@ -2,12 +2,15 @@ import Export from "../../../dynast/export";
 import Import from "../../../dynast/import";
 
 export function process(ab) {
-	return Import(ab);
+	const defs = Import(ab);
+
+debugger ;
+	return
 }
 
 export function compile(template, start, length, locate) {
-	return new Promise(() => {});
 }
+
 /*
 export function block(body) {
 	return { type: "null_block", body: body }
