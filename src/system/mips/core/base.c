@@ -10,14 +10,14 @@
 
 void LB(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
-    uint32_t data = load(target, pc, delayed);
+    uint32_t data = load(target, address, delayed);
 
     write_reg(FIELD_RT(word), (int32_t)(data << (24 - (target & 3) * 8)) >> 24);
 }
 
 void LBU(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
-    uint32_t data = load(target, pc, delayed);
+    uint32_t data = load(target, address, delayed);
 
     write_reg(FIELD_RT(word), (data >> (target & 3) * 8) & 0xFF);
 }
@@ -25,9 +25,9 @@ void LBU(uint32_t address, uint32_t word, uint32_t delayed) {
 void LH(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
 
-    if (target & 1) exception(EXCEPTION_ADDRESSLOAD, pc, delayed, 0);
+    if (target & 1) exception(EXCEPTION_ADDRESSLOAD, address, delayed, 0);
 
-    uint32_t data = load(target, pc, delayed);
+    uint32_t data = load(target, address, delayed);
 
     write_reg(FIELD_RT(word), (int32_t)(data << (16 - (target & 2) * 8)) >> 16);
 }
@@ -35,9 +35,9 @@ void LH(uint32_t address, uint32_t word, uint32_t delayed) {
 void LHU(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
 
-    if (target & 1) exception(EXCEPTION_ADDRESSLOAD, pc, delayed, 0);
+    if (target & 1) exception(EXCEPTION_ADDRESSLOAD, address, delayed, 0);
 
-    uint32_t data = load(target, pc, delayed);
+    uint32_t data = load(target, address, delayed);
 
     write_reg(FIELD_RT(word), (data >> (target & 2) * 8) & 0xFFFF);
 }
@@ -45,44 +45,45 @@ void LHU(uint32_t address, uint32_t word, uint32_t delayed) {
 void LW(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
 
-    if (target & 3) exception(EXCEPTION_ADDRESSLOAD, pc, delayed, 0);
+    if (target & 3) exception(EXCEPTION_ADDRESSLOAD, address, delayed, 0);
 
-    write_reg(FIELD_RT(word), load(target, pc, delayed));
+    write_reg(FIELD_RT(word), load(target, address, delayed));
 }
 
 void SB(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
     int shift = (target & 3) * 8;
 
-    store(target, word << shift, 0xFF << shift, pc, delayed);
+    store(target, read_reg(FIELD_RT(word)) << shift, 0xFF << shift, address, delayed);
 }
 
 void SH(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
 
-    if (target & 1) exception(EXCEPTION_ADDRESSSTORE, pc, delayed, 0);
+    if (target & 1) exception(EXCEPTION_ADDRESSSTORE, address, delayed, 0);
 
     int shift = (target & 3) * 8;
 
-    store(target, word << shift, 0xFFFF << shift, pc, delayed);
+    store(target, read_reg(FIELD_RT(word)) << shift, 0xFFFF << shift, address, delayed);
 }
 
 void SW(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
 
-    if (target & 3) exception(EXCEPTION_ADDRESSSTORE, pc, delayed, 0);
+    if (target & 3) exception(EXCEPTION_ADDRESSSTORE, address, delayed, 0);
 
-    store(target, word, ~0, pc, delayed);
+    store(target, read_reg(FIELD_RT(word)), ~0, address, delayed);
 }
 
+/* THESE ARE PROBABLY WRONG */
 void LWR(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
-    int shift = (target & 3) * 3;
+    int shift = (target & 3) * 8;
 
     uint32_t rt = read_reg(FIELD_RT(word));
-    uint32_t data = load(target, pc, delayed);
+    uint32_t data = load(target, address, delayed);
 
-    write_reg(FIELD_RT(word), (data >> shift) | (rt & (~0 << shift)));
+    write_reg(FIELD_RT(word), (data >> shift) | (rt & ~(~0 >> shift)));
 }
 
 void LWL(uint32_t address, uint32_t word, uint32_t delayed) {
@@ -90,7 +91,7 @@ void LWL(uint32_t address, uint32_t word, uint32_t delayed) {
 
     if ((target & 3) == 3) return ;
 
-    uint32_t data = load(target, pc, delayed);
+    uint32_t data = load(target, address, delayed);
     int shift = ((target & 3) + 1) * 8;
 
     write_reg(FIELD_RT(word), (data >> (32 - shift)) | ((~0 >> shift) & read_reg(FIELD_RT(word))));
@@ -100,7 +101,7 @@ void SWR(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
     int shift = (target & 3) * 8;
 
-    store(target, read_reg(FIELD_RT(word)) << shift, -1 << shift, pc, delayed);
+    store(target, read_reg(FIELD_RT(word)) << shift, ~0 << shift, address, delayed);
 }
 
 void SWL(uint32_t address, uint32_t word, uint32_t delayed) {
@@ -110,7 +111,7 @@ void SWL(uint32_t address, uint32_t word, uint32_t delayed) {
 
     int shift = 32 - ((target & 3) + 1) * 8;
 
-    store(target, read_reg(FIELD_RT(word)) >> shift, -1 << shift, pc, delayed);
+    store(target, read_reg(FIELD_RT(word)) >> shift, ~0 << shift, address, delayed);
 }
 
 // ******

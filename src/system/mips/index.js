@@ -64,7 +64,9 @@ export default class MIPS {
 		this._environment = {
 			debug: (v) => console.log((v >>> 0).toString(16)),
 	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop) },
-			execute: (pc, delayed) => this._execute(pc, delayed),
+			execute: (pc, delayed) => {
+				this._execute(pc, delayed)
+			},
 	    	load: (address, pc, delayed) => this.load(address, pc, delayed),
 	    	store: (address, value, mask, pc, delayed) => this.store(address, value, mask, pc, delayed),
 	    	mfc0: (reg, pc, delayed) => this._mfc0(reg, pc, delayed),
