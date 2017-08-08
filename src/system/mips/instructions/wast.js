@@ -3,24 +3,45 @@ import Import from "../../../dynast/import";
 
 import Instructions from "./base";
 
-const START_PC = 0;
-
-function names(table) {
-	return Object.keys(table).reduce((acc, key) => {
-		const entry = table[key];
-
-		if (typeof entry === 'string') {
-			acc.push(entry);
-			return acc;
-		} else {
-			return acc.concat(names(entry));
-		}
-	}, []);
-}
-
 function template(func) {
 	// TODO
 	return func;
+}
+
+class Registers {
+	constructor() {
+		this._set = {};
+	}
+
+	get(type) {
+		if (this._set[type] === undefined) {
+			this._set[type] = [];
+		}
+
+		const obj = {
+			tee: { op: 'tee_local' },
+			get: { op: 'get_local' },
+			set: { op: 'set_local' }
+		};
+
+		this._set[type].push(obj);
+		return obj;
+	}
+
+	bake() {
+		var index = 0;
+
+		return Object.keys(this._set).map((type) => {
+			var group = this._set[type];
+
+			group.forEach((k) => {
+				k.tee.index =
+				k.set.index =
+				k.get.index = index++
+			});
+			return { count: group.length, type: type }
+		})
+	}
 }
 
 export class Compiler {
@@ -42,11 +63,11 @@ export class Compiler {
 			version: 1,
 
 			export_section: [
-					{
-	            		"field": "block",
-	            		"kind": "func_type",
-	            		"index": exported_functions + imported_functions
-					}
+				{
+            		"field": "block",
+            		"kind": "func_type",
+            		"index": exported_functions + imported_functions + 1
+				}
 			],
 			import_section: defs.import_section.concat(
 				defs.export_section.map((i) => {
@@ -61,7 +82,7 @@ export class Compiler {
 						return {
 		            			"module": "core",
 		            			"field": i.field,
-		            			"type": defs.function_section[i.index]
+		            			"type": defs.function_section[i.index - imported_functions].type
 		            		};
 		            default:
 		            	throw new Error(`Cannot import ${i.kind}`)
@@ -70,45 +91,54 @@ export class Compiler {
 			)
 		}
 
-		const targets = names(Instructions);
+
+		this._base.import_section.push({
+			"module": "env",
+			"field": "debug",
+			"type": {
+				"type": "func_type",
+				"parameters": ["i32"],
+				"returns": []
+			}
+		});
 
 		this._imports = {};
-		this._base.import_section.forEach((v, i) => {
-			this._imports[v.field] = i;
+		var index = 0;
+		this._base.import_section.forEach((imp, i) => {
+			if (imp.type.type !== 'func_type') return ;
+			this._imports[imp.field] = index++;
 		})
 
 		this._templates = {};
 		defs.export_section.forEach((exp) => {
-			if (targets.indexOf(exp.field) < 0) {
-				return ;
-			}
-
+			if (exp.kind !== 'func_type') return ;
 			const func = defs.function_section[exp.index - imported_functions];
 			this._templates[exp.field] = template(func);
 		});
 	}
 
 	compile(start, length, locate) {
-		length = 8;
+		length = 8; // TEMPORARY
 
+		const allocator = new Registers;
 		const end = start + length * 4;
 		const escapeTable = [];
 
+		const START_PC = allocator.get('i32');
+
 		var code = {
 			op: 'block',
-			block: {
-				type: 'void',
-				body: [
-					// Calculate current PC table offset
-					{ op: 'call', function_index: this._imports.getPC },
-					{ op: 'i32.const', value: (start) >> 0 },
-					"i32.sub",
-					{ op: 'i32.const', value: 2 },
-					"i32.shr_u",
+			kind: 'void',
+			body: [
+				// Calculate current PC table offset
+				{ op: 'call', function_index: this._imports.getPC },
+				{ op: 'i32.const', value: (start) >> 0 },
+				"i32.sub",
+				{ op: 'i32.const', value: 2 },
+				"i32.shr_u",
 
-					{ op: 'br_table', target_table: escapeTable, default_target: length }
-				]
-			}
+				{ op: 'br_table', target_table: escapeTable, default_target: length }
+			]
 		};
 
 		function func(pc, delayed, escape_depth) {
@@ -122,13 +152,14 @@ export class Compiler {
 				];
 			}
 
+			console.log(op);
 			/*
 			return op.instruction(op, value(pc >> 0), value(delayed), () => delayed ? ["unreachable"] : [
 				... func(pc + 4, 1, escape_depth),
 
 				{ op: 'call', function_index: this._imports.getClocks },
 				{ op: 'i32.const', value: (pc + 8) >> 0 },
-				{ op: 'get_local', index: START_PC },
+				START_PC.get,
 				"i32.sub",
 				{ op: 'i32.const', value: 4 },
 				"i32.div_u",
@@ -155,7 +186,7 @@ export class Compiler {
 		}
 
 		// Fall through trap (continue to next execution cell)
-		code.body.concat([
+		code.body.push(
 			// Update PC
 			{ op: 'i32.const', value: end >> 0 },
 			{ op: 'call', function_index: this._imports.setPC },
@@ -163,13 +194,13 @@ export class Compiler {
 			// Eat some cycles (based on PC)
 			{ op: 'call', function_index: this._imports.getClocks },
 			{ op: 'i32.const', value: end >> 0 },
-			{ op: 'get_local', index: START_PC },
+			START_PC.get,
 			"i32.sub",
 			{ op: 'i32.const', value: 2 },
 			"i32.shr_u",
 			"i32.sub",
 			{ op: 'call', function_index: this._imports.setClocks }
-		]);
+		);
 
 		const function_body = [
 			{
@@ -182,7 +213,7 @@ export class Compiler {
 						body: [
 							// Log our beginning PC
 							{ op: 'call', function_index: this._imports.getPC },
-							{ op: 'set_local', index: START_PC },
+							START_PC.set,
 
 							// Break when our clock runs out
 							{ op: 'call', function_index: this._imports.getClocks },
@@ -204,9 +235,20 @@ export class Compiler {
 
 							{ op: 'br', relative_depth: 0 }
 						]
-					}
+					},
 				]
 			}
 		];
+
+		const result = {
+			function_section: [{
+				type: { type: "func_type", parameters: [], returns: [] },
+				locals: allocator.bake(),
+				code: function_body
+			}]
+		};
+		Object.assign(result, this._base);
+
+		return Export(result);
 	}
 }

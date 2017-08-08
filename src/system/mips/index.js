@@ -89,7 +89,6 @@ export default class MIPS {
 				})
 			})
 			.then((module) => {
-				this._coreModule = module.module;
 				this._exports =  module.instance.exports;
 				this.reset();
 				this.onReady && this.onReady();
@@ -165,7 +164,7 @@ export default class MIPS {
 
 				WebAssembly.instantiate(defs, {
 					env: this._environment,
-					core: this._coreModule
+					core: this._exports
 				}).then((result) => {
 					const funct = {
 						code: result.instance.exports.block,
@@ -187,6 +186,7 @@ export default class MIPS {
 			try {
 				this._interrupt();
 				funct.code();
+				throw null;	// TEMPORARY
 			} catch (e) {
 				this._trap(e);
 			}

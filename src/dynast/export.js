@@ -36,7 +36,7 @@ function encode_kind_type(payload, type) {
 		payload.uint8(KIND_TYPES.GLOBAL);
 		break ;
 	default:
-		throw new Error("illegal external_kind ${def.type.type}");
+		throw new Error(`illegal external_kind ${type}`);
 	}
 }
 
