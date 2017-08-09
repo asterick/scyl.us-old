@@ -47,46 +47,6 @@ class Registers {
 	}
 }
 
-function template(func) {
-	const locals = func.type.parameters.concat();
-	const parameters = func.type.parameters.length;
-	const modified = [];
-
-	// Unroll locals
-	func.locals.forEach((group) => {
-		for (var i = 0; i < group.count; i++) locals.push(group.type);
-	});
-
-	// Process backwards
-	const code = func.code;
-	var i = code.length - 1;
-	var depth = -1;
-
-	while (i >= 0) {
-		const term = code[i];
-		const op = (typeof term === 'string') ? term : term.op;
-
-		switch (op) {
-		case "end":
-			depth++;
-			break ;
-		case "if":
-		case "loop":
-		case "block":
-			depth--;
-			break ;
-		case "set_local":
-			if (term.index < parameters) console.error("Cannot assign to parameter");
-		}
-
-		modified.unshift(term);
-		i--;
-	}
-
-	//console.log(modified);
-
-	return { parameters, locals, modified };
-}
 
 export class Compiler {
 	constructor(ab) {
@@ -158,24 +118,199 @@ export class Compiler {
 			if (exp.index < imported_functions || exp.kind !== 'func_type') return ;
 			const func = defs.function_section[exp.index - imported_functions];
 
-			console.log(exp.field);
-			this._templates[exp.field] = template(func);
+			this._templates[exp.field] = this.template(func, exp.field);
 		});
 	}
 
+	template (func, name) {
+		const locals = func.type.parameters.concat();
+		const parameters = func.type.parameters.map((p, i) => ({ index: i }));
+		const modified = [];
+
+		// Unroll locals
+		func.locals.forEach((group) => {
+			for (var i = 0; i < group.count; i++) locals.push(group.type);
+		});
+
+		// Process backwards
+		const code = func.code;
+		var i = code.length - 2;	// Trim tail "end"
+		var depth = 0;
+
+		while (i >= 0) {
+			const term = code[i];
+			const op = (typeof term === 'string') ? term : term.op;
+
+			switch (op) {
+			case "call":
+				if (term.function_index !== this._imports.execute) break ;
+
+				{
+					let stack = -2;
+
+					while (stack != 0) {
+						const term = code[--i];
+						const op = (typeof term === 'string') ? term : term.op;
+
+						switch(op) {
+						case 'get_local':
+							stack++;
+							break ;
+						case 'i32.add':
+							stack--;
+							break ;
+						case 'i32.const':
+							stack++;
+							break ;
+						default:
+							throw new Error(`Cannot unroll stack for op ${op}`);
+						}
+					}
+				}
+
+				modified.unshift( { template: 'delay', relative_depth: depth } );
+				continue ;
+			case "return":
+				modified.unshift( { template: 'eject', relative_depth: depth } )
+				i--;
+				continue ;
+
+			case "get_local":
+				if (term.index < parameters.length) {
+					modified.unshift( parameters[term.index] );
+				} else {
+					modified.unshift({ template: "get_local", index: term.index });
+				}
+
+				i--;
+				continue ;
+
+			case "tee_local":
+			case "set_local":
+				if (term.index < parameters.length) {
+					parameters[term.index].dynamic = true;
+				}
+
+				modified.unshift({ template: op, index: term.index });
+				i--;
+				continue ;
+
+			case "end":
+				depth++;
+				break ;
+			case "if":
+			case "loop":
+			case "block":
+				depth--;
+				break ;
+
+			}
+
+			modified.unshift(term);
+			i--;
+		}
+
+		parameters.forEach((param, i) => {
+			if (param.dynamic) {
+				modified.unshift({ op: 'set_local', index: i })
+				modified.unshift({ template: "argument", index: i })
+
+				param.op = 'get_local';
+			} else {
+				param.template = 'argument';
+				param.op = 'i32.const';
+			}
+		});
+
+		return { locals, code: modified };
+	}
+
 	compile(start, length, locate) {
-		length = 8; // TEMPORARY
+		length = 1024; // TEMPORARY
 
 		const allocator = new Registers;
 		const end = start + length * 4;
-		const escapeTable = [];
+
+		const func = (pc, delayed, escape_depth) => {
+			var op = locate(pc);
+
+			if (op === null) {
+				code.push(
+					{ op: 'i32.const', value: pc >> 0 },
+					{ op: 'i32.const', value: delayed ? 1 : 0 },
+			        { op: "call", function_index: this._imports.execute }
+				);
+				return ;
+			}
+
+			const template = this._templates[op.name];
+
+			const execute = delayed ?
+				() => code.push("unreachable") :
+				(depth) => {
+					func(pc + 4, 1, escape_depth + depth);
+					code.push(
+						{ op: 'call', function_index: this._imports.getClocks },
+						{ op: 'i32.const', value: (pc + 8) >> 0 },
+						START_PC.get,
+						"i32.sub",
+						{ op: 'i32.const', value: 4 },
+						"i32.div_u",
+						"i32.sub",
+						{ op: 'call', function_index: this._imports.setClocks },
+
+						{ op: 'br', relative_depth: escape_depth }
+					);
+				}
+
+			allocator.push();
+
+			var parameters = template.locals.map((type) => allocator.get(type));
+			const values = [pc, op.word, delayed];
+
+			template.code.forEach((k) => {
+				if (k.template === undefined) {
+					code.push(k);
+					return ;
+				}
+
+				switch (k.template) {
+				case 'delay':
+					execute(k.relative_depth);
+					break ;
+				case 'eject':
+					code.push({ op: 'br', relative_depth: k.relative_depth });
+					break ;
+				case 'argument':
+					code.push({ op: 'i32.const', value: values[k.index] >> 0 });
+					break ;
+				case 'get_local':
+					code.push(parameters[k.index].get);
+					break ;
+				case 'set_local':
+					code.push(parameters[k.index].set);
+					break ;
+				case 'tee_local':
+					code.push(parameters[k.index].tee);
+					break ;
+				default:
+					throw k
+				}
+
+				return ;
+			});
+
+			allocator.pop();
+		}
 
 		const START_PC = allocator.get('i32');
+		const escapeTable = [];
 
-		var code = [
+		const code = [
+			{ op: 'block', kind: 'void' },
 			// Calculate current PC table offset
 			{ op: 'call', function_index: this._imports.getPC },
-			{ op: 'i32.const', value: (start) >> 0 },
+			{ op: 'i32.const', value: start >> 0 },
 			"i32.sub",
 			{ op: 'i32.const', value: 2 },
 			"i32.shr_u",
@@ -183,54 +318,13 @@ export class Compiler {
 			{ op: 'br_table', target_table: escapeTable, default_target: length }
 		];
 
-		const process = (pc, word, delayed, execute) => {
-
-		}
-
-		const func = (pc, delayed, escape_depth) => {
-			var op = locate(pc);
-
-			if (op === null) {
-				return [
-					{ op: 'i32.const', value: pc >> 0 },
-					{ op: 'i32.const', value: delayed ? 1 : 0 },
-			        { op: "call", function_index: this._imports.execute }
-				];
-			}
-
-			allocator.push();
-			const result = [];
-			/*
-			op.instruction(op, value(pc >> 0), value(delayed), () => delayed ? ["unreachable"] : [
-				... func(pc + 4, 1, escape_depth),
-
-				{ op: 'call', function_index: this._imports.getClocks },
-				{ op: 'i32.const', value: (pc + 8) >> 0 },
-				START_PC.get,
-				"i32.sub",
-				{ op: 'i32.const', value: 4 },
-				"i32.div_u",
-				"i32.sub"
-				{ op: 'call', function_index: this._imports.setClocks },
-
-				{ op: 'br', relative_depth: escape_depth }
-			]);
-			*/
-			allocator.pop();
-
-			return result;
-		}
-
 		for (var i = 0; i < length; i++) {
 			escapeTable.push(i);
 
-			code = [
-				{ op: 'block', kind: 'void' },
-				... code,
-				"end",
+			code.unshift({ op: 'block', kind: 'void' });
+			code.push("end");
 
-				... func(start + i * 4, 0, length - i)
-			];
+			func(start + i * 4, 0, length - i);
 		}
 
 		// Fall through trap (continue to next execution cell)
@@ -247,7 +341,9 @@ export class Compiler {
 			{ op: 'i32.const', value: 2 },
 			"i32.shr_u",
 			"i32.sub",
-			{ op: 'call', function_index: this._imports.setClocks }
+			{ op: 'call', function_index: this._imports.setClocks },
+
+			"end"
 		);
 
 		const function_body = [
@@ -265,9 +361,7 @@ export class Compiler {
 
 					// Default section
 					{ op: 'block', kind: 'void' },
-						{ op: 'block', kind: 'void' },
-							... code,
-						"end",
+						... code,
 
 						// Escape from execution block
 						"return",

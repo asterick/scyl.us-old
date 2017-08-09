@@ -147,6 +147,7 @@ export default class MIPS {
 			var funct = this._cache[physical];
 
 			if (funct === undefined || !funct.code || funct.logical !== logical) {
+				const g = +new Date;
 				const defs = this._compiler.compile(logical, block_size / 4, (address) => {
 					// Do not assemble past block end (fallback to intepret)
 					if (address >= logical + block_size) {
@@ -160,7 +161,8 @@ export default class MIPS {
 						// There was a loading error, fallback to interpret
 						return null;
 					}
-				})
+				});
+				console.log(+new Date - g)
 
 				WebAssembly.instantiate(defs, {
 					env: this._environment,
@@ -175,8 +177,10 @@ export default class MIPS {
 						this._cache[start] = funct;
 					}
 
+					funct.code();
+					debugger ;
 					// Resume execution after the JIT core completes
-					this.tick();
+					//this.tick();
 				});
 
 				// Execution has paused, waiting for compiler to finish
@@ -186,7 +190,6 @@ export default class MIPS {
 			try {
 				this._interrupt();
 				funct.code();
-				throw null;	// TEMPORARY
 			} catch (e) {
 				this._trap(e);
 			}
