@@ -178,7 +178,6 @@ export default class MIPS {
 					}
 
 					funct.code();
-					debugger ;
 					// Resume execution after the JIT core completes
 					//this.tick();
 				});

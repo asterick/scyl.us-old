@@ -3,50 +3,74 @@ import Import from "../../../dynast/import";
 
 import Instructions from "./base";
 
+// TODO: One WebAssembly supports tail calls, convert to function table
+// instead of a br_table
+
 class Registers {
 	constructor() {
-		this._set = {};
+		this._index = { i32: 0, i64: 0, f32: 0, f64: 0 };
+		this._max = { i32: 0, i64: 0, f32: 0, f64: 0 };
+		this._list = [];
+
+		this._stack = [];
 	}
 
 	push() {
-
+		this._stack.push(this._index);
+		this._index = Object.create(this._index);
 	}
 
 	pop() {
-
+		this._index = this._stack.pop();
 	}
 
 	get(type) {
-		if (this._set[type] === undefined) {
-			this._set[type] = [];
-		}
-
 		const obj = {
+			type: type,
+			index: this._index[type]++,
 			tee: { op: 'tee_local' },
 			get: { op: 'get_local' },
 			set: { op: 'set_local' }
 		};
 
-		this._set[type].push(obj);
+		this._max[type] = Math.max(this._max[type], this._index[type]);
+		this._list.push(obj);
+
 		return obj;
 	}
 
 	bake() {
-		var index = 0;
+		var base = 0;
+		var result = [];
+		var offset = {};
 
-		return Object.keys(this._set).map((type) => {
-			var group = this._set[type];
+		Object.keys(this._max).forEach((type) => {
+			const max = this._max[type]
 
-			group.forEach((k) => {
-				k.tee.index =
-				k.set.index =
-				k.get.index = index++
-			});
-			return { count: group.length, type: type }
+			result.push({ count: max, type });
+
+			offset[type] = base;
+			base += max;
+		});
+
+		this._list.forEach((k) => {
+			k.set.index = k.get.index = k.tee.index = offset[k.type] + k.index;
 		})
+
+		return result;
 	}
 }
 
+function names(table) {
+	return Object.keys(table).reduce((acc, key) => {
+		const entry = table[key];
+		if (typeof entry === 'string') {
+			return acc.concat(entry);
+		} else {
+			return acc.concat(names(entry))
+		}
+	}, [])
+}
 
 export class Compiler {
 	constructor(ab) {
@@ -113,9 +137,13 @@ export class Compiler {
 			this._imports[imp.field] = index++;
 		})
 
+		const targets = names(Instructions);
+
 		this._templates = {};
 		defs.export_section.forEach((exp) => {
 			if (exp.index < imported_functions || exp.kind !== 'func_type') return ;
+			if (targets.indexOf(exp.field) < 0) return ;
+
 			const func = defs.function_section[exp.index - imported_functions];
 
 			this._templates[exp.field] = this.template(func, exp.field);
@@ -170,6 +198,7 @@ export class Compiler {
 
 				modified.unshift( { template: 'delay', relative_depth: depth } );
 				continue ;
+
 			case "return":
 				modified.unshift( { template: 'eject', relative_depth: depth } )
 				i--;
@@ -212,13 +241,11 @@ export class Compiler {
 
 		parameters.forEach((param, i) => {
 			if (param.dynamic) {
-				modified.unshift({ op: 'set_local', index: i })
-				modified.unshift({ template: "argument", index: i })
-
-				param.op = 'get_local';
+				modified.unshift({ template: 'set_local', index: i });
+				modified.unshift({ template: "argument", index: i });
+				param.template = 'get_local';
 			} else {
 				param.template = 'argument';
-				param.op = 'i32.const';
 			}
 		});
 
@@ -226,8 +253,6 @@ export class Compiler {
 	}
 
 	compile(start, length, locate) {
-		length = 1024; // TEMPORARY
-
 		const allocator = new Registers;
 		const end = start + length * 4;
 
@@ -306,8 +331,41 @@ export class Compiler {
 		const START_PC = allocator.get('i32');
 		const escapeTable = [];
 
+		// Header
 		const code = [
 			{ op: 'block', kind: 'void' },
+				{ op: 'loop', kind: 'void' },
+					// Break when our clock runs out
+					{ op: 'call', function_index: this._imports.getClocks },
+					{ op: 'i32.const', value: 0 },
+					"i32.le_s",
+					{ op: 'br_if', relative_depth: 1 },
+
+					// Log our beginning PC
+					{ op: 'call', function_index: this._imports.getPC },
+					START_PC.set,
+
+					// Default section
+					{ op: 'block', kind: 'void' }
+		];
+
+		// Leader block
+		for (var i = 0; i < length; i++) {
+			escapeTable.push(i);
+			code.push({ op: 'block', kind: 'void' });
+		}
+
+		// Address Selector
+		code.push(
+			{ op: 'block', kind: 'void' },
+
+			{ op: 'call', function_index: this._imports.getPC },
+			{ op: 'i32.const', value: start >> 0 },
+			"i32.sub",
+			{ op: 'i32.const', value: 2 },
+			"i32.shr_u",
+			{ op: 'call', function_index: this._imports.debug },
+
 			// Calculate current PC table offset
 			{ op: 'call', function_index: this._imports.getPC },
 			{ op: 'i32.const', value: start >> 0 },
@@ -316,12 +374,10 @@ export class Compiler {
 			"i32.shr_u",
 
 			{ op: 'br_table', target_table: escapeTable, default_target: length }
-		];
+		);
 
+		// Inline body
 		for (var i = 0; i < length; i++) {
-			escapeTable.push(i);
-
-			code.unshift({ op: 'block', kind: 'void' });
 			code.push("end");
 
 			func(start + i * 4, 0, length - i);
@@ -329,6 +385,9 @@ export class Compiler {
 
 		// Fall through trap (continue to next execution cell)
 		code.push(
+			{ op: 'i32.const', value: 1 },
+			{ op: 'call', function_index: this._imports.debug },
+
 			// Update PC
 			{ op: 'i32.const', value: end >> 0 },
 			{ op: 'call', function_index: this._imports.setPC },
@@ -343,44 +402,31 @@ export class Compiler {
 			"i32.sub",
 			{ op: 'call', function_index: this._imports.setClocks },
 
-			"end"
-		);
+			{ op: 'i32.const', value: 0x888 },
+			{ op: 'call', function_index: this._imports.debug },
 
-		const function_body = [
-			{ op: 'block', kind: 'void' },
-				{ op: 'loop', kind: 'void' },
-					// Log our beginning PC
-					{ op: 'call', function_index: this._imports.getPC },
-					START_PC.set,
+			"end",
 
-					// Break when our clock runs out
-					{ op: 'call', function_index: this._imports.getClocks },
-					{ op: 'i32.const', value: 0 },
-					"i32.le_s",
-					{ op: 'br_if', relative_depth: 1 },
+			// Default Case
+			{ op: 'i32.const', value: 0x999 },
+			{ op: 'call', function_index: this._imports.debug },
 
-					// Default section
-					{ op: 'block', kind: 'void' },
-						... code,
+			// Escape from execution block
+			"return",
+			"end",
 
-						// Escape from execution block
-						"return",
-					"end",
-					{ op: 'br', relative_depth: 0 },
-				"end",
+			{ op: 'br', relative_depth: 0 },	// Continue
+			"end",
 			"end",
 		    "end"	// End of function
-		];
+		);
 
-		const result = {
-			function_section: [{
-				type: { type: "func_type", parameters: [], returns: [] },
-				locals: allocator.bake(),
-				code: function_body
-			}]
-		};
-		Object.assign(result, this._base);
+		this._base.function_section = [{
+			type: { type: "func_type", parameters: [], returns: [] },
+			locals: allocator.bake(),
+			code: code
+		}];
 
-		return Export(result);
+		return Export(this._base);
 	}
 }

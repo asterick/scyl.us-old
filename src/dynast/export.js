@@ -80,11 +80,11 @@ function encode_global_type(payload, ast) {
 }
 
 function encode_code_expr(payload, codes) {
-	const copy = codes.concat();
+	var index = 0;
 	var depth = 1;
 
 	while (depth > 0) {
-		const code = copy.shift();
+		const code = codes[index++];
 		const op = typeof code === 'string' ? code : code.op;
 
 		if (ByteCode[op] === undefined) {
