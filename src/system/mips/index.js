@@ -147,7 +147,6 @@ export default class MIPS {
 			var funct = this._cache[physical];
 
 			if (funct === undefined || !funct.code || funct.logical !== logical) {
-				const g = +new Date;
 				const defs = this._compiler.compile(logical, block_size / 4, (address) => {
 					// Do not assemble past block end (fallback to intepret)
 					if (address >= logical + block_size) {
@@ -162,7 +161,6 @@ export default class MIPS {
 						return null;
 					}
 				});
-				console.log(+new Date - g)
 
 				WebAssembly.instantiate(defs, {
 					env: this._environment,
@@ -179,7 +177,7 @@ export default class MIPS {
 
 					funct.code();
 					// Resume execution after the JIT core completes
-					//this.tick();
+					//this.tick();	// UNCOMMENT WHEN CODE FINISHES
 				});
 
 				// Execution has paused, waiting for compiler to finish
