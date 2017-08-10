@@ -38,6 +38,10 @@ void reset() {
     clocks = 0;
 }
 
+uint32_t getRegisterAddress() {
+    return (uint32_t)&registers[0];
+}
+
 uint32_t getStartPC() {
     return start_pc;
 }
