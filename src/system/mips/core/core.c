@@ -38,10 +38,6 @@ void reset() {
     clocks = 0;
 }
 
-uint32_t getRegister(uint32_t i) {
-    return registers[i];
-}
-
 uint32_t getStartPC() {
     return start_pc;
 }

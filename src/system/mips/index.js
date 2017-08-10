@@ -87,6 +87,9 @@ export default class MIPS {
 			})
 			.then((module) => {
 				this._exports =  module.instance.exports;
+
+				this.registers = new Uint32Array(this._exports.memory.buffer, this._exports.getRegisterAddress(), 64);
+
 				this.reset();
 				this.onReady && this.onReady();
 			});
@@ -115,10 +118,6 @@ export default class MIPS {
 
 	set clocks(v) {
 		this._exports.setClocks(v);
-	}
-
-	register(i) {
-		return this._exports.getRegister(i) >>> 0;
 	}
 
 	// Execution core
@@ -231,21 +230,6 @@ export default class MIPS {
 			}
 		} catch (e) {
 			throw new Exception(e, pc, delayed, 0);
-		}
-	}
-
-	readSafe(address) {
-		if ((address & 0xC0000000) !== (0x80000000 >> 0)) {
-			let page = address & 0xFFFFF000;
-			let result = this._tlb[page | (this._entryHi & 0xFC0)] || this._tlb[page | 0xFFF];
-
-			if (~result & 0x0200) {
-				throw "TLB MISS";
-			}
-
-			return this.read(true, ((result & 0xFFFFF000) | (address & 0x00000FFF)) >>> 0);
-		} else {
-			return this.read(true, address & 0x1FFFFFFC);
 		}
 	}
 
