@@ -1,0 +1,12 @@
+#pragma once
+
+EXTERN union {
+    struct {
+        uint32_t lo;
+        uint32_t hi;
+    } parts;
+    uint64_t wide;
+} mult;
+
+EXTERN uint32_t registers[32];
+EXTERN uint32_t pc;

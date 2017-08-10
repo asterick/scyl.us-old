@@ -4,6 +4,10 @@
 
 #include "imports.h"
 
+#define EXTERN extern
+#include "registers.h"
+#include "helper.h"
+
 // ******
 // ** Co-Processor Move registers
 // ******
