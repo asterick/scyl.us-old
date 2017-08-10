@@ -1,6 +1,14 @@
 import Inferno from 'inferno';
 import System from "./system";
 
+import Import from "./dynast/import";
+
+fetch("test.wasm")
+	.then((data) => data.arrayBuffer())
+	.then((bios) => {
+		console.log(Import(bios))
+	})
+
 fetch("system0.rom")
 	.then((data) => data.arrayBuffer())
 	.then((bios) => {

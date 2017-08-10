@@ -4,6 +4,7 @@
 
 #include "imports.h"
 
+uint32_t start_pc;
 uint32_t clocks; // How much time we need to catch up on
 uint32_t registers[32];
 uint32_t pc;
@@ -39,6 +40,14 @@ void reset() {
 
 uint32_t getRegister(uint32_t i) {
     return registers[i];
+}
+
+uint32_t getStartPC() {
+    return start_pc;
+}
+
+void setStartPC(uint32_t address) {
+    start_pc = address;
 }
 
 uint32_t getPC() {

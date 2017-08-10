@@ -175,7 +175,9 @@ export default class MIPS {
 						this._cache[start] = funct;
 					}
 
+					console.log(this.clocks)
 					funct.code();
+					console.log(this.clocks)
 					// Resume execution after the JIT core completes
 					//this.tick();	// UNCOMMENT WHEN CODE FINISHES
 				});

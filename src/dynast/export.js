@@ -372,7 +372,6 @@ export default function (ast) {
 	var mappedTypes = {};
 	ast = Object.create(ast);
 	ast.function_type_section = [];
-	ast.type_section = [];
 
 	function typeIndex(def) {
 		var form;
@@ -392,6 +391,14 @@ export default function (ast) {
 
 		return mappedTypes[form];
 	}
+
+	// Prepopulate type section
+	if (ast.type_section) {
+		ast.type_section.forEach(typeIndex)
+	} else {
+		ast.type_section = [];
+	}
+
 
 	// Unstamp the import section
 	if (ast.import_section)
