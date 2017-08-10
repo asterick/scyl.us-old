@@ -1,10 +1,10 @@
-import { FieldsNumeric } from "./fields";
+import { Fields } from "./fields";
 import Disassemble from "./disassemble";
 import Instructions from "./base";
 export { Compiler } from "./wast";
 
 export function locate(word) {
-	const fields = new FieldsNumeric(word);
+	const fields = new Fields(word);
 	var entry = Instructions;
 	var fallback = null;
 

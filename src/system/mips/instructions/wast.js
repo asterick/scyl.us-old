@@ -241,11 +241,6 @@ export class Compiler {
 		return index;
 	}
 
-
-	wrap(code) {
-		return
-	}
-
 	compile(start, length, locate) {
 		length = 1024;
 
@@ -287,7 +282,9 @@ export class Compiler {
 							{ op: 'br', relative_depth: 0 }, // Continue
 						"end",
 					"end",
-				    "end"	// End of function
+
+				    // End of function
+				    "end"
 				]
 			},
 			{

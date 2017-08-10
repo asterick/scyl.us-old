@@ -1,4 +1,4 @@
-export class FieldsNumeric {
+export class Fields {
     constructor(word = 0) {
         this.word = word;
     }
