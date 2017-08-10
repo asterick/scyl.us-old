@@ -88,7 +88,10 @@ export default class MIPS {
 			.then((module) => {
 				this._exports =  module.instance.exports;
 
-				this.registers = new Uint32Array(this._exports.memory.buffer, this._exports.getRegisterAddress(), 64);
+				const memory = this._exports.memory.buffer;
+				this.registers = new Uint32Array(memory, this._exports.getRegisterAddress(), 64);
+				this._ram = new Uint32Array(memory, this._exports.getAddressRAM(), this._exports.getSizeRAM() / 4);
+				this._rom = new Uint32Array(memory, this._exports.getAddressROM(), this._exports.getSizeROM() / 4);
 
 				this.reset();
 				this.onReady && this.onReady();

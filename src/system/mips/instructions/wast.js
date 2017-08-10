@@ -1,7 +1,7 @@
 import Export from "../../../dynast/export";
 import Import from "../../../dynast/import";
 
-import Instructions from "./base";
+import Table from "./table";
 
 // WARNING: This can possibly cause call stack to overflow, depending on how
 // large a function is, may have to use trampolines later
@@ -60,7 +60,7 @@ export class Compiler {
 		})
 		this._function_base = index;
 
-		const targets = names(Instructions);
+		const targets = names(Table);
 
 		this._templates = {};
 		defs.export_section.forEach((exp) => {
@@ -118,7 +118,7 @@ export class Compiler {
 
 			case "get_local":
 				if (term.index < parameters.length) {
-					modified.unshift( parameters[term.index] );
+					modified.unshift(parameters[term.index]);
 					i--;
 					continue ;
 				}
@@ -295,6 +295,7 @@ export class Compiler {
 					"i32.shr_u",
 					"i32.sub",
 					{ op: 'call', function_index: this._imports.setClocks },
+
 					"end"
 				]
 			}

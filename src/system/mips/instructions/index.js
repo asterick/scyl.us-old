@@ -1,11 +1,11 @@
 import { Fields } from "./fields";
 import Disassemble from "./disassemble";
-import Instructions from "./base";
+import Table from "./table";
 export { Compiler } from "./wast";
 
 export function locate(word) {
 	const fields = new Fields(word);
-	var entry = Instructions;
+	var entry = Table;
 	var fallback = null;
 
 	while (typeof entry === "object") {

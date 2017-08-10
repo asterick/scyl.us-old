@@ -8,12 +8,6 @@ export default class extends MIPS {
 		super();
 
 		this._gpu = new GPU(this);
-		this._ram = new Uint32Array(0x100000);
-		this._rom = new Uint32Array(0x20000);
-
-		// Copy in our bios (and discard it)
-		this._rom.set(new Uint32Array(bios));
-
 		this.tick = this.tick.bind(this);
 	}
 

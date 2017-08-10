@@ -11,7 +11,7 @@ export default class extends Component {
 		try {
 			return <tr><td>{hex(pc)}</td> <td>{hex(this.props.runtime.load(pc))}</td></tr>;
 		} catch(E) {
-			return <tr><td>{hex(address)}</td> <td colSpan="3">Bus error</td></tr>;
+			return <tr><td>{hex(pc)}</td> <td colSpan="3">Bus error</td></tr>;
 		}
 	}
 

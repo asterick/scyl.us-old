@@ -1,7 +1,11 @@
-OUTPUT = ../bin/system0.rom
-BINARY = system0.elf
+HEADER = system0.h
+
 OBJECTS = main.o startup.o
 LD_SCRIPT = ./linker.x
+
+ELFFILE = system0.elf
+CODEROM = code.bin
+DATAROM = data.bin
 
 AS = mipsel-unknown-elf-as
 CC = mipsel-unknown-elf-gcc
@@ -13,20 +17,20 @@ ASFLAGS = $(TARGET)
 CFLAGS = $(TARGET) -Wall -O3 -G0 -nostdlib -Wimplicit-function-declaration
 LDFLAGS = -T $(LD_SCRIPT)
 
-all: $(OUTPUT)
+all: $(HEADER)
 
 clean:
-	rm -Rf  $(OBJECTS)
+	rm -Rf  $(OBJECTS) $(CODEROM) $(DATAROM) $(HEADER)
 
-dump: $(OUTPUT)
-	mipsel-unknown-elf-objdump -x -s -d $(BINARY)
+dump: $(ELFFILE)
+	mipsel-unknown-elf-objdump -x -s -d $(ELFFILE)
 
-$(OUTPUT): $(BINARY)
-	$(OBJCOPY) -I elf32-littlemips -O binary -R ".data" $< $@
-	$(OBJCOPY) -I elf32-littlemips -O binary -j ".data" $< data.bin
-	cat data.bin >> $@
+$(HEADER): $(ELFFILE)
+	$(OBJCOPY) -I elf32-littlemips -O binary -R ".data" $< $(CODEROM)
+	$(OBJCOPY) -I elf32-littlemips -O binary -j ".data" $< $(DATAROM)
+	python3 ./header.py $@ $(CODEROM) $(DATAROM)
 
-$(BINARY): $(OBJECTS) $(LD_SCRIPT)
+$(ELFFILE): $(OBJECTS) $(LD_SCRIPT)
 	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
 
 %.o: %.s

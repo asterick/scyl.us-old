@@ -5,7 +5,7 @@ WABT_ROOT = ~/wabt
 
 CFLAGS = -O3
 
-TARGET = "../../../../assets/core.wasm"
+TARGET = "../bin/core.wasm"
 
 all: $(TARGET)
 
