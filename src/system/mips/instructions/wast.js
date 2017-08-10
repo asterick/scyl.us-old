@@ -258,9 +258,6 @@ export class Compiler {
 				code: [
 					{ op: 'block', kind: 'void' },
 						{ op: 'loop', kind: 'void' },
-							{ op: 'call', function_index: this._imports.getPC },
-							{ op: 'call', function_index: this._imports.debug },
-
 							// Break when our clock runs out
 							{ op: 'call', function_index: this._imports.getClocks },
 							{ op: 'i32.const', value: 0 },
