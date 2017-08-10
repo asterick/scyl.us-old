@@ -320,7 +320,7 @@ export class Compiler {
 			previous = this.instruction(functions, locate, start+i*4, 0, previous);
 		}
 
-		const base = {
+		const module = {
 			magicNumber: 0x6d736100,
 			version: 1,
 
@@ -356,8 +356,6 @@ export class Compiler {
 			}]
 		}
 
-		console.log(base);
-
-		return Export(base);
+		return Export(module);
 	}
 }

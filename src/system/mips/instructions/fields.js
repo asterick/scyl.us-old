@@ -1,5 +1,3 @@
-import { local, LOCAL_VARS } from "./wast";
-
 export class FieldsNumeric {
     constructor(word = 0) {
         this.word = word;
