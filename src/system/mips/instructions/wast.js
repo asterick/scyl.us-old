@@ -49,16 +49,7 @@ export class Compiler {
 	            default:
 	            	throw new Error(`Cannot import ${i.kind}`)
 	            }
-			}),
-			{
-				"module": "env",
-				"field": "debug",
-				"type": {
-					"type": "func_type",
-					"parameters": ["i32"],
-					"returns": []
-				}
-			}
+			})
 		);
 
 		this._imports = {};
