@@ -64,6 +64,7 @@ export default class MIPS {
 		this._environment = {
 	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop) },
 			execute: (pc, delayed) => this._execute(pc, delayed),
+			translate: (address, write, pc, delayed) => this._translate(address, pc, delayed),
 	    	load: (address, pc, delayed) => this.load(address, pc, delayed),
 	    	store: (address, value, mask, pc, delayed) => this.store(address, value, mask, pc, delayed),
 	    	mfc0: (reg, pc, delayed) => this._mfc0(reg, pc, delayed),
@@ -140,7 +141,7 @@ export default class MIPS {
 		while (this.clocks > 0) {
 			const block_size = this._blockSize(this.pc);
 			const block_mask = ~(block_size - 1);
-			const physical = (this._translate(this.pc, false) & block_mask) >>> 0;
+			const physical = (this._translate(this.pc, false, this.pc, false) & block_mask) >>> 0;
 			const logical = (this.pc & block_mask) >>> 0;
 
 			var funct = this._cache[physical];
@@ -210,16 +211,17 @@ export default class MIPS {
 	}
 
 	load (logical, pc, delayed) {
+		var physical = this._translate(logical, false, pc, delayed);
 		try {
-			return this.read(false, this._translate(logical, false));
+			return this.read(false, physical);
 		} catch (e) {
 			throw new Exception(e, pc, delayed, 0);
 		}
 	}
 
 	store (logical, value, mask, pc, delayed) {
+		var physical = this._translate(logical, true, pc, delayed);
 		try {
-			const physical = this._translate(logical, true);
 			this.write(physical, value, mask);
 
 			// Invalidate cache line
@@ -240,8 +242,9 @@ export default class MIPS {
 	// be software interpreted so TLB changes don't
 	// cause cache failures
 	_execute(pc, delayed) {
+		var physical = this._translate(pc, false, pc, delayed);
 		try {
-			var data = this.read(true, this._translate(pc, false));
+			var data = this.read(true, physical);
 		} catch(e) {
 			throw new Exception(e, pc, delayed, 0);
 		}
@@ -343,10 +346,10 @@ export default class MIPS {
 		}
 	}
 
-	_translate(address, write) {
+	_translate(address, write, pc, delayed) {
 		let cached = true;
 		if (address & 0x8000000 && ~this._status & STATUS_KUc) {
-			throw Exceptions.CoprocessorUnusable;
+			throw new Exception(Exceptions.CoprocessorUnusable, pc, delayed, 0);
 		}
 
 		if ((address & 0xE0000000) === (0xA0000000 >> 0)) {
@@ -363,14 +366,14 @@ export default class MIPS {
 			if (~result & 0x0200) {
 				this._badAddr = address;
 				this._entryHi = (this._entryHi & ~0xFFFFF000) | (address & 0xFFFFF000);
-				throw write ? Exceptions.TLBStore : Exceptions.TLBLoad;
+				throw new Exception(write ? Exceptions.TLBStore : Exceptions.TLBLoad, pc, delayed);
 			}
 
 			// Writes are not permitted
 			if (write && ~result & 0x0400) {
 				this._badAddr = address;
 				this._entryHi = (this._entryHi & ~0xFFFFF000) | (address & 0xFFFFF000);
-				throw Exceptions.TLBMod;
+				throw new Exception(Exceptions.TLBMod, pc, delayed);
 			}
 
 			return ((result & 0xFFFFF000) | (address & 0x00000FFF)) >>> 0;

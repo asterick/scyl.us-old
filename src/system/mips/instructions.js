@@ -1,7 +1,8 @@
-import Export from "../../../dynast/export";
-import Import from "../../../dynast/import";
+import { Fields } from "./fields";
+import { Disassembly, Instructions } from "./table";
 
-import Table from "./table";
+import Export from "../../dynast/export";
+import Import from "../../dynast/import";
 
 // WARNING: This can possibly cause call stack to overflow, depending on how
 // large a function is, may have to use trampolines later
@@ -60,7 +61,7 @@ export class Compiler {
 		})
 		this._function_base = index;
 
-		const targets = names(Table);
+		const targets = names(Instructions);
 
 		this._templates = {};
 		defs.export_section.forEach((exp) => {
@@ -347,4 +348,24 @@ export class Compiler {
 
 		return Export(module);
 	}
+}
+
+export function locate(word) {
+	const fields = new Fields(word);
+	var entry = Instructions;
+	var fallback = null;
+
+	while (typeof entry === "object") {
+		fallback = entry.fallback || fallback;
+		entry = entry[fields[entry.field]];
+	}
+
+	fields.name = entry || fallback;
+
+	return fields;
+}
+
+export function disassemble(word, address) {
+	const op = locate(word);
+	return Disassembly[op.name](op, address);
 }
