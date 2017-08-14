@@ -42,22 +42,8 @@ export default class extends MIPS {
 		this._gpu.resize();
 	}
 
-	blockSize(address) {
-		if (address >= 0x1FC00000 && address < 0x1FC80000) {
-			return this._rom.length;
-		}
-
-		// Use the default page size
-	}
-
 	read (code, address) {
-		if (address < 0x400000) {
-			return this._ram[address >>> 2];
-		}
-		else if (address >= 0x1FC00000 && address < 0x1FC80000) {
-			return this._rom[(address >>> 2) & 0x1FFFF];
-		}
-
+		debugger ;
 		throw code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData;
 	}
 

@@ -62,6 +62,7 @@ export default class MIPS {
 		this._cache = [];
 
 		this._environment = {
+			debug: (value) => console.log((value >>> 0).toString(16)),
 	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop) },
 			execute: (pc, delayed) => this._execute(pc, delayed),
 			translate: (address, write, pc, delayed) => this._translate(address, pc, delayed),
@@ -114,10 +115,9 @@ export default class MIPS {
 
 				const memory = this._exports.memory.buffer;
 				this.registers = new Uint32Array(memory, this._exports.getRegisterAddress(), 64);
-				this._ram = new Uint32Array(memory, this._exports.getAddressRAM(), this._exports.getSizeRAM() / 4);
-				this._rom = new Uint32Array(memory, this._exports.getAddressROM(), this._exports.getSizeROM() / 4);
 				this.load = this._exports.load;
 				this.store = this._exports.store;
+				this._unmapped_read = this._exports.unmapped_read;
 
 				this.reset();
 				this.onReady && this.onReady();
@@ -179,7 +179,7 @@ export default class MIPS {
 					}
 
 					try {
-						var word = this.read(true, address - logical + physical);
+						var word = this._unmapped_read(address - logical + physical, 0, 0);
 						return locate(word);
 					} catch(e) {
 						// There was a loading error, fallback to interpret
@@ -239,22 +239,21 @@ export default class MIPS {
 	// be software interpreted so TLB changes don't
 	// cause cache failures
 	_execute(pc, delayed) {
-		var physical = this._translate(pc, false, pc, delayed);
-		try {
-			var data = this.read(true, physical);
-		} catch(e) {
-			throw new Exception(e, pc, delayed, 0);
-		}
-
+		const physical = this._translate(pc, false, pc, delayed);
+		const data = this._unmapped_read(physical, pc, delayed);
 		const call = locate(data);
+
 		this._exports[call.name](pc, data, delayed);
 	}
 
 	_blockSize(address) {
 		if ((address & 0xC0000000) !== (0x80000000 >> 0)) {
 			return MIN_COMPILE_SIZE;
+		} else if (address >= 0x1FC00000 && address < 0x1FC80000) {
+			const romSize = this._exports.getSizeROM();
+			return Math.min(MAX_COMPILE_SIZE, romSize);
 		} else {
-			return Math.min(MAX_COMPILE_SIZE, this.blockSize(address & 0x1FFFFFFC) || MIN_COMPILE_SIZE);
+			return MIN_COMPILE_SIZE;
 		}
 	}
 

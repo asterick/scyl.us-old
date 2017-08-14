@@ -12,8 +12,8 @@ export default class extends Component {
 
 	render() {
 		return <div>
-			<Debugger runtime={this.props.runtime} />
 			<canvas className={style.screen} ref={(node) => this.props.runtime.attach(node)} width="640" height="480" />
+			<Debugger runtime={this.props.runtime} />
 		</div>
 	}
 }
