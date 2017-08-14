@@ -43,7 +43,6 @@ export default class extends MIPS {
 	}
 
 	read (code, address) {
-		debugger ;
 		throw code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData;
 	}
 

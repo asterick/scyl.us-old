@@ -25,3 +25,6 @@ $(TARGET): $(OBJECTS)
 
 %.o: %.c
 	$(LLVM_ROOT)/clang -emit-llvm --target=wasm32 $(CFLAGS) $< -c -o $@
+
+%.o: %.cc
+	$(LLVM_ROOT)/clang -emit-llvm --target=wasm32 $(CFLAGS) $< -c -o $@

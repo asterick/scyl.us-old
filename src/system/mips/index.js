@@ -250,8 +250,7 @@ export default class MIPS {
 		if ((address & 0xC0000000) !== (0x80000000 >> 0)) {
 			return MIN_COMPILE_SIZE;
 		} else if (address >= 0x1FC00000 && address < 0x1FC80000) {
-			const romSize = this._exports.getSizeROM();
-			return Math.min(MAX_COMPILE_SIZE, romSize);
+			return MAX_COMPILE_SIZE;
 		} else {
 			return MIN_COMPILE_SIZE;
 		}
