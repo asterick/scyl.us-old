@@ -31,7 +31,14 @@ uint32_t load(uint32_t logical, uint32_t pc, uint32_t delayed) {
 void store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed) {
 	uint32_t physical = translate(logical, 1, pc, delayed);
 
-	invalidate(physical, logical);
 
-	write(physical, value, mask, pc, delayed);
+	if (physical < 0x400000) {
+		physical >>= 2;
+		invalidate(physical, logical);
+		ram[physical] = (ram[physical] & ~mask) | (value & mask);
+	} else if (physical >= 0x1FC00000 && physical < 0x1FC80000) {
+		// This is rom
+	} else {
+		write(physical, value, mask, pc, delayed);
+	}
 }

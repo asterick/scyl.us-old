@@ -62,13 +62,6 @@ export default class extends MIPS {
 	}
 
 	write (address, value, mask = ~0) {
-		if (address < 0x400000) {
-			address >>= 2;
-			this._ram[address] = (this._ram[address] & ~mask) | (value & mask);
-		} else if (address >= 0x1FC00000 && address < 0x1FC80000) {
-			// This is rom
-		} else {
-			throw Exceptions.BusErrorData;
-		}
+		throw Exceptions.BusErrorData;
 	}
 }
