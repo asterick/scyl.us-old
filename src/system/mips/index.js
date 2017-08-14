@@ -65,8 +65,31 @@ export default class MIPS {
 	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop) },
 			execute: (pc, delayed) => this._execute(pc, delayed),
 			translate: (address, write, pc, delayed) => this._translate(address, pc, delayed),
-	    	load: (address, pc, delayed) => this.load(address, pc, delayed),
-	    	store: (address, value, mask, pc, delayed) => this.store(address, value, mask, pc, delayed),
+	    	read: (physical, pc, delayed) => {
+				try {
+					return this.read(false, physical >>> 0);
+				} catch (e) {
+					throw new Exception(e, pc, delayed, 0);
+				}
+	    	},
+	    	write: (physical, value, mask, pc, delayed) => {
+				try {
+					this.write(physical, value, mask);
+				} catch (e) {
+					throw new Exception(e, pc, delayed, 0);
+				}
+			},
+	    	invalidate: (physical, logical) => {
+				// Invalidate cache line
+				const cache_line = physical & ~(this._blockSize(logical) - 1);
+				const entry = this._cache[cache_line];
+
+				// Clear this row out (de-reference the function so we don't leak)
+				if (entry) {
+					entry.code = null;
+					this._cache[cache_line] = null;
+				}
+	    	},
 	    	mfc0: (reg, pc, delayed) => this._mfc0(reg, pc, delayed),
 	    	mtc0: (reg, word, pc, delayed) => this._mtc0(reg, word, pc, delayed),
 	    	rfe: (pc, delayed) => this._rfe(pc, delayed),
@@ -210,34 +233,6 @@ export default class MIPS {
 		this.timer += _prev - this.clocks;
 	}
 
-	load (logical, pc, delayed) {
-		var physical = this._translate(logical, false, pc, delayed);
-		try {
-			return this.read(false, physical);
-		} catch (e) {
-			throw new Exception(e, pc, delayed, 0);
-		}
-	}
-
-	store (logical, value, mask, pc, delayed) {
-		var physical = this._translate(logical, true, pc, delayed);
-		try {
-			this.write(physical, value, mask);
-
-			// Invalidate cache line
-			const cache_line = physical & ~(this._blockSize(logical) - 1);
-			const entry = this._cache[cache_line];
-
-			// Clear this row out (de-reference the function so we don't leak)
-			if (entry) {
-				entry.code = null;
-				this._cache[cache_line] = null;
-			}
-		} catch (e) {
-			throw new Exception(e, pc, delayed, 0);
-		}
-	}
-
 	// This forces delay slots at the end of a page to
 	// be software interpreted so TLB changes don't
 	// cause cache failures
@@ -259,6 +254,10 @@ export default class MIPS {
 		} else {
 			return Math.min(MAX_COMPILE_SIZE, this.blockSize(address & 0x1FFFFFFC) || MIN_COMPILE_SIZE);
 		}
+	}
+
+	mappedRead (physical) {
+		return this.read(false, this._translate(physical));
 	}
 
 	/*******

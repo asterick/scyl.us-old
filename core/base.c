@@ -1,4 +1,5 @@
 #include "types.h"
+
 #include "fields.h"
 #include "consts.h"
 
@@ -7,6 +8,7 @@
 #define EXTERN extern
 #include "registers.h"
 #include "helper.h"
+#include "memory.h"
 
 // ******
 // ** Load/Store instructions

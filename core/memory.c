@@ -22,3 +22,16 @@ uint32_t getSizeRAM() {
 	return sizeof(ram);
 }
 
+uint32_t load(uint32_t logical, uint32_t pc, uint32_t delayed) {
+	uint32_t physical = translate(logical, 0, pc, delayed);
+
+	return read(physical, pc, delayed);
+}
+
+void store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed) {
+	uint32_t physical = translate(logical, 1, pc, delayed);
+
+	invalidate(physical, logical);
+
+	write(physical, value, mask, pc, delayed);
+}
