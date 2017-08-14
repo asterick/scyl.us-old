@@ -16,14 +16,14 @@
 
 void LB(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
-    uint32_t data = load(target, address, delayed);
+    uint32_t data = load(target, 0, address, delayed);
 
     write_reg(FIELD_RT(word), (int32_t)(data << (24 - (target & 3) * 8)) >> 24);
 }
 
 void LBU(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
-    uint32_t data = load(target, address, delayed);
+    uint32_t data = load(target, 0, address, delayed);
 
     write_reg(FIELD_RT(word), (data >> (target & 3) * 8) & 0xFF);
 }
@@ -33,7 +33,7 @@ void LH(uint32_t address, uint32_t word, uint32_t delayed) {
 
     if (target & 1) exception(EXCEPTION_ADDRESSLOAD, address, delayed, 0);
 
-    uint32_t data = load(target, address, delayed);
+    uint32_t data = load(target, 0, address, delayed);
 
     write_reg(FIELD_RT(word), (int32_t)(data << (16 - (target & 2) * 8)) >> 16);
 }
@@ -43,7 +43,7 @@ void LHU(uint32_t address, uint32_t word, uint32_t delayed) {
 
     if (target & 1) exception(EXCEPTION_ADDRESSLOAD, address, delayed, 0);
 
-    uint32_t data = load(target, address, delayed);
+    uint32_t data = load(target, 0, address, delayed);
 
     write_reg(FIELD_RT(word), (data >> (target & 2) * 8) & 0xFFFF);
 }
@@ -53,7 +53,7 @@ void LW(uint32_t address, uint32_t word, uint32_t delayed) {
 
     if (target & 3) exception(EXCEPTION_ADDRESSLOAD, address, delayed, 0);
 
-    write_reg(FIELD_RT(word), load(target, address, delayed));
+    write_reg(FIELD_RT(word), load(target, 0, address, delayed));
 }
 
 void SB(uint32_t address, uint32_t word, uint32_t delayed) {
@@ -83,7 +83,7 @@ void SW(uint32_t address, uint32_t word, uint32_t delayed) {
 
 void LWR(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
-    uint32_t data = load(target, address, delayed);
+    uint32_t data = load(target, 0, address, delayed);
     uint32_t rt = read_reg(FIELD_RT(word));
 
     int shift = (target & 3) * 8;
@@ -97,7 +97,7 @@ void LWL(uint32_t address, uint32_t word, uint32_t delayed) {
 
     if ((target & 3) == 3) return ;
 
-    uint32_t data = load(target, address, delayed);
+    uint32_t data = load(target, 0, address, delayed);
     uint32_t rt = read_reg(FIELD_RT(word));
 
     int shift = 24 - (target & 3) * 8;

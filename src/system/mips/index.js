@@ -66,9 +66,9 @@ export default class MIPS {
 	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop) },
 			execute: (pc, delayed) => this._execute(pc, delayed),
 			translate: (address, write, pc, delayed) => this._translate(address, pc, delayed),
-	    	read: (physical, pc, delayed) => {
+	    	read: (physical, code, pc, delayed) => {
 				try {
-					return this.read(false, physical >>> 0);
+					return this.read(code, physical >>> 0);
 				} catch (e) {
 					throw new Exception(e, pc, delayed, 0);
 				}
@@ -117,7 +117,6 @@ export default class MIPS {
 				this.registers = new Uint32Array(memory, this._exports.getRegisterAddress(), 64);
 				this.load = this._exports.load;
 				this.store = this._exports.store;
-				this._unmapped_read = this._exports.unmapped_read;
 
 				this.reset();
 				this.onReady && this.onReady();
@@ -179,7 +178,7 @@ export default class MIPS {
 					}
 
 					try {
-						var word = this._unmapped_read(address - logical + physical, 0, 0);
+						var word = this.load(address);
 						return locate(word);
 					} catch(e) {
 						// There was a loading error, fallback to interpret
@@ -239,8 +238,7 @@ export default class MIPS {
 	// be software interpreted so TLB changes don't
 	// cause cache failures
 	_execute(pc, delayed) {
-		const physical = this._translate(pc, false, pc, delayed);
-		const data = this._unmapped_read(physical, pc, delayed);
+		const data = this.load(pc, true, pc, delayed);
 		const call = locate(data);
 
 		this._exports[call.name](pc, data, delayed);

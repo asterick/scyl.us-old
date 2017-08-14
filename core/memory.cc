@@ -2,15 +2,27 @@ extern "C" {
 
 #include "types.h"
 #include "imports.h"
-static const uint32_t ROM_BASE = 0x1FC00000;
-static const uint32_t ROM_SIZE = 512*1024;	// 512kB of rom
 
-static uint32_t ram[1024*1024];    // 4MB of RAM
+static const uint32_t ROM_BASE = 0x1FC00000;
+static const uint32_t ROM_SIZE = 512*1024;		// 512kB of rom
+static const uint32_t RAM_SIZE = 4*1024*1024;	// 4MB of RAM
+
+static uint32_t ram[RAM_SIZE / sizeof(uint32_t)];
 static const uint32_t rom[] = {
 	#include "../system0/system0.h"
 };
 
-uint32_t unmapped_read(uint32_t physical, uint32_t pc, uint32_t delayed) {
+STATIC_FUNCTION uint32_t _translate(uint32_t logical, uint32_t write, uint32_t pc, uint32_t delayed) {
+	if ((logical & 0xC0000000) != (0x80000000 >> 0)) {
+		return translate(logical, write, pc, delayed);
+	} else {
+		return logical & 0x1FFFFFFC;
+	}
+}
+
+uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t delayed) {
+	uint32_t physical = _translate(logical, code, pc, delayed);
+
 	if (physical < sizeof(ram)) {
 		return ram[physical >> 2];
 	} else if (physical >= ROM_BASE && physical < (ROM_BASE + ROM_SIZE)) {
@@ -20,18 +32,12 @@ uint32_t unmapped_read(uint32_t physical, uint32_t pc, uint32_t delayed) {
 
 		return rom[physical >> 2];
 	} else {
-		return read(physical, pc, delayed);
+		return read(physical, code, pc, delayed);
 	}
 }
 
-uint32_t load(uint32_t logical, uint32_t pc, uint32_t delayed) {
-	uint32_t physical = translate(logical, 0, pc, delayed);
-
-	return unmapped_read(physical, pc, delayed);
-}
-
 void store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed) {
-	uint32_t physical = translate(logical, 1, pc, delayed);
+	uint32_t physical = _translate(logical, 1, pc, delayed);
 
 	if (physical < sizeof(ram)) {
 		physical >>= 2;
