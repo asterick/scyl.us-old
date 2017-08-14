@@ -9,7 +9,7 @@ import { disassemble } from "../../system/mips/instructions";
 export default class extends Component {
 	disassemble(pc) {
 		try {
-			const word = this.props.runtime.mappedRead(pc);
+			const word = this.props.runtime.load(pc) >>> 0;
 			return <tr><td>{hex(pc)}</td> <td>{hex(word)}</td> { disassemble(word, pc) }</tr>;
 		} catch(E) {
 			return <tr><td>{hex(pc)}</td> <td colSpan="3">Bus error</td></tr>;

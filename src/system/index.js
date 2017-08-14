@@ -16,7 +16,7 @@ export default class extends MIPS {
 
 		this._adjust_clock = +new Date();
 		this.running = true;
-		//this.tick();
+		this.tick();
 	}
 
 	stop () {

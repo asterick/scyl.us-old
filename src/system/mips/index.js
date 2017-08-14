@@ -116,6 +116,8 @@ export default class MIPS {
 				this.registers = new Uint32Array(memory, this._exports.getRegisterAddress(), 64);
 				this._ram = new Uint32Array(memory, this._exports.getAddressRAM(), this._exports.getSizeRAM() / 4);
 				this._rom = new Uint32Array(memory, this._exports.getAddressROM(), this._exports.getSizeROM() / 4);
+				this.load = this._exports.load;
+				this.store = this._exports.store;
 
 				this.reset();
 				this.onReady && this.onReady();
@@ -254,10 +256,6 @@ export default class MIPS {
 		} else {
 			return Math.min(MAX_COMPILE_SIZE, this.blockSize(address & 0x1FFFFFFC) || MIN_COMPILE_SIZE);
 		}
-	}
-
-	mappedRead (physical) {
-		return this.read(false, this._translate(physical));
 	}
 
 	/*******

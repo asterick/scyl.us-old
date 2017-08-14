@@ -9,7 +9,8 @@ import locate from "../../system/mips/instructions";
 export default class extends Component {
 	disassemble(pc) {
 		try {
-			return <tr><td>{hex(pc)}</td> <td>{hex(this.props.runtime.mappedRead(pc))}</td></tr>;
+			const word = this.props.runtime.load(pc) >>> 0;
+			return <tr><td>{hex(pc)}</td> <td>{hex(word)}</td></tr>;
 		} catch(E) {
 			return <tr><td>{hex(pc)}</td> <td colSpan="3">Bus error</td></tr>;
 		}

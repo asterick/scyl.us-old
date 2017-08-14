@@ -5,7 +5,11 @@ extern const uint32_t _DATA_ROM;
 extern const uint32_t _DATA_START;
 extern const uint32_t _DATA_SIZE;
 
-volatile uint32_t DATA[] = {1,1,1,1,1,1,1,1,1};
+volatile uint32_t DATA[] = {
+	0xDEADFACE,
+	0xCAFEBABE,
+	0x01234567
+};
 
 void* memcpy(void* dest, const void* src, size_t n) {
 	unsigned char *t = (unsigned char*) dest;
