@@ -8,9 +8,7 @@ static const uint32_t ROM_SIZE = 512*1024;		// 512kB of rom
 static const uint32_t RAM_SIZE = 4*1024*1024;	// 4MB of RAM
 
 static uint32_t ram[RAM_SIZE / sizeof(uint32_t)];
-static const uint32_t rom[] = {
-	#include "../system0/system0.h"
-};
+static const uint32_t rom[ROM_SIZE / sizeof(uint32_t)] = {'ESNI','!!TR'};
 
 STATIC_FUNCTION uint32_t _translate(uint32_t logical, uint32_t write, uint32_t pc, uint32_t delayed) {
 	if ((logical & 0xC0000000) != (0x80000000 >> 0)) {

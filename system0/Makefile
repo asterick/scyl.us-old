@@ -3,9 +3,9 @@ HEADER = system0.h
 OBJECTS = main.o startup.o
 LD_SCRIPT = ./linker.x
 
-ELFFILE = system0.elf
-CODEROM = code.bin
-DATAROM = data.bin
+ELFFILE = ../bin/system0.elf
+CODEROM = ../bin/code.bin
+DATAROM = ../bin/data.bin
 
 AS = mipsel-unknown-elf-as
 CC = mipsel-unknown-elf-gcc
@@ -28,7 +28,6 @@ dump: $(ELFFILE)
 $(HEADER): $(ELFFILE)
 	$(OBJCOPY) -I elf32-littlemips -O binary -R ".data" $< $(CODEROM)
 	$(OBJCOPY) -I elf32-littlemips -O binary -j ".data" $< $(DATAROM)
-	python3 ./header.py $@ $(CODEROM) $(DATAROM)
 
 $(ELFFILE): $(OBJECTS) $(LD_SCRIPT)
 	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
