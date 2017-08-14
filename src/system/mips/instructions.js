@@ -5,7 +5,7 @@ import Export from "../../dynast/export";
 import Import from "../../dynast/import";
 
 // WARNING: This can possibly cause call stack to overflow, depending on how
-// large a function is, may have to use trampolines later
+// large an instruction chain is, may have to use trampolines later
 
 function names(table) {
 	return Object.keys(table).reduce((acc, key) => {
