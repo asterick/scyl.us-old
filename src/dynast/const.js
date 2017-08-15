@@ -14,7 +14,7 @@ export const PAYLOAD_TYPES = {
 	ELEMENT: 9,
 	CODE: 10,
 	DATA: 11
-}
+};
 
 export const VALUE_TYPES = {
 	"i32": -0x01,
@@ -31,7 +31,7 @@ export const KIND_TYPES = {
 	TABLE: 1,
 	MEMORY: 2,
 	GLOBAL: 3
-}
+};
 
 export const FLAG_RESIZABLE_LIMIT_PRESENT = 1;
 export const FLAG_GLOBAL_MUTABLE = 1;

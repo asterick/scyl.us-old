@@ -13,9 +13,9 @@ function names(table) {
 		if (typeof entry === 'string') {
 			return acc.concat(entry);
 		} else {
-			return acc.concat(names(entry))
+			return acc.concat(names(entry));
 		}
-	}, [])
+	}, []);
 }
 
 export class Compiler {
@@ -48,7 +48,7 @@ export class Compiler {
 	            			"type": defs.function_section[i.index - imported_functions].type
 	            		};
 	            default:
-	            	throw new Error(`Cannot import ${i.kind}`)
+	            	throw new Error(`Cannot import ${i.kind}`);
 	            }
 			})
 		);
@@ -58,7 +58,7 @@ export class Compiler {
 		this._import_section.forEach((imp, i) => {
 			if (imp.type.type !== 'func_type') return ;
 			this._imports[imp.field] = index++;
-		})
+		});
 		this._function_base = index;
 
 		const targets = names(Instructions);
@@ -174,7 +174,7 @@ export class Compiler {
 				{ op: 'i32.const', value: pc >> 0 },
 				{ op: 'i32.const', value: delayed ? 1 : 0 },
 		        { op: "call", function_index: this._imports.execute }
-			]
+			];
 		}
 
 		const template = this._templates[op.name];
@@ -212,7 +212,7 @@ export class Compiler {
 				return acc ;
 
 			default:
-				throw k
+				throw k;
 			}
 		}, []);
 
@@ -344,7 +344,7 @@ export class Compiler {
 					maximum: table.length
 				}
 			}]
-		}
+		};
 
 		return Export(module);
 	}

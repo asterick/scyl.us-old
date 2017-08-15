@@ -62,8 +62,7 @@ export default class MIPS {
 		this._cache = [];
 
 		this._environment = {
-			debug: (value) => console.log((value >>> 0).toString(16)),
-	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop) },
+	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop); },
 			execute: (pc, delayed) => this._execute(pc, delayed),
 			translate: (address, write, pc, delayed) => this._translate(address, pc, delayed),
 	    	read: (physical, code, pc, delayed) => {
@@ -108,7 +107,7 @@ export default class MIPS {
 
 				return WebAssembly.instantiate(ab, {
 					env: this._environment
-				})
+				});
 			})
 			.then((module) => {
 				this._exports =  module.instance.exports;
@@ -137,7 +136,7 @@ export default class MIPS {
 	}
 
 	get hi() {
-		return this._exports.getHI() >>> 0
+		return this._exports.getHI() >>> 0;
 	}
 
 	get clocks() {

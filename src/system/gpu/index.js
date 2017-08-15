@@ -436,7 +436,7 @@ export default class {
 			attributes: attributes,
 			uniforms: uniforms,
 			program: shaderProgram
-		}
+		};
 	}
 
 	// THIS IS MY GROSS TEST BENCH

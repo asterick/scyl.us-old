@@ -18,7 +18,7 @@ export default class extends Component {
 					}}/>
 					: <input type="button" value="start" onClick={() => {
 						this.props.runtime.start();
-						this.forceUpdate()
+						this.forceUpdate();
 					}}/>
 				}
 				<input type="button" value="step" onClick={() => {
@@ -30,6 +30,6 @@ export default class extends Component {
 			<Memory runtime={this.props.runtime} />
 			<Assembly runtime={this.props.runtime} />
 			<Registers runtime={this.props.runtime} />
-		</div>
+		</div>;
 	}
 }

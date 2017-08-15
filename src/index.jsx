@@ -17,4 +17,5 @@ runtime.onReady = function () {
 
 	// We are all setup we can now do shit
 	runtime.start();
-}
+};
+

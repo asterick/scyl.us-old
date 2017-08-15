@@ -100,7 +100,8 @@ function encode_code_expr(payload, codes) {
 			encode_value_type(payload, code.kind);
 			depth++;
 			break ;
-		case "br":
+
+			case "br":
 		case "br_if":
 			payload.varuint(code.relative_depth);
 			break ;
@@ -112,10 +113,10 @@ function encode_code_expr(payload, codes) {
 			break ;
 
 		case "call":
-			payload.varuint(code.function_index)
+			payload.varuint(code.function_index);
 			break ;
 		case "call_indirect":
-			payload.varuint(code.type_index)
+			payload.varuint(code.type_index);
 			payload.varuint(code.reserved);
 			break ;
 
@@ -316,7 +317,7 @@ function encode_code_section(defs) {
 			body.varuint(local.count);
 			encode_value_type(body, local.type);
 		});
-		encode_code_expr(body, def.code)
+		encode_code_expr(body, def.code);
 
 		const buffer = body.result();
 		payload.varuint(buffer.byteLength);
@@ -378,10 +379,10 @@ export default function (ast) {
 
 		switch (def.type) {
 		case "func_type":
-			form = `func:${def.parameters.join(",")}|${def.returns.join(",")}`
+			form = `func:${def.parameters.join(",")}|${def.returns.join(",")}`;
 			break ;
 		default:
-			throw new Error(`Unrecognized type ${def.type}`)
+			throw new Error(`Unrecognized type ${def.type}`);
 		}
 
 		if (mappedTypes[form] === undefined) {
@@ -394,7 +395,7 @@ export default function (ast) {
 
 	// Prepopulate type section
 	if (ast.type_section) {
-		ast.type_section.forEach(typeIndex)
+		ast.type_section.forEach(typeIndex);
 	} else {
 		ast.type_section = [];
 	}
@@ -406,7 +407,7 @@ export default function (ast) {
 		switch (imp.type.type) {
 		case "func_type":
 			imp = Object.create(imp);
-			imp.type = { type: "func_type", index: typeIndex(imp.type) }
+			imp.type = { type: "func_type", index: typeIndex(imp.type) };
 		default:
 			return imp ;
 		}

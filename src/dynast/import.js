@@ -66,7 +66,7 @@ function decode_global_type(payload) {
 		type: "global_type",
 		mutable: Boolean(flags & FLAG_GLOBAL_MUTABLE),
 		content_type
-	}
+	};
 }
 
 function decode_code_expr(payload) {
@@ -421,7 +421,7 @@ export default function (array) {
 		}
 
 		if (payload.remaining() > 0) {
-			throw new Error(`section ${id} decoded with ${payload.remaining()} bytes remaining`)
+			throw new Error(`section ${id} decoded with ${payload.remaining()} bytes remaining`);
 		}
 	}
 

@@ -27,6 +27,6 @@ export default class extends Component {
 	}
 
 	render() {
-		return  <table class={style["memory"]}>{this.listing()}</table>
+		return  <table class={style["memory"]}>{this.listing()}</table>;
 	}
 };

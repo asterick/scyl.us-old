@@ -13,6 +13,6 @@ export default class extends Component {
 			<tr><td>hi</td> <td>{hex(this.props.runtime.hi)}</td></tr>
 			<tr><td>lo</td> <td>{hex(this.props.runtime.lo)}</td></tr>
 			{ Registers.map((n, i) => <tr><td>{n}</td> <td>{hex(this.props.runtime.registers[i])}</td></tr>) }
-		</table>
+		</table>;
 	}
 };

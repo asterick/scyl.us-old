@@ -82,7 +82,7 @@ export const Disassembly = {
     CTC0: (fields, pc) => `ctc0\t${Consts.Registers[fields.rt]}, cop0cnt${fields.rd}`,
     LWC0: (fields, pc) => `lwc0\t${Consts.COP0Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`,
     SWC0: (fields, pc) => `swc0\t${Consts.COP0Registers[fields.rt]}, ${fields.imm16}(${Consts.Registers[fields.rs]})`
-}
+};
 
 export const Instructions = {
     field: "opcode",
