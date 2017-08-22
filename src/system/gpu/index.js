@@ -3,7 +3,7 @@ import Renderer from "./renderer";
 export default class GPU extends Renderer {
     constructor(container, parent) {
         super(container);
-        this._test();
+        //this._test();
 
         this._parent = parent;
     }
@@ -12,7 +12,7 @@ export default class GPU extends Renderer {
 	_test () {
 		const gl = this._gl;
 
-        this.render(gl.TRIANGLE_FAN, 0, 3, false, -1, new Int16Array([
+        this.render(gl.TRIANGLE_FAN, 0, 4, false, -1, new Int16Array([
             0,   0, 0b0000000000000001,
             0, 240, 0b0000011111000001,
           256, 240, 0b1111111111000001,
