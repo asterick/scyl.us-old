@@ -6,9 +6,12 @@ This is a brief overview of the R3000 based computer for my website (yet unnamed
 Table of Contents
 ------
 
-* [Memory Layout]
+* [Memory Layout]: Memory
+
 * [CPU (MIPS R3000)]
+
 * [Root Counters]
+
 * [DMA Engine]
 
 Memory Layout
