@@ -48,5 +48,8 @@
   "bugs": {
     "url": "https://github.com/asterick/scyl.us/issues"
   },
-  "homepage": "https://github.com/asterick/scyl.us#readme"
+  "homepage": "https://github.com/asterick/scyl.us#readme",
+  "dependencies": {
+    "prepack": "^0.2.6"
+  }
 }

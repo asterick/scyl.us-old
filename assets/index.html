@@ -4,7 +4,23 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <script src="app.js" async></script>
+        <style type='text/css'>
+            body {
+                background: black;
+            }
+            #system {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                z-index: -1;
+            }
+        </style>
         <title>scyl.us</title>
     </head>
-    <body><div id="container"></div></body>
+    <body>
+        <canvas id="system" width="640" height="480"></canvas>
+        <div id="container"></div>
+    </body>
 </html>

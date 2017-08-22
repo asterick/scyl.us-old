@@ -207,7 +207,6 @@ export default class MIPS {
 			}
 
 			try {
-				this._interrupt();
 				funct.code();
 			} catch (e) {
 				this._trap(e);
@@ -215,12 +214,12 @@ export default class MIPS {
 		}
 
 		this.timer += _prev - this.clocks;
+		this._interrupt();
 		return true;
 	}
 
 	step () {
 		const _prev = this.clocks;
-		this._interrupt();
 
 		try {
 			var pc = this.pc;
@@ -231,6 +230,7 @@ export default class MIPS {
 			this._trap(e);
 		}
 		this.timer += _prev - this.clocks;
+		this._interrupt();
 	}
 
 	// This forces delay slots at the end of a page to

@@ -3,8 +3,8 @@ import Component from 'inferno-component';
 
 import style from "./style.css";
 
-import { Registers } from "../../system/mips/consts";
-import { hex } from "../../util";
+import { Registers } from "../system/mips/consts";
+import { hex } from "../util";
 
 export default class extends Component {
 	render() {

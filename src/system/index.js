@@ -4,10 +4,10 @@ import GPU from "./gpu";
 import { Exceptions } from "./mips/consts";
 
 export default class extends MIPS {
-	constructor (bios) {
+	constructor (container) {
 		super();
 
-		this._gpu = new GPU(this);
+		this._gpu = new GPU(container, this);
 		this.tick = this.tick.bind(this);
 	}
 
@@ -32,14 +32,6 @@ export default class extends MIPS {
 			// Schedule next tick when the CPU is free
 			setTimeout(this.tick, 0);
 		}
-	}
-
-	attach (canvas) {
-		this._gpu.attach(canvas);
-	}
-
-	resize () {
-		this._gpu.resize();
 	}
 
 	read (code, address) {

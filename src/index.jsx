@@ -1,7 +1,7 @@
 import Inferno from 'inferno';
 import System from "./system";
 
-var runtime = new System();
+var runtime = new System("system");
 
 runtime.onReady = function () {
 	function rerender() {
@@ -18,4 +18,3 @@ runtime.onReady = function () {
 	// We are all setup we can now do shit
 	runtime.start();
 };
-

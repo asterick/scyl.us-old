@@ -37,7 +37,7 @@ for (var i = 0; i < 0x10000; i++) {
 }
 
 export default class {
-	constructor (parent) {
+	constructor (container, parent) {
 		this._parent = parent;
 
 		// SETUP DEFAULT REGIONS
@@ -48,13 +48,15 @@ export default class {
 		this.setClut(CLUT_4BPP, 0, 220);
 		this.setMask(true, false);
 		this.setDither(true);
-		this.setBlend(false);
+		this.setBlend(false, 0, 0, 0, 0);
 
 		this._dirty = false;
 
 		// Bind our function
 		this._requestFrame = () => this._repaint();
 		this._resize = () => this._onresize();
+
+		if (container) this._attach(container);
 	}
 
 	setBlend(blend, setSrcCoff, setDstCoff, resetSrcCoff ,resetDstCoff) {
@@ -112,12 +114,15 @@ export default class {
 		this._setMask = setMask;
 	}
 
-	attach (canvas) {
-		if (!canvas) {
+	_attach (container) {
+		if (!container) {
 			window.removeEventListener("resize", this._resize);
 			window.cancelAnimationFrame(this._animationFrame);
 			return ;
 		}
+
+		const canvas = document.getElementById(container);
+		this._canvas = canvas;
 
 		// Create our context
 		const gl = canvas.getContext("webgl2", {
@@ -129,7 +134,6 @@ export default class {
 
 		window.addEventListener("resize", this._resize);
 
-		this._canvas = canvas;
 		this._gl = gl;
 		this._onresize();
 
@@ -172,6 +176,8 @@ export default class {
 		// Set context to render by default
 		this._enterRender();
 		this._requestRepaint();
+
+		this._test();
 	}
 
 	render (type, textured, color, vertexes) {
