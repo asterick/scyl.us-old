@@ -5,38 +5,39 @@
   "main": "src/index.jsx",
   "scripts": {
     "start": "webpack-dev-server --hot --inline",
-    "build": "webpack -p"
+    "build": "BABEL_ENV=production webpack"
   },
   "keywords": [],
   "author": "Bryon Vandiver",
   "license": "Apache-2.0",
   "devDependencies": {
-    "babel-core": "^6.24.1",
-    "babel-loader": "^7.0.0",
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-minify": "^0.2.0",
     "babel-plugin-inferno": "^3.2.0",
-    "babel-preset-es2016": "^6.24.1",
     "core-util-is": "^1.0.2",
-    "css-loader": "^0.28.4",
-    "inferno": "^3.3.1",
-    "inferno-component": "^3.3.1",
-    "postcss-loader": "^2.0.5",
-    "postcss-smart-import": "^0.7.4",
+    "css-loader": "^0.28.5",
+    "inferno": "^3.7.1",
+    "inferno-component": "^3.7.1",
+    "postcss-loader": "^2.0.6",
+    "postcss-smart-import": "^0.7.5",
     "precss": "^1.4.0",
     "process-nextick-args": "^1.0.7",
     "raw-loader": "^0.5.1",
-    "recast": "^0.12.3",
-    "style-loader": "^0.18.1",
+    "style-loader": "^0.18.2",
     "util-deprecate": "^1.0.2",
-    "webpack": "^2.6.1",
-    "webpack-dev-server": "^2.4.5"
+    "webpack": "^2.7.0",
+    "webpack-dev-server": "^2.7.1"
   },
   "babel": {
-    "presets": [
-      "es2016"
-    ],
     "plugins": [
       "inferno"
-    ]
+    ],
+    "env": {
+      "production": {
+        "presets": ["minify"]
+      }
+    }
   },
   "bin": {
     "scyl.us": "app.js"
@@ -50,6 +51,8 @@
   },
   "homepage": "https://github.com/asterick/scyl.us#readme",
   "dependencies": {
-    "babel-plugin-transform-decorators-legacy": "^1.3.4"
+    "babel-plugin-minify-dead-code-elimination": "^0.2.0",
+    "babel-plugin-transform-decorators-legacy": "^1.3.4",
+    "babel-plugin-transform-inline-consecutive-adds": "^0.2.0"
   }
 }

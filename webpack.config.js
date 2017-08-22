@@ -20,8 +20,7 @@ module.exports = {
         loaders: [
             {
                 test: /\.jsx?$/,
-                exclude: /node_modules/,
-                loader: 'babel-loader'
+                loader: 'babel-loader',
             },
             {
                 test: /\.css$/,
@@ -37,4 +36,4 @@ module.exports = {
     resolve: {
         extensions: ['.js', '.jsx', '.css'],
     }
-}
+};

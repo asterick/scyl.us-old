@@ -20,7 +20,7 @@ LDFLAGS = -T $(LD_SCRIPT)
 all: $(HEADER)
 
 clean:
-	rm -Rf  $(OBJECTS) $(CODEROM) $(DATAROM) $(HEADER)
+	rm -Rf  $(OBJECTS) $(CODEROM) $(DATAROM) $(HEADER) $(ELFFILE)
 
 dump: $(ELFFILE)
 	mipsel-unknown-elf-objdump -x -s -d $(ELFFILE)
