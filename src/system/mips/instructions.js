@@ -300,7 +300,6 @@ export class Compiler {
 					"end"
 				]
 			}
-
 		];
 
 		// Prime function table with the "Tail"

@@ -37,9 +37,7 @@ for (var i = 0; i < 0x10000; i++) {
 }
 
 export default class {
-	constructor (container, parent) {
-		this._parent = parent;
-
+	constructor (container) {
 		// SETUP DEFAULT REGIONS
 		this.setViewport(0, 0, 256, 240);
 		this.setClip(0, 0, 256, 240);
@@ -176,11 +174,9 @@ export default class {
 		// Set context to render by default
 		this._enterRender();
 		this._requestRepaint();
-
-		this._test();
 	}
 
-	render (type, textured, color, vertexes) {
+	render (type, offset, count, textured, color, vertexes) {
 		const gl = this._gl;
 		const flat = color >= 0;
 		const size = 4 + (textured ? 4 : 0) + (flat ? 0 : 2);
@@ -226,10 +222,10 @@ export default class {
 		gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.DYNAMIC_DRAW);
 
 		// Setup our vertex pointers
-		gl.vertexAttribIPointer( this._drawShader.attributes.aVertex, 2, gl.SHORT, size, 0);
+		gl.vertexAttribIPointer( this._drawShader.attributes.aVertex, 2, gl.SHORT, size, offset);
 
 		if (textured) {
-			gl.vertexAttribIPointer(this._drawShader.attributes.aTexture, 2, gl.SHORT, size, 4);
+			gl.vertexAttribIPointer(this._drawShader.attributes.aTexture, 2, gl.SHORT, size, offset+4);
 			gl.enableVertexAttribArray(this._drawShader.attributes.aTexture);
 		} else {
 			gl.vertexAttribI4i(this._drawShader.attributes.aTexture, 0, 0, 0, 0);
@@ -240,12 +236,12 @@ export default class {
 			gl.vertexAttribI4ui(this._drawShader.attributes.aColor, color, color, color, color);
 			gl.disableVertexAttribArray(this._drawShader.attributes.aColor);
 		} else {
-			gl.vertexAttribIPointer(this._drawShader.attributes.aColor, 1, gl.UNSIGNED_SHORT, size, textured ? 8 : 4);
+			gl.vertexAttribIPointer(this._drawShader.attributes.aColor, 1, gl.UNSIGNED_SHORT, size, offset + (textured ? 8 : 4));
 			gl.enableVertexAttribArray(this._drawShader.attributes.aColor);
 		}
 
 		// Draw array
-		gl.drawArrays(type, 0, vertexes.buffer.byteLength / size);
+		gl.drawArrays(type, 0, count);
 
 		// Set our dirty flag so we know to copy the shadow frame over
 		this._dirty = true;
@@ -443,49 +439,5 @@ export default class {
 			uniforms: uniforms,
 			program: shaderProgram
 		};
-	}
-
-	// THIS IS MY GROSS TEST BENCH
-	_test () {
-		const gl = this._gl;
-
-        this.render(gl.TRIANGLE_FAN, false, -1, new Int16Array([
-            0,   0, 0b0000000000000001,
-            0, 240, 0b0000011111000001,
-          256, 240, 0b1111111111000001,
-          256,   0, 0b1111100000000001,
-        ]));
-
-        const palette = new Uint16Array(16);
-        for (var i = 0; i < palette.length; i++) palette[i] = ((i * 2) * 0x21) | (((i >> 2) ^ i) & 1 ? 0x8000 : 0);
-        this.setData(this._clutX, this._clutY, 16, 1, palette);
-
-        const px = new Uint16Array([
-        	0x3210,
-        	0x7654,
-        	0xBA98,
-        	0xFEDC,
-    	]);
-    	const px2 = new Uint16Array(4);
-    	this.setData(0, 0, 1, 4, px);
-    	this.getData(0, 0, 1, 4, px2);
-    	for (var i = 0; i < px.length; i++) if (px[i] != px2[i]) throw "getData / setData mismatch";
-
-		this.setMask(false, true);
-		this.setBlend(false, 1.0, 0.25, 0.25, 0.75);
-
-        this.render(gl.TRIANGLE_STRIP,  true, 0b1111111111111111, new Int16Array([
-            64,  64, 0, 0,
-            64, 192, 0, 4,
-           192,  64, 4, 0,
-           192, 192, 4, 4,
-        ]));
-
-        this.render(gl.POINTS, false, 0b1111111111111111, new Int16Array([
-            96,  96,
-            96, 160,
-           160,  96,
-           160, 160,
-        ]));
 	}
 }
