@@ -4,14 +4,8 @@ const webpack = require("webpack");
 module.exports = {
     entry: './src/index.jsx',
     output: {
-        path: path.join(__dirname, './bin'),
+        path: path.join(__dirname, './assets'),
         filename: 'app.js',
-    },
-    devServer: {
-        contentBase: [path.join(__dirname, "bin"), path.join(__dirname, "assets")],
-        compress: true,
-        hot: true,
-        port: 8888
     },
     plugins: [
         new webpack.IgnorePlugin(/^fs$/)

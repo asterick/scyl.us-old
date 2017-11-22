@@ -20,11 +20,8 @@ if (Config.environment === 'development') {
         }
     });
 
-    app.use(express.static('bin'));
+	app.use(express.static('assets'));
 }
-
-app.use(express.static('assets'));
-
 
 app.listen(base.port, () => {
     logging("debug", `Server started on port ${base.port}`);

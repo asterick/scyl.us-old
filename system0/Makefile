@@ -3,9 +3,9 @@ HEADER = system0.h
 OBJECTS = main.o startup.o
 LD_SCRIPT = ./linker.x
 
-ELFFILE = ../bin/system0.elf
-CODEROM = ../bin/code.bin
-DATAROM = ../bin/data.bin
+ELFFILE = system0.elf
+CODEROM = code.bin
+DATAROM = data.bin
 
 AS = mipsel-unknown-elf-as
 CC = mipsel-unknown-elf-gcc

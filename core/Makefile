@@ -2,11 +2,11 @@ OBJECTS = core.o cop0.o base.o memory.o
 LLVM_ROOT = ~/llvmwasm/bin
 BINARYEN_ROOT = ~/binaryen/bin
 WABT_ROOT = ~/wabt
-ROM_FILES = ../bin/code.bin ../bin/data.bin
+ROM_FILES = ../system0/code.bin ../system0/data.bin
 
 CFLAGS = -O3
 
-TARGET = "../bin/core.wasm"
+TARGET = "../assets/core.wasm"
 
 all: $(TARGET)
 
