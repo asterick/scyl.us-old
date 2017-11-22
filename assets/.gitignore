@@ -1,5 +1,3 @@
 *.rom
 *.js
 *.wasm
-*.bin
-*.elf
