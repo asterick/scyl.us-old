@@ -6,6 +6,8 @@
 #include "registers.h"
 #include "helper.h"
 
+static const int32_t CLOCK_BLOCK = 15000;        // Clock ticks per ms
+
 uint32_t start_pc;
 uint32_t clocks;
 
@@ -48,6 +50,12 @@ uint32_t getLO() {
 
 void setClocks(int32_t time) {
     clocks = time;
+}
+
+int32_t addClocks(int32_t time) {
+    if (time > 100) time = 100;
+
+    return clocks += time * CLOCK_BLOCK;
 }
 
 int32_t getClocks() {

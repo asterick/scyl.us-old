@@ -2,7 +2,7 @@ import Exception from "./exception";
 import { locate, Compiler } from "./instructions";
 
 import { params } from "../../util";
-import { MAX_COMPILE_SIZE, CLOCK_BLOCK, MIN_COMPILE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
+import { MAX_COMPILE_SIZE, MIN_COMPILE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
 
 const STATUS_CU3 = 0x80000000;
 const STATUS_CU2 = 0x40000000;
@@ -140,11 +140,7 @@ export default class MIPS {
 	}
 
 	get clocks() {
-		return this._exports.getClocks() >>> 0;
-	}
-
-	set clocks(v) {
-		this._exports.setClocks(v);
+		return this._exports.getClocks() >> 0;
 	}
 
 	// Execution core
@@ -159,7 +155,7 @@ export default class MIPS {
 	// Execute a single frame
 	_tick (ticks) {
 		// Advance clock, with 0.1 sec a max 'lag' time
-		const _prev = this.clocks = Math.max(100 * CLOCK_BLOCK, this.clocks + CLOCK_BLOCK * ticks);
+		const _prev = this._exports.addClocks(ticks);
 
 		while (this.clocks > 0) {
 			const block_size = this._blockSize(this.pc);

@@ -28,12 +28,11 @@ $(TARGET): system $(OBJECTS)
 	$(LLVM_ROOT)/llc -asm-verbose=false -o temp.s temp.bc
 	$(BINARYEN_ROOT)/s2wasm temp.s > temp.wast
 	python2 ./romdata.py temp.wast $(ROM_FILES)
-
 	$(BINARYEN_ROOT)/wasm-as temp.wast -o $@
 	rm -Rf $(TEMP_FILES)
 
-%.o: %.c
+%.o: %.c *.h
 	$(LLVM_ROOT)/clang -emit-llvm --target=wasm32 $(CFLAGS) $< -c -o $@
 
-%.o: %.cc
+%.o: %.cc *.h
 	$(LLVM_ROOT)/clang -emit-llvm --target=wasm32 $(CFLAGS) $< -c -o $@
