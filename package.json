@@ -4,8 +4,8 @@
   "description": "My personal webpage",
   "main": "src/index.jsx",
   "scripts": {
-    "start": "node server",
-    "build": "BABEL_ENV=production webpack"
+    "start": "make -C core; node server",
+    "build": "BABEL_ENV=production webpack; make -C core"
   },
   "keywords": [],
   "author": "Bryon Vandiver",

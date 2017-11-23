@@ -3,7 +3,7 @@ import Renderer from "./renderer";
 export default class GPU extends Renderer {
     constructor(container, parent) {
         super(container);
-        //this._test();
+        this._test();
 
         this._parent = parent;
     }
