@@ -234,8 +234,6 @@ export class Compiler {
 	}
 
 	compile(start, length, locate) {
-		length = 1024;
-
 		const end = start + length * 4;
 		const table = [];
 		const functions = [
