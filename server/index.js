@@ -1,5 +1,3 @@
-const { URL } = require("url");
-
 const express = require("express");
 const WebSocket = require('ws');
 
@@ -10,7 +8,6 @@ const Config = require("../config.json");
 // === Main ===
 const app = express();
 const expressWs = require('express-ws')(app);
-const base = new URL(Config.server);
 
 if (Config.environment === 'development') {
     const webpack = require("webpack");
@@ -32,6 +29,6 @@ app.ws('/socketserver', function(ws, req) {
   ws.send("hello");
 });
 
-app.listen(base.port, () => {
-    logging("debug", `Server started on port ${base.port}`);
+app.listen(Config.server.port, () => {
+    logging("debug", `Server started on port ${Config.server.port}`);
 });
