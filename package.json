@@ -4,8 +4,9 @@
   "description": "My personal webpage",
   "main": "server/index.js",
   "scripts": {
-    "start": "make -C core; node server",
-    "build": "BABEL_ENV=production webpack; make -C core"
+    "core": "make -C core",
+    "start": "node server",
+    "build": "BABEL_ENV=production webpack"
   },
   "keywords": [],
   "author": "Bryon Vandiver",
@@ -21,7 +22,8 @@
     "inferno-component": "^3.10.1",
     "raw-loader": "^0.5.1",
     "webpack": "^3.8.1",
-    "winston": "^2.4.0"
+    "winston": "^2.4.0",
+    "wrtc": "0.0.63"
   },
   "babel": {
     "plugins": [
