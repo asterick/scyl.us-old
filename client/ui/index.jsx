@@ -1,15 +1,13 @@
 import Inferno from 'inferno';
 import Component from 'inferno-component';
 
-import style from "./style.css";
-
 import Memory from "./memory";
 import Assembly from "./assembly";
 import Registers from "./registers";
 
 export default class extends Component {
 	render() {
-		return <div class={style.debugger}>
+		return <div class="debugger">
 			<div style="display: inline-block">
 				{ this.props.runtime.running
 					? <input type="button" value="stop" onClick={() => {

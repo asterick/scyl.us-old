@@ -1,6 +1,5 @@
 import Inferno from 'inferno';
 import Component from 'inferno-component';
-import style from "./style.css";
 
 import { hex } from "../util";
 
@@ -27,6 +26,6 @@ export default class extends Component {
 	}
 
 	render() {
-		return  <table class={style["memory"]}>{this.listing()}</table>;
+		return  <table class="memory">{this.listing()}</table>;
 	}
 };
