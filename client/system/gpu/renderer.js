@@ -233,10 +233,10 @@ export default class {
 		}
 
 		if (flat) {
-			gl.vertexAttribI4ui(this._drawShader.attributes.aColor, color, color, color, color);
+			gl.vertexAttribI4i(this._drawShader.attributes.aColor, color, color, color, color);
 			gl.disableVertexAttribArray(this._drawShader.attributes.aColor);
 		} else {
-			gl.vertexAttribIPointer(this._drawShader.attributes.aColor, 1, gl.UNSIGNED_SHORT, size, offset + (textured ? 8 : 4));
+			gl.vertexAttribIPointer(this._drawShader.attributes.aColor, 1, gl.SHORT, size, offset + (textured ? 8 : 4));
 			gl.enableVertexAttribArray(this._drawShader.attributes.aColor);
 		}
 

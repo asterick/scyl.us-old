@@ -5,7 +5,7 @@ uniform vec2 uClipSize;
 uniform vec2 uClipPos;
 uniform vec2 uDrawPos;
 
-in uint aColor;
+in int aColor;
 in ivec2 aVertex;
 in ivec2 aTexture;
 
@@ -14,17 +14,17 @@ out vec2 vTexture;
 out vec3 vColor;
 flat out lowp uint vMask;
 
-vec3 unpack(uint color) {
+vec3 unpack(int color) {
 	return vec3(
-			float(color & 0x1Fu) / 31.0,
-			float((color >>  5) & 0x1Fu) / 31.0,
-			float((color >> 10) & 0x1Fu) / 31.0
+			float(color & 0x1F) / 31.0,
+			float((color >>  5) & 0x1F) / 31.0,
+			float((color >> 10) & 0x1F) / 31.0
 		);
 }
 
 void main(void) {
 	vColor    = unpack(aColor);
-	vMask	  = bool(aColor & 0x8000u) ? 0xFFu : 0u;
+	vMask	  = bool(aColor < 0) ? 0xFFu : 0u;
 	vTexture  = vec2(aTexture);
 	vAbsolute = vec2(aVertex) + uDrawPos;
 

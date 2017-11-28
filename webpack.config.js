@@ -2,7 +2,7 @@ const path = require("path");
 const webpack = require("webpack");
 
 module.exports = {
-    entry: './src/index.jsx',
+    entry: './client/index.jsx',
     output: {
         path: path.join(__dirname, './assets'),
         filename: 'app.js',

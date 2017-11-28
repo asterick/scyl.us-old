@@ -8,7 +8,8 @@ const logging = require("./logging");
 const Config = require("../config.json");
 
 // === Main ===
-const server = express();
+const app = express();
+const expressWs = require('express-ws')(app);
 const base = new URL(Config.server);
 
 if (Config.environment === 'development') {
@@ -21,25 +22,16 @@ if (Config.environment === 'development') {
         }
     });
 
-	server.use(express.static('assets'));
+	app.use(express.static('assets'));
 }
 
-const wss = new WebSocket.Server({ server });
-
-wss.on('connection', function connection(ws, req) {
-    console.log(ws);
-
-    const location = url.parse(req.url, true);
-    // You might use location.query.access_token to authenticate or share sessions
-    // or req.headers.cookie (see http://stackoverflow.com/a/16395220/151312)
-
-    ws.on('message', function incoming(message) {
-        console.log('received: %s', message);
-    });
-
-    ws.send('something');
+app.ws('/socketserver', function(ws, req) {
+  ws.on('message', function(msg) {
+    ws.send(msg);
+  });
+  ws.send("hello");
 });
 
-server.listen(base.port, () => {
+app.listen(base.port, () => {
     logging("debug", `Server started on port ${base.port}`);
 });

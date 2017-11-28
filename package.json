@@ -2,7 +2,7 @@
   "name": "scyl.us",
   "version": "1.0.0",
   "description": "My personal webpage",
-  "main": "src/index.jsx",
+  "main": "server/index.js",
   "scripts": {
     "start": "make -C core; node server",
     "build": "BABEL_ENV=production webpack; make -C core"
@@ -17,6 +17,7 @@
     "babel-plugin-inferno": "^3.2.0",
     "css-loader": "^0.28.5",
     "express": "^4.16.2",
+    "express-ws": "^3.0.0",
     "inferno": "^3.7.1",
     "inferno-component": "^3.7.1",
     "postcss-loader": "^2.0.6",
@@ -50,8 +51,5 @@
   "bugs": {
     "url": "https://github.com/asterick/scyl.us/issues"
   },
-  "homepage": "https://github.com/asterick/scyl.us#readme",
-  "dependencies": {
-    "ws": "^3.3.2"
-  }
+  "homepage": "https://github.com/asterick/scyl.us#readme"
 }
