@@ -11,9 +11,8 @@ runtime.onReady = function () {
 	runtime.start();
 };
 
-/*
 var url = new URL('/socketserver', window.location.href);
-url.protocol = 'ws:';
+url.protocol = url.protocol.replace("http","ws");
 var exampleSocket = new WebSocket(url.href, ["protocolOne"]);
 
 exampleSocket.onopen = function (event) {
@@ -23,4 +22,3 @@ exampleSocket.onopen = function (event) {
 exampleSocket.onmessage = function (event) {
 	console.log(event);
 }
-*/
