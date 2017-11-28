@@ -1,13 +1,14 @@
-const Config = require("../config.json");
-
 const { URL } = require("url");
 
 const express = require("express");
+const WebSocket = require('ws');
 
 const logging = require("./logging");
 
+const Config = require("../config.json");
+
 // === Main ===
-const app = express();
+const server = express();
 const base = new URL(Config.server);
 
 if (Config.environment === 'development') {
@@ -20,13 +21,25 @@ if (Config.environment === 'development') {
         }
     });
 
-	app.use(express.static('assets'));
+	server.use(express.static('assets'));
 }
 
-app.get("/fart", (req, res) => {
-	res.end("hi");
-})
+const wss = new WebSocket.Server({ server });
 
-app.listen(base.port, () => {
+wss.on('connection', function connection(ws, req) {
+    console.log(ws);
+
+    const location = url.parse(req.url, true);
+    // You might use location.query.access_token to authenticate or share sessions
+    // or req.headers.cookie (see http://stackoverflow.com/a/16395220/151312)
+
+    ws.on('message', function incoming(message) {
+        console.log('received: %s', message);
+    });
+
+    ws.send('something');
+});
+
+server.listen(base.port, () => {
     logging("debug", `Server started on port ${base.port}`);
 });

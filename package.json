@@ -50,5 +50,8 @@
   "bugs": {
     "url": "https://github.com/asterick/scyl.us/issues"
   },
-  "homepage": "https://github.com/asterick/scyl.us#readme"
+  "homepage": "https://github.com/asterick/scyl.us#readme",
+  "dependencies": {
+    "ws": "^3.3.2"
+  }
 }
