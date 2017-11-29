@@ -1,4 +1,4 @@
-npm run build
+npm run core
 ssh node@scyl.us "source .profile; pm2 stop scyl.us"
 ssh node@scyl.us "source .profile; cd ~/scyl.us; git reset --hard"
 ssh node@scyl.us "source .profile; cd ~/scyl.us; git pull"
