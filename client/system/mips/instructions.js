@@ -11,7 +11,7 @@ function names(table) {
 	return Object.keys(table).reduce((acc, key) => {
 		const entry = table[key];
 		if (typeof entry === 'string') {
-			return acc.concat(entry);
+			return (key !== 'field') ? acc.concat(entry) : acc;
 		} else {
 			return acc.concat(names(entry));
 		}

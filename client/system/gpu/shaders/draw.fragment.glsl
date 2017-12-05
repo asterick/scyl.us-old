@@ -28,7 +28,12 @@ flat in lowp uint vMask;
 
 out uvec4 fragColor;
 
-const uint ordered_dither[] = uint[](0u, 4u, 1u, 5u, 6u, 2u, 7u, 3u, 1u, 5u, 0u, 4u, 7u, 3u, 6u, 2u);
+const uint ordered_dither[] = uint[](
+	0u, 4u, 1u, 5u,
+	6u, 2u, 7u, 3u,
+	1u, 5u, 0u, 4u,
+	7u, 3u, 6u, 2u
+);
 
 void main(void) {
 	ivec2 vramTarget = ivec2(vAbsolute);
@@ -42,7 +47,7 @@ void main(void) {
 		if (uClutMode > 0) {
 			uvec4 color = texelFetch(sVram, ivec2(iVec.x >> uClutMode, iVec.y) + uTextureOffset, 0);
 			uint word = (color.r >> 3) | ((color.g >> 3) << 5) | ((color.b >> 3) << 10) | (color.a >= 128u ? 0x8000u : 0u);
-		
+
 			texpos = ivec2((word >> ((iVec.x & uClutIndexMask) << uClutIndexShift)) & uClutColorMask, 0) + uClutOffset;
 		} else {
 			texpos = iVec + uTextureOffset;

@@ -1,7 +1,6 @@
 import Exception from "./exception";
 import { locate, Compiler } from "./instructions";
 
-import { params } from "../../util";
 import { MAX_COMPILE_SIZE, MIN_COMPILE_SIZE, PROCESSOR_ID, Exceptions } from "./consts";
 
 const STATUS_CU3 = 0x80000000;
@@ -32,10 +31,6 @@ const ALL_STATUS_BITS =
 	STATUS_CU3 | STATUS_CU2 | STATUS_CU1 | STATUS_CU0 |
 	STATUS_BEV | STATUS_IM |
 	STATUS_KUo | STATUS_IEo | STATUS_KUp | STATUS_IEp | STATUS_KUc | STATUS_IEc;
-
-function random() {
-	return (Math.random() * 0x37 + 0x8) & 0x3F;
-}
 
 export default class MIPS {
 	/*******
@@ -281,7 +276,7 @@ export default class MIPS {
 		case 0x0: // c0_index
 			return this._index;
 		case 0x1: // c0_random (non-deterministic, cheap method)
-			return random() << 8;
+			return ((Math.random() * 0x37 + 0x8) & 0x3F) << 8;
 		case 0x2: // c0_entrylo
 			return this._entryLo;
 		case 0xA: // c0_entryhi

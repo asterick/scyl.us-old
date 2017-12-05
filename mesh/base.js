@@ -1,4 +1,6 @@
-export default class PeerConnection {
+const EventEmitter = require('events').EventEmitter;
+
+class PeerConnection extends EventEmitter {
 	constructor() {
 		this.connection = new RTCPeerConnection();
 		this.connection.ondatachannel = event => this._bindChannel(event.channel);
@@ -35,7 +37,7 @@ export default class PeerConnection {
 	}
 
 	_addIce(candidate) {
-		remoteConnection
+		this.connection
 			.addIceCandidate(candidate)
 			.catch(err => this._onerror(err));
 	}
