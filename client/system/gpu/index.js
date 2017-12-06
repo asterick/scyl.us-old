@@ -12,6 +12,7 @@ export default class GPU extends Renderer {
 	_test () {
 		const gl = this._gl;
 
+        this.setClut(true, 2, 0, 220);
         this.render(gl.TRIANGLE_FAN, 0, 4, false, -1, new Int16Array([
             0,   0, 0b0000000000000001,
             0, 240, 0b0000011111000001,

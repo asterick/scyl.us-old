@@ -8,6 +8,7 @@ uniform bool uTextured;
 uniform ivec2 uTextureOffset;
 uniform ivec2 uClutOffset;
 
+uniform bool uClutEnable;
 uniform int uClutMode;
 uniform int uClutIndexMask;
 uniform int uClutIndexShift;
@@ -44,7 +45,7 @@ void main(void) {
 		ivec2 texpos;
 
 		// Paletted mode
-		if (uClutMode > 0) {
+		if (uClutEnable) {
 			uvec4 color = texelFetch(sVram, ivec2(iVec.x >> uClutMode, iVec.y) + uTextureOffset, 0);
 			uint word = (color.r >> 3) | ((color.g >> 3) << 5) | ((color.b >> 3) << 10) | (color.a >= 128u ? 0x8000u : 0u);
 

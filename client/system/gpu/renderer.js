@@ -6,10 +6,6 @@ import DrawVertexShader from "raw-loader!./shaders/draw.vertex.glsl";
 const VRAM_WIDTH = 1024;
 const VRAM_HEIGHT = 512;
 
-const CLUT_16BPP = 0;
-const CLUT_8BPP  = 1;
-const CLUT_4BPP  = 2;
-
 const PALETTE = new Uint32Array(0x10000);
 const VRAM_WORDS = new Uint32Array(VRAM_WIDTH * VRAM_HEIGHT);
 const VRAM_BYTES = new Uint8Array(VRAM_WORDS.buffer);
@@ -43,7 +39,7 @@ export default class {
 		this.setClip(0, 0, 256, 240);
 		this.setDraw(0, 0);
 		this.setTexture(0, 0);
-		this.setClut(CLUT_4BPP, 0, 220);
+		this.setClut(false, 0, 0, 0);
 		this.setMask(true, false);
 		this.setDither(true);
 		this.setBlend(false, 0, 0, 0, 0);
@@ -57,7 +53,7 @@ export default class {
 		if (container) this._attach(container);
 	}
 
-	setBlend(blend, setSrcCoff, setDstCoff, resetSrcCoff ,resetDstCoff) {
+	setBlend(blend, setSrcCoff, setDstCoff, resetSrcCoff, resetDstCoff) {
 		this._blend = blend;
 		this._setSrcCoff = setSrcCoff;
 		this._setDstCoff = setDstCoff;
@@ -70,7 +66,8 @@ export default class {
 		this._textureY = y;
 	}
 
-	setClut(mode, x, y) {
+	setClut(enable, mode, x, y) {
+		this._clutEnable = enable;
 		this._clutMode = mode;
 		this._clutX = x;
 		this._clutY = y;
@@ -195,9 +192,10 @@ export default class {
 	   	gl.uniform1i(this._drawShader.uniforms.uTextured, textured);
 	   	if (textured) {
 		   	gl.uniform2i(this._drawShader.uniforms.uTextureOffset, this._textureX, this._textureY);
-		   	gl.uniform1i(this._drawShader.uniforms.uClutMode, this._clutMode);
+		   	gl.uniform1i(this._drawShader.uniforms.uClutEnable, this._clutEnable);
 
-		   	if (this._clutMode > 0) {
+		   	if (this._clutEnable) {
+			   	gl.uniform1i(this._drawShader.uniforms.uClutMode, this._clutMode);
 		   		gl.uniform2i(this._drawShader.uniforms.uClutOffset, this._clutX, this._clutY);
 		   		gl.uniform1i(this._drawShader.uniforms.uClutIndexMask, this._clutIndexMask);
 		   		gl.uniform1i(this._drawShader.uniforms.uClutIndexShift, this._clutIndexShift);
