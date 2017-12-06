@@ -15,14 +15,14 @@ export default class GPU extends Renderer {
         this.setClut(true, 2, 0, 220);
         this.render(gl.TRIANGLE_FAN, 0, 4, false, -1, new Int16Array([
             0,   0, 0b0000000000000001,
-            0, 240, 0b0000011111000001,
+            0, 240, 0b0000000000111111,
           256, 240, 0b1111111111000001,
           256,   0, 0b1111100000000001,
         ]));
 
         const palette = new Uint16Array(16);
         for (var i = 0; i < palette.length; i++) palette[i] = ((i * 2) * 0x21) | (((i >> 2) ^ i) & 1 ? 0x8000 : 0);
-        this.setData(this._clutX, this._clutY, 16, 1, palette);
+        this.setData(0, 220, 16, 1, palette);
 
         const px = new Uint16Array([
         	0x3210,

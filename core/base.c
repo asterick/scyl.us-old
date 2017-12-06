@@ -5,7 +5,6 @@
 
 #include "imports.h"
 
-#define EXTERN extern
 #include "registers.h"
 #include "helper.h"
 #include "memory.h"

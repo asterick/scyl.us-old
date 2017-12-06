@@ -32,7 +32,7 @@ $(TARGET): system $(OBJECTS)
 	rm -Rf $(TEMP_FILES)
 
 %.o: %.c *.h
-	$(LLVM_ROOT)/clang -emit-llvm --target=wasm32 $(CFLAGS) $< -c -o $@
+	clang -emit-llvm --target=wasm32 $(CFLAGS) $< -c -o $@
 
 %.o: %.cc *.h
-	$(LLVM_ROOT)/clang -emit-llvm --target=wasm32 $(CFLAGS) $< -c -o $@
+	clang -emit-llvm --target=wasm32 $(CFLAGS) $< -c -o $@
