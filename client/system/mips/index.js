@@ -151,7 +151,11 @@ export default class MIPS {
 			try {
 				funct.code();
 			} catch (e) {
-				this._trap(e);
+				if (e instanceof Exception) {
+					this.trap(e.exception, e.pc, e.delayed, e.coprocessor)
+				} else {
+					throw e;
+				}
 			}
 		}
 
@@ -169,19 +173,15 @@ export default class MIPS {
 
 			this._execute(pc, false);
 		} catch (e) {
-			this._trap(e);
+			if (e instanceof Exception) {
+				this.trap(e.exception, e.pc, e.delayed, e.coprocessor)
+			} else {
+				throw e;
+			}
 		}
 
 		this.timer += _prev - this.clocks;
 		this.handle_interrupt();
-	}
-
-	_trap(e) {
-		if (e instanceof Exception) {
-			this.trap(e.exception, e.pc, e.delayed, e.coprocessor)
-		} else {
-			throw e;
-		}
 	}
 
 	// This forces delay slots at the end of a page to
