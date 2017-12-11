@@ -1,7 +1,10 @@
 #include "types.h"
 #include "fields.h"
 #include "consts.h"
+
+extern "C" {
 #include "imports.h"
+}
 
 static const int MAX_UNIQUE_HASH = 64;
 static const int PAGE_SIZE = 0x10000;
