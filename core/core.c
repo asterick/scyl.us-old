@@ -3,6 +3,8 @@
 
 #define EXTERN
 
+#include "cop0.h"
+
 #include "registers.h"
 #include "helper.h"
 

@@ -1,4 +1,4 @@
-OBJECTS = core.o cop0.o base.o memory.o
+OBJECTS = core.o cop0.o base.o memory.o hash.o
 LLVM_ROOT = ~/llvmwasm/bin
 BINARYEN_ROOT = ~/binaryen/bin
 WABT_ROOT = ~/wabt

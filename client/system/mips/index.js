@@ -12,6 +12,7 @@ export default class MIPS {
 		this._cache = [];
 
 		this._environment = {
+			debug: (code) => console.log("WASM DEBUG", code),
 	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop); },
 			execute: (pc, delayed) => this._execute(pc, delayed),
 	    	read: (physical, code, pc, delayed) => {
@@ -66,6 +67,8 @@ export default class MIPS {
 
 				this.reset();
 				this.onReady && this.onReady();
+
+				debugger ;
 			});
 	}
 
@@ -150,11 +153,7 @@ export default class MIPS {
 			try {
 				funct.code();
 			} catch (e) {
-				if (e instanceof Exception) {
-					this.trap(e.exception, e.pc, e.delayed, e.coprocessor)
-				} else {
-					throw e;
-				}
+				this._trap(e);
 			}
 		}
 
@@ -172,15 +171,19 @@ export default class MIPS {
 
 			this._execute(pc, false);
 		} catch (e) {
-			if (e instanceof Exception) {
-				this.trap(e.exception, e.pc, e.delayed, e.coprocessor)
-			} else {
-				throw e;
-			}
+			this._trap(e);
 		}
 
 		this.timer += _prev - this.clocks;
 		this.handle_interrupt();
+	}
+
+	_trap(e) {
+		if (e instanceof Exception) {
+			this.trap(e.exception, e.pc, e.delayed, e.coprocessor)
+		} else {
+			throw e;
+		}
 	}
 
 	// This forces delay slots at the end of a page to

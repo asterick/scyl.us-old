@@ -1,11 +1,13 @@
 #include "types.h"
 #include "fields.h"
 #include "consts.h"
+#include "cop0.h"
 
 #include "imports.h"
 
 #include "registers.h"
 #include "helper.h"
+#include "hash.h"
 
 static const uint32_t PROCESSOR_ID = 0x00000301;
 
@@ -56,6 +58,8 @@ static uint32_t pt_base;
 void resetCOP0() {
 	status = STATUS_KUc | STATUS_BEV;
 	cause = 0;
+
+	reset_hash();
 }
 
 uint32_t random() {
@@ -81,8 +85,13 @@ void handle_interrupt() {
 }
 
 uint32_t locate(uint32_t hash) {
-	// TODO: FIND INSIDE OF THE TLB CACHE (keyed off hash or hash | 0xFFF)
-	return 0;
+	uint32_t regular = find_hash(hash);
+
+	if (regular & 0x200) {
+		return regular;
+	}
+
+	return find_hash(hash | 0xFFF);
 }
 
 static void write_tlb(int index) {
@@ -90,6 +99,7 @@ static void write_tlb(int index) {
 	if (locate(entry_hi) & 0x200) {
 		return ;
 	}
+
 	/*
 	// Clear out previous TLB element (if it was valid)
 	if (this._tlbLo[index] & 0x200) {
@@ -102,7 +112,6 @@ static void write_tlb(int index) {
 		let indexIs = this._entryHi | ((this._entryLo & 0x100) ? 0xFFF : 0);
 		this._tlb[indexIs]  = this._entryLo | index;
 	}
-
 	*/
 
 	// Store our TLB (does not handle global)
@@ -116,6 +125,7 @@ uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delay
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
 
+	// Check if line is cached (does nothing)
 	if ((address & 0xE0000000) == 0xA0000000) {
 		// cached = false;
 	}
