@@ -59,7 +59,7 @@ export default class MIPS {
 		this._environment = {
 	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop); },
 			execute: (pc, delayed) => this._execute(pc, delayed),
-			translate: (address, write, pc, delayed) => this._translate(address, pc, delayed),
+			translate: (address, write, pc, delayed) => this._translate(address, write, pc, delayed),
 	    	read: (physical, code, pc, delayed) => {
 				try {
 					return this.read(code, physical >>> 0);
