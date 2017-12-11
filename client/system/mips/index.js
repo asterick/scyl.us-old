@@ -12,7 +12,9 @@ export default class MIPS {
 		this._cache = [];
 
 		this._environment = {
-	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop); },
+	        exception: (code, pc, delayed, cop) => {
+	        	throw new Exception(code, pc, delayed, cop);
+	        },
 			execute: (pc, delayed) => this._execute(pc, delayed),
 	    	read: (physical, code, pc, delayed) => {
 				try {
@@ -191,6 +193,7 @@ export default class MIPS {
 		const data = this.load(pc, true, pc, delayed);
 		const call = locate(data);
 
+		this._exports.setStartPC(pc);
 		this._exports[call.name](pc, data, delayed);
 	}
 

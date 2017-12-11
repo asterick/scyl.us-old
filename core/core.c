@@ -10,9 +10,6 @@
 
 static const int32_t CLOCK_BLOCK = 15000;        // Clock ticks per ms
 
-uint32_t start_pc;
-uint32_t clocks;
-
 // *******
 // ** Interface helpers
 // *******

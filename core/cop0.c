@@ -122,6 +122,8 @@ uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delay
 }
 
 void trap(int exception, int address, int delayed, int coprocessor) {
+	clocks -= (address - start_pc + 4) >> 2;
+
 	// Preserve return address
 	epc = address;
 

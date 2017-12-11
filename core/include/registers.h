@@ -14,3 +14,7 @@ EXTERN union {
 
 EXTERN uint32_t registers[32];
 EXTERN uint32_t pc;
+
+EXTERN uint32_t start_pc;
+EXTERN int clocks;
+
