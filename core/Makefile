@@ -29,7 +29,7 @@ $(TARGET): system $(OBJECTS)
 	$(BINARYEN_ROOT)/s2wasm temp.s > temp.wast
 	python2 ./romdata.py temp.wast $(ROM_FILES)
 	$(BINARYEN_ROOT)/wasm-as temp.wast -o $@
-	# rm -Rf $(TEMP_FILES)
+	rm -Rf $(TEMP_FILES)
 
 %.o: %.c include
 	clang -emit-llvm --target=wasm32 $(CFLAGS) $< -c -o $@
