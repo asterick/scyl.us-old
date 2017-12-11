@@ -21,7 +21,7 @@
     "inferno": "^3.10.1",
     "inferno-component": "^3.10.1",
     "raw-loader": "^0.5.1",
-    "webpack": "^3.8.1",
+    "webpack": "^3.10.0",
     "winston": "^2.4.0",
     "wrtc": "0.0.63"
   },

@@ -5,7 +5,7 @@ WABT_ROOT = ~/wabt
 ROM_FILES = system0/code.bin system0/data.bin
 TEMP_FILES = $(ROM_FILES) temp.wast temp.s temp.bc
 
-CFLAGS = -O3
+CFLAGS = -O3 -Iinclude
 
 TARGET = "../assets/core.wasm"
 
@@ -29,10 +29,10 @@ $(TARGET): system $(OBJECTS)
 	$(BINARYEN_ROOT)/s2wasm temp.s > temp.wast
 	python2 ./romdata.py temp.wast $(ROM_FILES)
 	$(BINARYEN_ROOT)/wasm-as temp.wast -o $@
-	rm -Rf $(TEMP_FILES)
+	# rm -Rf $(TEMP_FILES)
 
-%.o: %.c *.h
+%.o: %.c include
 	clang -emit-llvm --target=wasm32 $(CFLAGS) $< -c -o $@
 
-%.o: %.cc *.h
+%.o: %.cc include
 	clang -emit-llvm --target=wasm32 $(CFLAGS) $< -c -o $@
