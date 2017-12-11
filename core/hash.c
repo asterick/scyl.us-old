@@ -2,9 +2,7 @@
 #include "fields.h"
 #include "consts.h"
 
-extern "C" {
 #include "imports.h"
-}
 
 static const int MAX_UNIQUE_HASH = 64;
 static const int PAGE_SIZE = 0x10000;
@@ -19,15 +17,13 @@ static HashPage* NULL = (HashPage *) 0;
 static HashPage* top_block[PAGE_SIZE];
 static HashPage base_block[MAX_UNIQUE_HASH];
 
-extern "C" void reset_hash() {
-	debug(1);
+void reset_hash() {
 	for (int i = 0; i < PAGE_SIZE; i++) {
-		top_block[i] = NULL;
+		//top_block[i] = NULL;
 	}
-	debug(2);
 }
 
-extern "C" uint32_t find_hash(uint32_t index) {
+uint32_t find_hash(uint32_t index) {
 	uint32_t hash_top = index >> 16;
 	HashPage* block = top_block[hash_top];
 
@@ -38,7 +34,7 @@ extern "C" uint32_t find_hash(uint32_t index) {
 	return block->values[hash_bottom];
 }
 
-extern "C" void clear_hash(uint32_t index) {
+void clear_hash(uint32_t index) {
 	uint32_t hash_top = index >> 16;
 
 	HashPage* block = top_block[hash_top];
@@ -61,7 +57,7 @@ extern "C" void clear_hash(uint32_t index) {
 	}
 }
 
-extern "C" void write_hash(uint32_t index, uint32_t value) {
+void write_hash(uint32_t index, uint32_t value) {
 	// Zero is implicitly a cleared value
 	if (value == 0) {
 		clear_hash(index);
@@ -74,7 +70,7 @@ extern "C" void write_hash(uint32_t index, uint32_t value) {
 
 	if (block == NULL) {
 		for (int i = 0; i < MAX_UNIQUE_HASH; i++) {
-			HashPage* block = &base_block[i];
+			block = &base_block[i];
 
 			if (block->used <= 0) {
 				top_block[hash_top] = block;

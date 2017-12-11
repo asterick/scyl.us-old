@@ -1,5 +1,3 @@
-extern "C" {
-
 #include "types.h"
 #include "imports.h"
 
@@ -38,6 +36,4 @@ void store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_
 	} else if (physical < ROM_BASE || physical >= (ROM_BASE + ROM_SIZE)) {
 		write(physical, value, mask, pc, delayed);
 	}
-}
-
 }

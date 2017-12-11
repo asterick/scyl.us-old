@@ -100,19 +100,17 @@ static void write_tlb(int index) {
 		return ;
 	}
 
-	/*
 	// Clear out previous TLB element (if it was valid)
-	if (this._tlbLo[index] & 0x200) {
-		let indexWas = this._tlbHi[index] | ((this._tlbLo[index] & 0x100) ? 0xFFF : 0);
-		delete this._tlb[indexWas];
+	if (tlb_lo[index] & 0x200) {
+		uint32_t indexWas = tlb_hi[index] | ((tlb_lo[index] & 0x100) ? 0xFFF : 0);
+		clear_hash(indexWas);
 	}
 
 	// Setup our fast lookup
-	if (this._entryLo & 0x200) {
-		let indexIs = this._entryHi | ((this._entryLo & 0x100) ? 0xFFF : 0);
-		this._tlb[indexIs]  = this._entryLo | index;
+	if (entry_lo & 0x200) {
+		uint32_t indexIs = entry_hi | ((entry_lo & 0x100) ? 0xFFF : 0);
+		write_hash(indexIs, entry_lo | index);
 	}
-	*/
 
 	// Store our TLB (does not handle global)
 	tlb_lo[index] = entry_lo;

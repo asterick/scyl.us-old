@@ -12,7 +12,6 @@ export default class MIPS {
 		this._cache = [];
 
 		this._environment = {
-			debug: (code) => console.log("WASM DEBUG", code),
 	        exception: (code, pc, delayed, cop) => { throw new Exception(code, pc, delayed, cop); },
 			execute: (pc, delayed) => this._execute(pc, delayed),
 	    	read: (physical, code, pc, delayed) => {
@@ -56,6 +55,7 @@ export default class MIPS {
 				this._exports =  module.instance.exports;
 
 				const memory = this._exports.memory.buffer;
+
 				this.registers = new Uint32Array(memory, this._exports.getRegisterAddress(), 64);
 				this.load = this._exports.load;
 				this.store = this._exports.store;
@@ -67,8 +67,6 @@ export default class MIPS {
 
 				this.reset();
 				this.onReady && this.onReady();
-
-				debugger ;
 			});
 	}
 
