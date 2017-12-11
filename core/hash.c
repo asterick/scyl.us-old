@@ -19,7 +19,7 @@ static HashPage base_block[MAX_UNIQUE_HASH];
 
 void reset_hash() {
 	for (int i = 0; i < PAGE_SIZE; i++) {
-		//top_block[i] = NULL;
+		top_block[i] = NULL;
 	}
 }
 
