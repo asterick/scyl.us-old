@@ -18,7 +18,7 @@ void reset() {
     pc = 0xBFC00000;
     clocks = 0;
 
-    resetCOP0();
+    reset_cop0();
 }
 
 uint32_t getRegisterAddress() {

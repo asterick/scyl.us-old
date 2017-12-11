@@ -22,7 +22,7 @@ static uint32_t epc;
 static uint32_t bad_addr;
 static uint32_t pt_base;
 
-void resetCOP0() {
+void reset_cop0() {
 	status = STATUS_KUc | STATUS_BEV;
 	cause = 0;
 
@@ -51,8 +51,8 @@ void handle_interrupt() {
 	}
 }
 
-uint32_t locate(uint32_t hash) {
-	uint32_t regular = find_hash(hash);
+uint32_t read_tlb(uint32_t hash) {
+	uint32_t regular = find_hash(hash & ~0x03F);
 
 	if (regular & 0x200) {
 		return regular;
@@ -63,7 +63,7 @@ uint32_t locate(uint32_t hash) {
 
 static void write_tlb(int index) {
 	// Ignore TLB entries that can cause a collision (normally would cause a system reset)
-	if (locate(entry_hi) & 0x200) {
+	if (read_tlb(entry_hi) & 0x200) {
 		return ;
 	}
 
@@ -97,7 +97,7 @@ uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delay
 
 	if ((address & 0xC0000000) != 0x80000000) {
 		uint32_t page = address & 0xFFFFF000;
-		uint32_t result = locate(page | (entry_hi & 0xFC0));
+		uint32_t result = read_tlb(page | (entry_hi & 0xFFF));
 
 		// cached = ~result & 0x0800;
 
@@ -277,7 +277,7 @@ void TLBP(uint32_t address, uint32_t word, uint32_t delayed) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
 
-	uint32_t found = locate(entry_hi);
+	uint32_t found = read_tlb(entry_hi);
 
 	if (found & 0x200) {
 		index = (found & 0x3F) << 8;
