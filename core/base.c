@@ -268,14 +268,14 @@ void DIV(uint32_t address, uint32_t word, uint32_t delayed) {
     int32_t rs = read_reg(FIELD_RS(word));
 
     if (rt == 0) {
-        registers.parts.hi = rs;
-        registers.parts.lo = (rs < 0) ? 1 : -1;
+        registers.hi = rs;
+        registers.lo = (rs < 0) ? 1 : -1;
     } else if (rs == -0x80000000 && rt == -1) {
-        registers.parts.hi = 0;
-        registers.parts.lo = -0x80000000;
+        registers.hi = 0;
+        registers.lo = -0x80000000;
     } else {
-        registers.parts.hi = (uint32_t)(rs % rt);
-        registers.parts.lo = (uint32_t)(rs / rt);
+        registers.hi = (uint32_t)(rs % rt);
+        registers.lo = (uint32_t)(rs / rt);
     }
 }
 
@@ -284,28 +284,28 @@ void DIVU(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t rs = read_reg(FIELD_RS(word));
 
     if (rt) {
-        registers.parts.hi = rs;
-        registers.parts.lo = (uint32_t)-1;
+        registers.hi = rs;
+        registers.lo = (uint32_t)-1;
     } else {
-        registers.parts.hi = rs % rt;
-        registers.parts.lo = rs / rt;
+        registers.hi = rs % rt;
+        registers.lo = rs / rt;
     }
 }
 
 void MFHI(uint32_t address, uint32_t word, uint32_t delayed) {
-    write_reg(FIELD_RD(word), registers.parts.hi);
+    write_reg(FIELD_RD(word), registers.hi);
 }
 
 void MFLO(uint32_t address, uint32_t word, uint32_t delayed) {
-    write_reg(FIELD_RD(word), registers.parts.lo);
+    write_reg(FIELD_RD(word), registers.lo);
 }
 
 void MTHI(uint32_t address, uint32_t word, uint32_t delayed) {
-    registers.parts.hi = read_reg(FIELD_RS(word));
+    registers.hi = read_reg(FIELD_RS(word));
 }
 
 void MTLO(uint32_t address, uint32_t word, uint32_t delayed) {
-    registers.parts.lo = read_reg(FIELD_RS(word));
+    registers.lo = read_reg(FIELD_RS(word));
 }
 
 // ******
@@ -313,66 +313,66 @@ void MTLO(uint32_t address, uint32_t word, uint32_t delayed) {
 // ******
 
 void J(uint32_t address, uint32_t word, uint32_t delayed) {
-    registers.parts.pc = (address & 0xF0000000) | (FIELD_IMM26(word) << 2);
+    registers.pc = (address & 0xF0000000) | (FIELD_IMM26(word) << 2);
     execute(address + 4, 1);
 }
 
 void JAL(uint32_t address, uint32_t word, uint32_t delayed) {
-    registers.parts.pc = (address & 0xF0000000) | (FIELD_IMM26(word) << 2);
+    registers.pc = (address & 0xF0000000) | (FIELD_IMM26(word) << 2);
     write_reg(REGS_RA, address + 8);
     execute(address + 4, 1);
 }
 
 void JR(uint32_t address, uint32_t word, uint32_t delayed) {
-    registers.parts.pc = read_reg(FIELD_RS(word)) & 0xFFFFFFFC;
+    registers.pc = read_reg(FIELD_RS(word)) & 0xFFFFFFFC;
     execute(address + 4, 1);
 }
 
 void JALR(uint32_t address, uint32_t word, uint32_t delayed) {
     write_reg(FIELD_RD(word), address + 8);
-    registers.parts.pc = read_reg(FIELD_RS(word)) & 0xFFFFFFFC;
+    registers.pc = read_reg(FIELD_RS(word)) & 0xFFFFFFFC;
     execute(address + 4, 1);
 }
 
 void BEQ(uint32_t address, uint32_t word, uint32_t delayed) {
     if (read_reg(FIELD_RS(word)) != read_reg(FIELD_RT(word))) return ;
 
-    registers.parts.pc = FIELD_SIMM16(word) * 4 + address + 4;
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 
 void BNE(uint32_t address, uint32_t word, uint32_t delayed) {
     if (read_reg(FIELD_RS(word)) == read_reg(FIELD_RT(word))) return ;
 
-    registers.parts.pc = FIELD_SIMM16(word) * 4 + address + 4;
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 
 void BLTZ(uint32_t address, uint32_t word, uint32_t delayed) {
     if ((int32_t)read_reg(FIELD_RS(word)) >= 0) return ;
 
-    registers.parts.pc = FIELD_SIMM16(word) * 4 + address + 4;
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 
 void BGEZ(uint32_t address, uint32_t word, uint32_t delayed) {
     if ((int32_t)read_reg(FIELD_RS(word)) > 0) return ;
 
-    registers.parts.pc = FIELD_SIMM16(word) * 4 + address + 4;
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 
 void BGTZ(uint32_t address, uint32_t word, uint32_t delayed) {
     if ((int32_t)read_reg(FIELD_RS(word)) <= 0) return ;
 
-    registers.parts.pc = FIELD_SIMM16(word) * 4 + address + 4;
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 
 void BLEZ(uint32_t address, uint32_t word, uint32_t delayed) {
     if ((int32_t)read_reg(FIELD_RS(word)) > 0) return ;
 
-    registers.parts.pc = FIELD_SIMM16(word) * 4 + address + 4;
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 
@@ -380,7 +380,7 @@ void BLTZAL(uint32_t address, uint32_t word, uint32_t delayed) {
     if ((int32_t)read_reg(FIELD_RS(word)) >= 0) return ;
 
     write_reg(REGS_RA, address + 8);
-    registers.parts.pc = FIELD_SIMM16(word) * 4 + address + 4;
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 
@@ -388,7 +388,7 @@ void BGEZAL(uint32_t address, uint32_t word, uint32_t delayed) {
     if ((int32_t)read_reg(FIELD_RS(word)) < 0) return ;
 
     write_reg(REGS_RA, address + 8);
-    registers.parts.pc = FIELD_SIMM16(word) * 4 + address + 4;
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 

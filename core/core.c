@@ -17,64 +17,64 @@ typedef void (*exec_block)();
 
 // This is a template function for executing
 void execute_call(uint32_t start, uint32_t length) {
-    while (registers.parts.clocks > 0) {
-        uint32_t index = ((registers.parts.start_pc = registers.parts.pc) - start) >> 2;
+    while (registers.clocks > 0) {
+        uint32_t index = ((registers.start_pc = registers.pc) - start) >> 2;
         if (index >= length) break ;
         ((exec_block)(index))();
     }
 }
 
 void finalize_call(uint32_t end) {
-    registers.parts.pc = end;
-    registers.parts.clocks -= (end - registers.parts.start_pc) >> 2;
+    registers.pc = end;
+    registers.clocks -= (end - registers.start_pc) >> 2;
 }
 
 void reset() {
-    registers.parts.pc = 0xBFC00000;
-    registers.parts.clocks = 0;
+    registers.pc = 0xBFC00000;
+    registers.clocks = 0;
 
     reset_cop0();
 }
 
 uint32_t getRegisterAddress() {
-    return (uint32_t)&registers.parts.regs[0];
+    return (uint32_t)&registers.regs[0];
 }
 
 uint32_t getStartPC() {
-    return registers.parts.start_pc;
+    return registers.start_pc;
 }
 
 void setStartPC(uint32_t address) {
-    registers.parts.start_pc = address;
+    registers.start_pc = address;
 }
 
 uint32_t getPC() {
-    return registers.parts.pc;
+    return registers.pc;
 }
 
 void setPC(uint32_t address) {
-    registers.parts.pc = address;
+    registers.pc = address;
 }
 
 uint32_t getHI() {
-    return registers.parts.hi;
+    return registers.hi;
 }
 
 uint32_t getLO() {
-    return registers.parts.lo;
+    return registers.lo;
 }
 
 void setClocks(int32_t time) {
-    registers.parts.clocks = time;
+    registers.clocks = time;
 }
 
 int32_t addClocks(int32_t time) {
-    registers.parts.clocks += time * CLOCK_BLOCK;
-    if (registers.parts.clocks > MAX_CLOCK_LAG) registers.parts.clocks = MAX_CLOCK_LAG;
+    registers.clocks += time * CLOCK_BLOCK;
+    if (registers.clocks > MAX_CLOCK_LAG) registers.clocks = MAX_CLOCK_LAG;
 
-    return registers.parts.clocks;
+    return registers.clocks;
 }
 
 int32_t getClocks() {
-    return registers.parts.clocks;
+    return registers.clocks;
 }

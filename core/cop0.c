@@ -46,7 +46,7 @@ void interrupt(int i) {
 
 void handle_interrupt() {
 	if ((status & STATUS_IEc) && (cause & status & STATUS_IM)) {
-		trap(EXCEPTION_INTERRUPT, registers.parts.pc, 0, 0);
+		trap(EXCEPTION_INTERRUPT, registers.pc, 0, 0);
 	}
 }
 
@@ -121,7 +121,7 @@ uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delay
 }
 
 void trap(int exception, int address, int delayed, int coprocessor) {
-	registers.parts.clocks -= (address - registers.parts.start_pc + 4) >> 2;
+	registers.clocks -= (address - registers.start_pc + 4) >> 2;
 
 	// Preserve return address
 	epc = address;
@@ -138,11 +138,11 @@ void trap(int exception, int address, int delayed, int coprocessor) {
 	switch (exception) {
 	case EXCEPTION_TLBLOAD:
 	case EXCEPTION_TLBSTORE:
-		registers.parts.pc = (status & STATUS_BEV) ? 0xbfc00100 : 0x80000000;
+		registers.pc = (status & STATUS_BEV) ? 0xbfc00100 : 0x80000000;
 		break ;
 
 	default:
-		registers.parts.pc = (status & STATUS_BEV) ? 0xbfc00180 : 0x80000080;
+		registers.pc = (status & STATUS_BEV) ? 0xbfc00180 : 0x80000080;
 		break ;
 	}
 }

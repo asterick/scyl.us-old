@@ -20,9 +20,9 @@ EXTERN union {
 
 // These are the functions that get inlined
 STATIC_FUNCTION uint32_t read_reg(int reg) {
-	return reg ? registers.parts.regs[reg] : 0;
+	return reg ? registers.regs[reg] : 0;
 }
 
 STATIC_FUNCTION void write_reg(int reg, uint32_t value) {
-	if (reg) registers.parts.regs[reg] = value;
+	if (reg) registers.regs[reg] = value;
 }
