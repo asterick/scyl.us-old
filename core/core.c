@@ -8,16 +8,24 @@
 #include "registers.h"
 
 static const int32_t CLOCK_BLOCK = 15000;   // Clock ticks per ms
+typedef void (*exec_block)();
 
 // *******
 // ** Interface helpers
 // *******
 
 // This is a template function for executing
-void execute_call() {
+void execute_call(uint32_t start, uint32_t length) {
     while (clocks > 0) {
-        start_pc = pc;
+        uint32_t index = ((start_pc = pc) - start) >> 2;
+        if (index >= length) break ;
+        ((exec_block)(index))();
     }
+}
+
+void finalize_call(uint32_t end) {
+    pc = end;
+    clocks -= (end - start_pc) >> 2;
 }
 
 void reset() {

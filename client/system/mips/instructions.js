@@ -61,7 +61,7 @@ export class Compiler {
 		});
 		this._function_base = index;
 
-		const targets = names(Instructions).concat("execute_call");
+		const targets = names(Instructions).concat("execute_call", "finalize_call");
 
 		this._templates = {};
 		defs.export_section.forEach((exp) => {
@@ -166,6 +166,32 @@ export class Compiler {
 		};
 	}
 
+	process(template, values) {
+		const body = template.code.reduce((acc, k) => {
+			if (k.template === undefined) {
+				acc.push(k);
+				return acc;
+			}
+
+			switch (k.template) {
+			case 'argument':
+				acc.push({ op: 'i32.const', value: values[k.index] >> 0 });
+				return acc ;
+
+			default:
+				throw k;
+			}
+		}, []);
+
+		body.push("end");
+
+		return {
+			type: { type: "func_type", parameters: [], returns: [] },
+			locals: template.locals,
+			code: body
+		};
+	}
+
 	instruction(functions, locate, pc, delayed, tailcall = null) {
 		var op = locate(pc);
 
@@ -237,67 +263,8 @@ export class Compiler {
 		const end = start + length * 4;
 		const table = [];
 		const functions = [
-			{
-				type: { type: "func_type", parameters: [], returns: [] },
-				locals: [{ count: 1, type: 'i32' }],
-				code: [
-					{ op: 'block', kind: 'void' },
-						{ op: 'loop', kind: 'void' },
-							// Break when our clock runs out
-							{ op: 'call', function_index: this._imports.getClocks },
-							{ op: 'i32.const', value: 0 },
-							"i32.le_s",
-							{ op: 'br_if', relative_depth: 1 },
-
-							// Calculate current PC table offset
-							{ op: 'call', function_index: this._imports.getPC },
-							{ op: 'tee_local', index: 0 },
-							{ op: 'call', function_index: this._imports.setStartPC },
-
-							{ op: 'get_local', index: 0 },
-							{ op: 'i32.const', value: start >> 0 },
-							"i32.sub",
-							{ op: 'i32.const', value: 2 },
-							"i32.shr_u",
-
-							{ op: 'tee_local', index: 0 },
-							{ op: 'i32.const', value: length >> 0 },
-							{ op: 'i32.gt_u' },
-							{ op: 'br_if', relative_depth: 1 },
-
-							{ op: 'get_local', index: 0 },
-							{ op: "call_indirect", type_index: 0, reserved: 0 },
-
-							// Default section
-							{ op: 'br', relative_depth: 0 }, // Continue
-						"end",
-					"end",
-
-				    // End of function
-				    "end"
-				]
-			},
-			{
-				type: { type: "func_type", parameters: [], returns: [] },
-				locals: [],
-				code: [
-					// Update PC
-					{ op: 'i32.const', value: end >> 0 },
-					{ op: 'call', function_index: this._imports.setPC },
-
-					// Eat some cycles (based on PC)
-					{ op: 'call', function_index: this._imports.getClocks },
-					{ op: 'i32.const', value: end >> 0 },
-					{ op: 'call', function_index: this._imports.getStartPC },
-					"i32.sub",
-					{ op: 'i32.const', value: 2 },
-					"i32.shr_u",
-					"i32.sub",
-					{ op: 'call', function_index: this._imports.setClocks },
-
-					"end"
-				]
-			}
+			this.process(this._templates.execute_call, [start, length]),
+			this.process(this._templates.finalize_call, [end])
 		];
 
 		// Prime function table with the "Tail"
