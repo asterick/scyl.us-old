@@ -5,7 +5,7 @@ WABT_ROOT = ~/wabt
 ROM_FILES = system0/code.bin system0/data.bin
 TEMP_FILES = $(ROM_FILES) temp.wast temp.s temp.bc
 
-CFLAGS = -O3 -Iinclude
+CFLAGS = -O3 -Iinclude -ffreestanding
 
 TARGET = "../assets/core.wasm"
 
