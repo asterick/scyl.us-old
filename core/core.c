@@ -7,7 +7,8 @@
 
 #include "registers.h"
 
-static const int32_t CLOCK_BLOCK = 15000;   // Clock ticks per ms
+static const int32_t CLOCK_BLOCK = 15000;       // Clock ticks per ms
+static const int32_t MAX_CLOCK_LAG = 1500000;
 typedef void (*exec_block)();
 
 // *******
@@ -68,9 +69,10 @@ void setClocks(int32_t time) {
 }
 
 int32_t addClocks(int32_t time) {
-    if (time > 100) time = 100;
+    clocks += time * CLOCK_BLOCK;
+    if (clocks > MAX_CLOCK_LAG) clocks = MAX_CLOCK_LAG;
 
-    return clocks += time * CLOCK_BLOCK;
+    return clocks;
 }
 
 int32_t getClocks() {
