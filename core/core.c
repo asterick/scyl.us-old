@@ -17,64 +17,64 @@ typedef void (*exec_block)();
 
 // This is a template function for executing
 void execute_call(uint32_t start, uint32_t length) {
-    while (clocks > 0) {
-        uint32_t index = ((start_pc = pc) - start) >> 2;
+    while (registers.parts.clocks > 0) {
+        uint32_t index = ((registers.parts.start_pc = registers.parts.pc) - start) >> 2;
         if (index >= length) break ;
         ((exec_block)(index))();
     }
 }
 
 void finalize_call(uint32_t end) {
-    pc = end;
-    clocks -= (end - start_pc) >> 2;
+    registers.parts.pc = end;
+    registers.parts.clocks -= (end - registers.parts.start_pc) >> 2;
 }
 
 void reset() {
-    pc = 0xBFC00000;
-    clocks = 0;
+    registers.parts.pc = 0xBFC00000;
+    registers.parts.clocks = 0;
 
     reset_cop0();
 }
 
 uint32_t getRegisterAddress() {
-    return (uint32_t)&registers[0];
+    return (uint32_t)&registers.parts.regs[0];
 }
 
 uint32_t getStartPC() {
-    return start_pc;
+    return registers.parts.start_pc;
 }
 
 void setStartPC(uint32_t address) {
-    start_pc = address;
+    registers.parts.start_pc = address;
 }
 
 uint32_t getPC() {
-    return pc;
+    return registers.parts.pc;
 }
 
 void setPC(uint32_t address) {
-    pc = address;
+    registers.parts.pc = address;
 }
 
 uint32_t getHI() {
-    return mult.parts.hi;
+    return registers.parts.hi;
 }
 
 uint32_t getLO() {
-    return mult.parts.lo;
+    return registers.parts.lo;
 }
 
 void setClocks(int32_t time) {
-    clocks = time;
+    registers.parts.clocks = time;
 }
 
 int32_t addClocks(int32_t time) {
-    clocks += time * CLOCK_BLOCK;
-    if (clocks > MAX_CLOCK_LAG) clocks = MAX_CLOCK_LAG;
+    registers.parts.clocks += time * CLOCK_BLOCK;
+    if (registers.parts.clocks > MAX_CLOCK_LAG) registers.parts.clocks = MAX_CLOCK_LAG;
 
-    return clocks;
+    return registers.parts.clocks;
 }
 
 int32_t getClocks() {
-    return clocks;
+    return registers.parts.clocks;
 }

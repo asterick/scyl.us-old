@@ -8,21 +8,21 @@ EXTERN union {
     struct {
         uint32_t lo;
         uint32_t hi;
+
+		uint32_t regs[32];
+		uint32_t pc;
+
+		uint32_t start_pc;
+		int clocks;
     } parts;
     uint64_t wide;
-} mult;
-
-EXTERN uint32_t registers[32];
-EXTERN uint32_t pc;
-
-EXTERN uint32_t start_pc;
-EXTERN int clocks;
+} registers;
 
 // These are the functions that get inlined
 STATIC_FUNCTION uint32_t read_reg(int reg) {
-	return reg ? registers[reg] : 0;
+	return reg ? registers.parts.regs[reg] : 0;
 }
 
 STATIC_FUNCTION void write_reg(int reg, uint32_t value) {
-	if (reg) registers[reg] = value;
+	if (reg) registers.parts.regs[reg] = value;
 }
