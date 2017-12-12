@@ -6,7 +6,6 @@
 #include "imports.h"
 
 #include "registers.h"
-#include "helper.h"
 #include "hash.h"
 
 uint32_t tlb_lo[TLB_PAGES];
@@ -37,7 +36,7 @@ uint32_t random() {
 	return inc;
 }
 
-int copEnabled(int cop) {
+int cop_enabled(int cop) {
 	return (((status >> 18) | ((status & STATUS_KUc) ? 1 : 0)) >> cop) & 1;
 }
 
@@ -153,7 +152,7 @@ void trap(int exception, int address, int delayed, int coprocessor) {
 // ******
 
 void MFC0(uint32_t address, uint32_t word, uint32_t delayed) {
-	if (!copEnabled(0)) {
+	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
 
@@ -204,7 +203,7 @@ void MFC0(uint32_t address, uint32_t word, uint32_t delayed) {
 }
 
 void MTC0(uint32_t address, uint32_t word, uint32_t delayed) {
-	if (!copEnabled(0)) {
+	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
 
@@ -240,7 +239,7 @@ void MTC0(uint32_t address, uint32_t word, uint32_t delayed) {
 // ******
 
 void RFE(uint32_t address, uint32_t word, uint32_t delayed) {
-	if (!copEnabled(0)) {
+	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
 
@@ -248,7 +247,7 @@ void RFE(uint32_t address, uint32_t word, uint32_t delayed) {
 }
 
 void TLBR(uint32_t address, uint32_t word, uint32_t delayed) {
-	if (!copEnabled(0)) {
+	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
 
@@ -257,7 +256,7 @@ void TLBR(uint32_t address, uint32_t word, uint32_t delayed) {
 }
 
 void TLBWI(uint32_t address, uint32_t word, uint32_t delayed) {
-	if (!copEnabled(0)) {
+	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
 
@@ -265,7 +264,7 @@ void TLBWI(uint32_t address, uint32_t word, uint32_t delayed) {
 }
 
 void TLBWR(uint32_t address, uint32_t word, uint32_t delayed) {
-	if (!copEnabled(0)) {
+	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
 
@@ -273,7 +272,7 @@ void TLBWR(uint32_t address, uint32_t word, uint32_t delayed) {
 }
 
 void TLBP(uint32_t address, uint32_t word, uint32_t delayed) {
-	if (!copEnabled(0)) {
+	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
 

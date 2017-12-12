@@ -6,13 +6,19 @@
 #include "cop0.h"
 
 #include "registers.h"
-#include "helper.h"
 
-static const int32_t CLOCK_BLOCK = 15000;        // Clock ticks per ms
+static const int32_t CLOCK_BLOCK = 15000;   // Clock ticks per ms
 
 // *******
 // ** Interface helpers
 // *******
+
+// This is a template function for executing
+void execute_call() {
+    while (clocks > 0) {
+        start_pc = pc;
+    }
+}
 
 void reset() {
     pc = 0xBFC00000;

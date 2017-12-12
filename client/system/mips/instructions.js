@@ -61,7 +61,7 @@ export class Compiler {
 		});
 		this._function_base = index;
 
-		const targets = names(Instructions);
+		const targets = names(Instructions).concat("execute_call");
 
 		this._templates = {};
 		defs.export_section.forEach((exp) => {

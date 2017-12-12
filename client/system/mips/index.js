@@ -61,7 +61,7 @@ export default class MIPS {
 				this.registers = new Uint32Array(memory, this._exports.getRegisterAddress(), 64);
 				this.load = this._exports.load;
 				this.store = this._exports.store;
-				this.copEnabled = this._exports.copEnabled;
+				this.cop_enabled = this._exports.cop_enabled;
 				this.translate = this._exports.translate;
 				this.interrupt = this._exports.interrupt;
 				this.handle_interrupt = this._exports.handle_interrupt;
