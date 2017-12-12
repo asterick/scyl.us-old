@@ -14,7 +14,7 @@ EXTERN union {
 
 		uint32_t start_pc;
 		int clocks;
-    } parts;
+    };
     uint64_t wide;
 } registers;
 
