@@ -61,7 +61,7 @@ export class Compiler {
 		});
 		this._function_base = index;
 
-		const targets = names(Instructions).concat("execute_call", "finalize_call");
+		const targets = names(Instructions).concat("execute_call", "finalize_call", "adjust_clock");
 
 		this._templates = {};
 		defs.export_section.forEach((exp) => {
@@ -166,7 +166,7 @@ export class Compiler {
 		};
 	}
 
-	process(template, values) {
+	process(template, values, naked = false) {
 		const body = template.code.reduce((acc, k) => {
 			if (k.template === undefined) {
 				acc.push(k);
@@ -182,6 +182,8 @@ export class Compiler {
 				throw k;
 			}
 		}, []);
+
+		if (naked) return body;
 
 		body.push("end");
 
@@ -218,19 +220,15 @@ export class Compiler {
 					acc.push("unreachable");
 				}
 
+				// Template the adjust clock code
+				acc.push.apply(acc, this.process(this._templates.adjust_clock, [(pc + 8) >> 0], true));
+
+				// call the delayed branch slot
 				acc.push(
 					{ op: 'call', function_index: this.instruction(functions, locate, pc + 4, true) },
-
-					{ op: 'call', function_index: this._imports.getClocks },
-					{ op: 'i32.const', value: (pc + 8) >> 0 },
-					{ op: 'call', function_index: this._imports.getStartPC },
-					"i32.sub",
-					{ op: 'i32.const', value: 4 },
-					"i32.div_u",
-					"i32.sub",
-					{ op: 'call', function_index: this._imports.setClocks },
 					"return"
 				);
+
 				return acc;
 
 			case 'argument':

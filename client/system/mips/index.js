@@ -3,6 +3,15 @@ import { locate, Compiler } from "./instructions";
 
 import { MAX_COMPILE_SIZE, MIN_COMPILE_SIZE, Exceptions } from "./consts";
 
+/**
+ Register mapping:
+ ** 32: lo
+ ** 33: hi
+ ** 34: pc
+ ** 35: start_pc
+ ** 36: clocks (int)
+ **/
+
 export default class MIPS {
 	/*******
 	 ** Runtime section
@@ -59,6 +68,7 @@ export default class MIPS {
 				const memory = this._exports.memory.buffer;
 
 				this.registers = new Uint32Array(memory, this._exports.getRegisterAddress(), 64);
+				this.add_clocks = this._exports.add_clocks;
 				this.load = this._exports.load;
 				this.store = this._exports.store;
 				this.cop_enabled = this._exports.cop_enabled;
@@ -73,24 +83,32 @@ export default class MIPS {
 	}
 
 	// Helper values for the magic registers
-	get pc() {
-		return this._exports.getPC() >>> 0;
-	}
-
-	set pc(v) {
-		this._exports.setPC(v);
-	}
-
 	get lo() {
-		return this._exports.getLO() >>> 0;
+		return this.registers[32];
 	}
 
 	get hi() {
-		return this._exports.getHI() >>> 0;
+		return this.registers[33];
+	}
+
+	get pc() {
+		return this.registers[34];
+	}
+
+	set pc(v) {
+		this.registers[34] = v;
+	}
+
+	get start_pc() {
+		return this.registers[35];
+	}
+
+	set start_pc(v) {
+		this.registers[35] = v;
 	}
 
 	get clocks() {
-		return this._exports.getClocks() >> 0;
+		return this.registers[36];
 	}
 
 	// Execution core
@@ -103,7 +121,7 @@ export default class MIPS {
 	// Execute a single frame
 	_tick (ticks) {
 		// Advance clock, with 0.1 sec a max 'lag' time
-		const _prev = this._exports.addClocks(ticks);
+		const _prev = this.add_clocks(ticks);
 
 		while (this.clocks > 0) {
 			const block_size = this._blockSize(this.pc);
@@ -193,7 +211,7 @@ export default class MIPS {
 		const data = this.load(pc, true, pc, delayed);
 		const call = locate(data);
 
-		this._exports.setStartPC(pc);
+		this.start_pc = pc;
 		this._exports[call.name](pc, data, delayed);
 	}
 

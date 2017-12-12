@@ -6,16 +6,17 @@
 
 EXTERN union {
     struct {
+		uint32_t regs[32];
         uint32_t lo;
         uint32_t hi;
-
-		uint32_t regs[32];
 		uint32_t pc;
-
 		uint32_t start_pc;
 		int clocks;
     };
-    uint64_t wide;
+    struct {
+    	uint32_t _align[32];
+    	uint64_t wide;
+	};
 } registers;
 
 // These are the functions that get inlined

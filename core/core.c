@@ -29,6 +29,10 @@ void finalize_call(uint32_t end) {
     registers.clocks -= (end - registers.start_pc) >> 2;
 }
 
+void adjust_clock(uint32_t end) {
+    registers.clocks -= (end - registers.start_pc) >> 2;
+}
+
 void reset() {
     registers.pc = 0xBFC00000;
     registers.clocks = 0;
@@ -37,44 +41,12 @@ void reset() {
 }
 
 uint32_t getRegisterAddress() {
-    return (uint32_t)&registers.regs[0];
+    return (uint32_t)&registers;
 }
 
-uint32_t getStartPC() {
-    return registers.start_pc;
-}
-
-void setStartPC(uint32_t address) {
-    registers.start_pc = address;
-}
-
-uint32_t getPC() {
-    return registers.pc;
-}
-
-void setPC(uint32_t address) {
-    registers.pc = address;
-}
-
-uint32_t getHI() {
-    return registers.hi;
-}
-
-uint32_t getLO() {
-    return registers.lo;
-}
-
-void setClocks(int32_t time) {
-    registers.clocks = time;
-}
-
-int32_t addClocks(int32_t time) {
+int32_t add_clocks(int32_t time) {
     registers.clocks += time * CLOCK_BLOCK;
     if (registers.clocks > MAX_CLOCK_LAG) registers.clocks = MAX_CLOCK_LAG;
 
-    return registers.clocks;
-}
-
-int32_t getClocks() {
     return registers.clocks;
 }
