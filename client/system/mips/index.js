@@ -108,7 +108,11 @@ export default class MIPS {
 	}
 
 	get clocks() {
-		return this.registers[36];
+		return this.registers[36] >> 0;
+	}
+
+	set clocks(v) {
+		this.registers[36] = v;
 	}
 
 	// Execution core
@@ -172,7 +176,7 @@ export default class MIPS {
 				funct.code();
 			} catch (e) {
 				if (e instanceof Exception) {
-					this.trap(e.exception, e.pc, e.delayed, e.coprocessor)
+					this.trap(e.exception, e.pc, e.delayed, e.coprocessor);
 				} else {
 					throw e;
 				}
@@ -188,13 +192,14 @@ export default class MIPS {
 		const _prev = this.clocks;
 
 		try {
-			var pc = this.pc;
+			this.start_pc = this.pc;
 			this.pc += 4;
 
-			this._execute(pc, false);
+			this._execute(this.start_pc, false);
+			this.clocks--;	// Could be off by one, don't mind that much
 		} catch (e) {
 			if (e instanceof Exception) {
-				this.trap(e.exception, e.pc, e.delayed, e.coprocessor)
+				this.trap(e.exception, e.pc, e.delayed, e.coprocessor);
 			} else {
 				throw e;
 			}
@@ -211,7 +216,6 @@ export default class MIPS {
 		const data = this.load(pc, true, pc, delayed);
 		const call = locate(data);
 
-		this.start_pc = pc;
 		this._exports[call.name](pc, data, delayed);
 	}
 
