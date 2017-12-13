@@ -7,8 +7,7 @@
 
 #include "registers.h"
 
-static const int32_t CLOCK_BLOCK = 15000;       // Clock ticks per ms
-static const int32_t MAX_CLOCK_LAG = 1500000;
+static const int32_t MAX_CLOCK_LAG = 60000;
 typedef void (*exec_block)();
 
 // *******
@@ -45,7 +44,7 @@ uint32_t getRegisterAddress() {
 }
 
 int32_t add_clocks(int32_t time) {
-    registers.clocks += time * CLOCK_BLOCK;
+    registers.clocks += time;
     if (registers.clocks > MAX_CLOCK_LAG) registers.clocks = MAX_CLOCK_LAG;
 
     return registers.clocks;

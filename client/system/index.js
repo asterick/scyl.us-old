@@ -24,8 +24,8 @@ export default class extends MIPS {
 	}
 
 	tick () {
-		const newClock = +new Date();
-		const cycles = newClock - this._adjust_clock;
+		const newClock = Date.now();
+		const cycles = (newClock - this._adjust_clock) * (15000000 / 1000);
 		this._adjust_clock = newClock;
 
 		if (this.running && this._tick(cycles)) {
