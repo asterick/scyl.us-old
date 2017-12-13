@@ -67,6 +67,25 @@ export default class MIPS {
 
 				const memory = this._exports.memory.buffer;
 
+				let addr = this._exports.getMemoryRegions();
+				let flags;
+
+				this.regions = [];
+
+				do {
+					let region = new Uint32Array(memory, addr, 4);
+					flags = region[3];
+					addr += 16;
+
+					this.regions.push({
+						start: region[0],
+						length: region[1],
+						end: region[0]+region[1],
+						flags: region[3],
+						buffer: new Uint8Array(memory, region[2], region[1])
+					});
+				} while(~flags & 4);
+
 				this.registers = new Uint32Array(memory, this._exports.getRegisterAddress(), 64);
 				this.add_clocks = this._exports.add_clocks;
 				this.load = this._exports.load;
