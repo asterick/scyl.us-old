@@ -174,6 +174,25 @@ export class Compiler {
 			}
 
 			switch (k.template) {
+			case 'delay':
+				let pc = values[0];
+				let delayed = values[2];
+
+				if (delayed) {
+					acc.push("unreachable");
+				}
+
+				// Template the adjust clock code
+				acc.push.apply(acc, this.process(this._templates.adjust_clock, [(pc + 8) >> 0], true));
+
+				// call the delayed branch slot
+				acc.push(
+					{ op: 'call', function_index: this.instruction(pc + 4, true) },
+					"return"
+				);
+
+				return acc;
+
 			case 'argument':
 				acc.push({ op: 'i32.const', value: values[k.index] >> 0 });
 				return acc ;
@@ -194,51 +213,25 @@ export class Compiler {
 		};
 	}
 
-	instruction(functions, locate, pc, delayed, tailcall = null) {
-		var op = locate(pc);
+	instruction(pc, delayed, tailcall = null) {
+		const op = this.locate(pc);
 
 		if (op === null) {
-			return [
-				{ op: 'i32.const', value: pc >> 0 },
-				{ op: 'i32.const', value: delayed ? 1 : 0 },
-		        { op: "call", function_index: this._imports.execute }
-			];
+			this.functions.push({
+				type: { type: "func_type", parameters: [], returns: [] },
+				locals: [],
+				code: [
+					{ op: 'i32.const', value: pc >> 0 },
+					{ op: 'i32.const', value: delayed ? 1 : 0 },
+			        { op: "call", function_index: this._imports.execute }
+				]
+			});
+
+			return this._function_base + this.functions.length - 1;
 		}
 
 		const template = this._templates[op.name];
-		const values = [pc, op.word, delayed];
-
-		const body = template.code.reduce((acc, k) => {
-			if (k.template === undefined) {
-				acc.push(k);
-				return acc;
-			}
-
-			switch (k.template) {
-			case 'delay':
-				if (delayed) {
-					acc.push("unreachable");
-				}
-
-				// Template the adjust clock code
-				acc.push.apply(acc, this.process(this._templates.adjust_clock, [(pc + 8) >> 0], true));
-
-				// call the delayed branch slot
-				acc.push(
-					{ op: 'call', function_index: this.instruction(functions, locate, pc + 4, true) },
-					"return"
-				);
-
-				return acc;
-
-			case 'argument':
-				acc.push({ op: 'i32.const', value: values[k.index] >> 0 });
-				return acc ;
-
-			default:
-				throw k;
-			}
-		}, []);
+		const body = this.process(template, [pc, op.word, delayed], true);
 
 		if (tailcall !== null) {
 			body.push({ op: 'call', function_index: tailcall });
@@ -246,21 +239,21 @@ export class Compiler {
 
 		body.push("end");
 
-		const index = this._function_base + functions.length;
-
-		functions.push({
+		this.functions.push({
 			type: { type: "func_type", parameters: [], returns: [] },
 			locals: template.locals,
 			code: body
 		});
 
-		return index;
+		return this._function_base + this.functions.length - 1;
 	}
 
 	compile(start, length, locate) {
 		const end = start + length * 4;
 		const table = [];
-		const functions = [
+
+		this.locate = locate;
+		this.functions = [
 			this.process(this._templates.execute_call, [start, length]),
 			this.process(this._templates.finalize_call, [end])
 		];
@@ -269,7 +262,7 @@ export class Compiler {
 		var previous = this._function_base + 1;
 		for (var i = length - 1; i >= 0; i--) {
 			table[i] =
-			previous = this.instruction(functions, locate, start+i*4, 0, previous);
+			previous = this.instruction(start+i*4, 0, previous);
 		}
 
 		const module = {
@@ -277,7 +270,7 @@ export class Compiler {
 			version: 1,
 
 			import_section: this._import_section,
-			function_section: functions,
+			function_section: this.functions,
 
 			type_section: [{ type: "func_type", parameters: [], returns: [] }],
 
