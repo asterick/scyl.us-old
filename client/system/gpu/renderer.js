@@ -33,24 +33,12 @@ for (var i = 0; i < 0x10000; i++) {
 }
 
 export default class {
-	constructor (container) {
-		// SETUP DEFAULT REGIONS
-		this.setViewport(0, 0, 256, 240);
-		this.setClip(0, 0, 256, 240);
-		this.setDraw(0, 0);
-		this.setTexture(0, 0);
-		this.setClut(false, 0, 0, 0);
-		this.setMask(true, false);
-		this.setDither(true);
-		this.setBlend(false, 0, 0, 0, 0);
-
+	constructor () {
 		this._dirty = false;
 
 		// Bind our function
 		this._requestFrame = () => this._repaint();
 		this._resize = () => this._onresize();
-
-		if (container) this._attach(container);
 	}
 
 	setBlend(blend, setSrcCoff, setDstCoff, resetSrcCoff, resetDstCoff) {
@@ -109,7 +97,7 @@ export default class {
 		this._setMask = setMask;
 	}
 
-	_attach (container) {
+	attach (container) {
 		if (!container) {
 			window.removeEventListener("resize", this._resize);
 			window.cancelAnimationFrame(this._animationFrame);

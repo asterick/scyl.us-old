@@ -7,7 +7,7 @@ export default class extends MIPS {
 	constructor (container) {
 		super();
 
-		this._gpu = new GPU(container, this);
+		this.gpu = new GPU();
 		this.tick = this.tick.bind(this);
 	}
 
