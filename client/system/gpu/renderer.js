@@ -10,6 +10,28 @@ const PALETTE = new Uint32Array(0x10000);
 const VRAM_WORDS = new Uint32Array(VRAM_WIDTH * VRAM_HEIGHT);
 const VRAM_BYTES = new Uint8Array(VRAM_WORDS.buffer);
 
+var gl = null;
+
+var _dirty = false;
+
+var _drawX, _drawY;
+var _viewX, _viewY, _viewWidth, _viewHeight;
+var _blend, _setSrcCoff, _setDstCoff, _resetSrcCoff, _resetDstCoff;
+var _clutEnable, _clutMode, _clutX, _clutY, _clutIndexMask, _clutIndexShift, _clutColorMask;
+var _clipX, _clipY, _clipWidth, _clipHeight;
+var _viewX, _viewY, _viewWidth, _viewHeight;
+var _dither;
+var _masked, _setMask;
+var _textureX, _textureY;
+
+var _canvas, _viewportWidth, _viewportHeight, _aspectRatio;
+var _isRendering;
+var _animationFrame;
+
+var _displayShader, _drawShader;
+var _copyBuffer, _drawBuffer;
+var _vram, _shadow, _framebuffer;
+
 function pack(i) {
 	var r = (i  >>  3) & 0x001F;
 	var g = (i  >>  6) & 0x03E0;
@@ -32,398 +54,375 @@ for (var i = 0; i < 0x10000; i++) {
 	PALETTE[i] = unpack(i);
 }
 
-export default class {
-	constructor () {
-		this._dirty = false;
+// Bind our function
+export function setBlend(blend, setSrcCoff, setDstCoff, resetSrcCoff, resetDstCoff) {
+	_blend = blend;
+	_setSrcCoff = setSrcCoff;
+	_setDstCoff = setDstCoff;
+	_resetSrcCoff = resetSrcCoff;
+	_resetDstCoff = resetDstCoff;
+}
 
-		// Bind our function
-		this._requestFrame = () => this._repaint();
-		this._resize = () => this._onresize();
+export function setTexture(x, y) {
+	_textureX = x;
+	_textureY = y;
+}
+
+export function setClut(enable, mode, x, y) {
+	_clutEnable = enable;
+	_clutMode = mode;
+	_clutX = x;
+	_clutY = y;
+
+	// Precompute some constants
+	_clutIndexMask = (1 << _clutMode) - 1;
+	_clutIndexShift = 4 - _clutMode;
+	_clutColorMask = (1 << (1 << _clutMode)) - 1;
+}
+
+export function setDraw(x, y) {
+	_drawX = x;
+	_drawY = x;
+}
+
+export function setClip(x, y, width, height) {
+	// This forces a copy back, and reconfigure the shader
+	_leaveRender();
+
+	_clipX = x;
+	_clipY = y;
+	_clipWidth = width;
+	_clipHeight = height;
+}
+
+export function setViewport (x, y, width, height) {
+	_viewX = x;
+	_viewY = y;
+	_viewWidth = width;
+	_viewHeight = height;
+}
+
+export function setDither (dither) {
+	_dither = dither;
+}
+
+export function setMask (masked, setMask) {
+	_masked = masked;
+	_setMask = setMask;
+}
+
+export function attach (container) {
+	if (!container) {
+		window.removeEventListener("resize", _onresize);
+		window.cancelAnimationFrame(_animationFrame);
+		return ;
 	}
 
-	setBlend(blend, setSrcCoff, setDstCoff, resetSrcCoff, resetDstCoff) {
-		this._blend = blend;
-		this._setSrcCoff = setSrcCoff;
-		this._setDstCoff = setDstCoff;
-		this._resetSrcCoff = resetSrcCoff;
-		this._resetDstCoff = resetDstCoff;
-	}
-
-	setTexture(x, y) {
-		this._textureX = x;
-		this._textureY = y;
-	}
-
-	setClut(enable, mode, x, y) {
-		this._clutEnable = enable;
-		this._clutMode = mode;
-		this._clutX = x;
-		this._clutY = y;
-
-		// Precompute some constants
-		this._clutIndexMask = (1 << this._clutMode) - 1;
-		this._clutIndexShift = 4 - this._clutMode;
-		this._clutColorMask = (1 << (1 << this._clutMode)) - 1;
-	}
-
-	setDraw(x, y) {
-		this._drawX = x;
-		this._drawY = x;
-	}
-
-	setClip(x, y, width, height) {
-		// This forces a copy back, and reconfigure the shader
-		this._leaveRender();
-
-		this._clipX = x;
-		this._clipY = y;
-		this._clipWidth = width;
-		this._clipHeight = height;
-	}
-
-	setViewport (x, y, width, height) {
-		this._viewX = x;
-		this._viewY = y;
-		this._viewWidth = width;
-		this._viewHeight = height;
-	}
-
-	setDither (dither) {
-		this._dither = dither;
-	}
-
-	setMask (masked, setMask) {
-		this._masked = masked;
-		this._setMask = setMask;
-	}
-
-	attach (container) {
-		if (!container) {
-			window.removeEventListener("resize", this._resize);
-			window.cancelAnimationFrame(this._animationFrame);
-			return ;
-		}
-
-		const canvas = document.getElementById(container);
-		this._canvas = canvas;
-
-		// Create our context
-		const gl = canvas.getContext("webgl2", {
-			alpha: false,
-			antialias: true,
-			depth: false,
-			stencil: false
-		});
-
-		window.addEventListener("resize", this._resize);
-
-		this._gl = gl;
-		this._onresize();
-
-		// Global enable / disables
-		gl.disable(gl.STENCIL_TEST);
-		gl.disable(gl.DEPTH_TEST);
-		gl.disable(gl.DITHER);
-		gl.colorMask(true, true, true, true);
-		gl.clearColor(0, 0, 0, 1);
-
-		// Setup or rendering programs
-		this._displayShader = this._createShader (DisplayVertexShader, DisplayFragmentShader);
-		this._drawShader = this._createShader (DrawVertexShader, DrawFragmentShader);
-
-		// Setup our vertex buffers
-		this._copyBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([ 1, 1, 1,-1,-1, 1,-1,-1]), gl.STATIC_DRAW);
-
-		this._drawBuffer = gl.createBuffer();
-
-		// Video memory
-		this._vram = gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D, this._vram);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-
-		this._shadow = gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D, this._shadow);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-
-		// Setup the draw targets
-		this._framebuffer = gl.createFramebuffer();
-		gl.bindFramebuffer(gl.FRAMEBUFFER, this._framebuffer);
-		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._shadow, 0);
-
-		// Set context to render by default
-		this._enterRender();
-		this._requestRepaint();
-	}
-
-	render (type, offset, count, textured, color, vertexes) {
-		const gl = this._gl;
-		const flat = color >= 0;
-		const size = 4 + (textured ? 4 : 0) + (flat ? 0 : 2);
-
-		this._enterRender();
-		this._requestRepaint();
-
-		if (this._blend) {
-			this._parityCopy();
-		}
-
-		// Drawing region
-	   	gl.uniform2f(this._drawShader.uniforms.uDrawPos, this._drawX, this._drawY);
-
-	   	// Texture settings
-	   	gl.uniform1i(this._drawShader.uniforms.uTextured, textured);
-	   	if (textured) {
-		   	gl.uniform2i(this._drawShader.uniforms.uTextureOffset, this._textureX, this._textureY);
-		   	gl.uniform1i(this._drawShader.uniforms.uClutEnable, this._clutEnable);
-
-		   	if (this._clutEnable) {
-			   	gl.uniform1i(this._drawShader.uniforms.uClutMode, this._clutMode);
-		   		gl.uniform2i(this._drawShader.uniforms.uClutOffset, this._clutX, this._clutY);
-		   		gl.uniform1i(this._drawShader.uniforms.uClutIndexMask, this._clutIndexMask);
-		   		gl.uniform1i(this._drawShader.uniforms.uClutIndexShift, this._clutIndexShift);
-		   		gl.uniform1ui(this._drawShader.uniforms.uClutColorMask, this._clutColorMask);
-		   	}
-	   	}
-
-	   	// Blending flags
-		gl.uniform1i(this._drawShader.uniforms.uSemiTransparent, this._blend);
-		if (this._blend) {
-			gl.uniform2f(this._drawShader.uniforms.uSetCoff, this._setSrcCoff, this._setDstCoff);
-			gl.uniform2f(this._drawShader.uniforms.uResetCoff, this._resetSrcCoff, this._resetDstCoff);
-		}
-
-	   	// Render flags
-	   	gl.uniform1i(this._drawShader.uniforms.uMasked, this._masked);
-	   	gl.uniform1i(this._drawShader.uniforms.uSetMask, this._setMask);
-	   	gl.uniform1i(this._drawShader.uniforms.uDither, this._dither);
-
-		// Buffer draw parameters
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._drawBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.DYNAMIC_DRAW);
-
-		// Setup our vertex pointers
-		gl.vertexAttribIPointer( this._drawShader.attributes.aVertex, 2, gl.SHORT, size, offset);
-
-		if (textured) {
-			gl.vertexAttribIPointer(this._drawShader.attributes.aTexture, 2, gl.SHORT, size, offset+4);
-			gl.enableVertexAttribArray(this._drawShader.attributes.aTexture);
-		} else {
-			gl.vertexAttribI4i(this._drawShader.attributes.aTexture, 0, 0, 0, 0);
-			gl.disableVertexAttribArray(this._drawShader.attributes.aTexture);
-		}
-
-		if (flat) {
-			gl.vertexAttribI4i(this._drawShader.attributes.aColor, color, color, color, color);
-			gl.disableVertexAttribArray(this._drawShader.attributes.aColor);
-		} else {
-			gl.vertexAttribIPointer(this._drawShader.attributes.aColor, 1, gl.SHORT, size, offset + (textured ? 8 : 4));
-			gl.enableVertexAttribArray(this._drawShader.attributes.aColor);
-		}
-
-		// Draw array
-		gl.drawArrays(type, 0, count);
-
-		// Set our dirty flag so we know to copy the shadow frame over
-		this._dirty = true;
-	}
-
-	_parityCopy() {
-		if (!this._dirty) return ;
-
-		const gl = this._gl;
-		gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, this._clipX, this._clipY, this._clipX, this._clipY, this._clipWidth, this._clipHeight);
-
-		this._dirty = false;
-	}
-
-	getData (x, y, width, height, target) {
-		const gl = this._gl;
-
-		gl.bindFramebuffer(gl.FRAMEBUFFER, this._framebuffer);
-		gl.readPixels(x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
-
-		if (!this._isRendering) {
-			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-		}
-
-		for (var i = 0; i < VRAM_WORDS.length; i++) {
-			target[i] = pack(VRAM_WORDS[i]);
-		}
-	}
-
-	setData (x, y, width, height, target) {
-		const gl = this._gl;
-
-		for (var i = 0; i < VRAM_WORDS.length; i++) {
-			VRAM_WORDS[i] = PALETTE[target[i]];
-		}
-
-		gl.bindTexture(gl.TEXTURE_2D, this._shadow);
-		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
-
-		gl.bindTexture(gl.TEXTURE_2D, this._vram);
-		gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
-	}
-
-	_onresize () {
-		// Lookup the size the browser is displaying the canvas.
-		this._viewportWidth = this._canvas.clientWidth;
-		this._viewportHeight = this._canvas.clientHeight;
-
-		// Make the canvas the same size
-		this._canvas.width  = this._viewportWidth;
-		this._canvas.height = this._viewportHeight;
-
-		this._aspectRatio = (this._viewportHeight / this._viewportWidth) * (4 / 3);
-
-		this._requestRepaint();
-	}
-
-	_requestRepaint() {
-		if (this._animationFrame) {
-			return ;
-		}
-
-		this._animationFrame = window.requestAnimationFrame(this._requestFrame);
-	}
-
-	_repaint () {
-		const gl = this._gl;
-
-		this._leaveRender();
-
-		// Copy our viewport to the screen
-		gl.viewport(0, 0, this._viewportWidth, this._viewportHeight);
-		gl.clear(gl.COLOR_BUFFER_BIT);
-
-	   	gl.uniform1f(this._displayShader.uniforms.uAspectRatio, this._aspectRatio);
-	   	gl.uniform2f(this._displayShader.uniforms.uViewportSize, this._viewWidth, this._viewHeight);
-	   	gl.uniform2f(this._displayShader.uniforms.uViewportPosition, this._viewX, this._viewY);
-
-		gl.bindBuffer(gl.ARRAY_BUFFER, this._copyBuffer);
-		gl.vertexAttribPointer(this._displayShader.attributes.aVertex, 2, gl.FLOAT, false, 0, 0);
-
-		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-		this._animationFrame = 0;
-	}
-
-	_enterRender () {
-		if (this._isRendering) return ;
-		this._isRendering = true;
-
-		const gl = this._gl;
-
-		gl.disableVertexAttribArray(this._displayShader.attributes.aVertex);
-		gl.enableVertexAttribArray(this._drawShader.attributes.aVertex);
-
-		// Setup our shadow frame
-		gl.bindFramebuffer(gl.FRAMEBUFFER, this._framebuffer);
-
-		// Setup our program
-		gl.useProgram(this._drawShader.program);
-
-    	// Select vram as TEXTURE0
-    	gl.uniform1i(this._drawShader.uniforms.sVram, 0);
-
-    	// Setup clipping rectangle
-		gl.viewport(this._clipX, this._clipY, this._clipWidth, this._clipHeight);
-	   	gl.uniform2f(this._drawShader.uniforms.uClipPos, this._clipX, this._clipY);
-	   	gl.uniform2f(this._drawShader.uniforms.uClipSize, this._clipWidth, this._clipHeight);
-
-		// Select the new frame buffer / vram
-		gl.bindFramebuffer(gl.FRAMEBUFFER, this._framebuffer);
-
-    	gl.activeTexture(gl.TEXTURE0);
-    	gl.bindTexture(gl.TEXTURE_2D, this._vram);
-    	gl.uniform1i(this._drawShader.uniforms.sVram, 0);
-	}
-
-	_leaveRender () {
-		if (!this._isRendering) return ;
-		this._isRendering = false;
-
-		const gl = this._gl;
-
-		// Copy render buffer to target
-		this._parityCopy();
-
-		// Change our attributes
-		gl.disableVertexAttribArray(this._drawShader.attributes.aVertex);
-		gl.disableVertexAttribArray(this._drawShader.attributes.aTexture);
-		gl.disableVertexAttribArray(this._drawShader.attributes.aColor);
-		gl.enableVertexAttribArray(this._displayShader.attributes.aVertex);
-
-		// ==== Setup program
-		gl.useProgram(this._displayShader.program);
-
-    	// Select vram as our source texture
-    	gl.activeTexture(gl.TEXTURE0);
-    	gl.bindTexture(gl.TEXTURE_2D, this._vram);
-    	gl.uniform1i(this._displayShader.uniforms.sVram, 0);
-
-		// Set to render to display
+	const canvas = document.getElementById(container);
+	_canvas = canvas;
+
+	// Create our context
+	gl = canvas.getContext("webgl2", {
+		alpha: false,
+		antialias: true,
+		depth: false,
+		stencil: false
+	});
+
+	window.addEventListener("resize", _onresize);
+
+	_onresize();
+
+	// Global enable / disables
+	gl.disable(gl.STENCIL_TEST);
+	gl.disable(gl.DEPTH_TEST);
+	gl.disable(gl.DITHER);
+	gl.colorMask(true, true, true, true);
+	gl.clearColor(0, 0, 0, 1);
+
+	// Setup or rendering programs
+	_displayShader = _createShader (DisplayVertexShader, DisplayFragmentShader);
+	_drawShader = _createShader (DrawVertexShader, DrawFragmentShader);
+
+	// Setup our vertex buffers
+	_copyBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, _copyBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([ 1, 1, 1,-1,-1, 1,-1,-1]), gl.STATIC_DRAW);
+
+	_drawBuffer = gl.createBuffer();
+
+	// Video memory
+	_vram = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, _vram);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+	_shadow = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, _shadow);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+	// Setup the draw targets
+	_framebuffer = gl.createFramebuffer();
+	gl.bindFramebuffer(gl.FRAMEBUFFER, _framebuffer);
+	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, _shadow, 0);
+
+	// Set context to render by default
+	_enterRender();
+	_requestRepaint();
+}
+
+export function getData (x, y, width, height, target) {
+	gl.bindFramebuffer(gl.FRAMEBUFFER, _framebuffer);
+	gl.readPixels(x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+
+	if (!_isRendering) {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	}
 
-	_createShader (vertex, fragment) {
-		const gl = this._gl;
-
-		var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-		var vertexShader =  gl.createShader(gl.VERTEX_SHADER);
-
-		gl.shaderSource(vertexShader, vertex);
-		gl.compileShader(vertexShader);
-
-		if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
-			console.error(gl.getShaderInfoLog(vertexShader));
-			return null;
-		}
-
-		gl.shaderSource(fragmentShader, fragment);
-		gl.compileShader(fragmentShader);
-
-		if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
-			console.error(gl.getShaderInfoLog(fragmentShader));
-			return null;
-		}
-
-		let shaderProgram = gl.createProgram();
-		gl.attachShader(shaderProgram, vertexShader);
-		gl.attachShader(shaderProgram, fragmentShader);
-		gl.linkProgram(shaderProgram);
-
-		if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-			console.error(gl.getError());
-			return null;
-		}
-
-		const attrCount = gl.getProgramParameter(shaderProgram, gl.ACTIVE_ATTRIBUTES);
-		const attributes = {};
-
-		for (var i = 0; i < attrCount; i++) {
-			const attr = gl.getActiveAttrib(shaderProgram, i);
-			attributes[attr.name] = i;
-		}
-
-		const uniCount= gl.getProgramParameter(shaderProgram, gl.ACTIVE_UNIFORMS);
-		const uniforms = {};
-
-		for (var i = 0; i < uniCount; i++) {
-			const uni = gl.getActiveUniform(shaderProgram, i);
-			uniforms[uni.name] = gl.getUniformLocation(shaderProgram, uni.name);
-		}
-
-		return {
-			attributes: attributes,
-			uniforms: uniforms,
-			program: shaderProgram
-		};
+	for (var i = 0; i < VRAM_WORDS.length; i++) {
+		target[i] = pack(VRAM_WORDS[i]);
 	}
 }
+
+export function setData (x, y, width, height, target) {
+	for (var i = 0; i < VRAM_WORDS.length; i++) {
+		VRAM_WORDS[i] = PALETTE[target[i]];
+	}
+
+	gl.bindTexture(gl.TEXTURE_2D, _shadow);
+	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+
+	gl.bindTexture(gl.TEXTURE_2D, _vram);
+	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+}
+
+export function render (type, offset, count, textured, color, vertexes) {
+	const flat = color >= 0;
+	const size = 4 + (textured ? 4 : 0) + (flat ? 0 : 2);
+
+	_enterRender();
+	_requestRepaint();
+
+	if (_blend) {
+		_parityCopy();
+	}
+
+	// Drawing region
+   	gl.uniform2f(_drawShader.uniforms.uDrawPos, _drawX, _drawY);
+
+   	// Texture settings
+   	gl.uniform1i(_drawShader.uniforms.uTextured, textured);
+   	if (textured) {
+	   	gl.uniform2i(_drawShader.uniforms.uTextureOffset, _textureX, _textureY);
+	   	gl.uniform1i(_drawShader.uniforms.uClutEnable, _clutEnable);
+
+	   	if (_clutEnable) {
+		   	gl.uniform1i(_drawShader.uniforms.uClutMode, _clutMode);
+	   		gl.uniform2i(_drawShader.uniforms.uClutOffset, _clutX, _clutY);
+	   		gl.uniform1i(_drawShader.uniforms.uClutIndexMask, _clutIndexMask);
+	   		gl.uniform1i(_drawShader.uniforms.uClutIndexShift, _clutIndexShift);
+	   		gl.uniform1ui(_drawShader.uniforms.uClutColorMask, _clutColorMask);
+	   	}
+   	}
+
+   	// Blending flags
+	gl.uniform1i(_drawShader.uniforms.uSemiTransparent, _blend);
+	if (_blend) {
+		gl.uniform2f(_drawShader.uniforms.uSetCoff, _setSrcCoff, _setDstCoff);
+		gl.uniform2f(_drawShader.uniforms.uResetCoff, _resetSrcCoff, _resetDstCoff);
+	}
+
+   	// Render flags
+   	gl.uniform1i(_drawShader.uniforms.uMasked, _masked);
+   	gl.uniform1i(_drawShader.uniforms.uSetMask, _setMask);
+   	gl.uniform1i(_drawShader.uniforms.uDither, _dither);
+
+	// Buffer draw parameters
+	gl.bindBuffer(gl.ARRAY_BUFFER, _drawBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.DYNAMIC_DRAW);
+
+	// Setup our vertex pointers
+	gl.vertexAttribIPointer(_drawShader.attributes.aVertex, 2, gl.SHORT, size, offset);
+
+	if (textured) {
+		gl.vertexAttribIPointer(_drawShader.attributes.aTexture, 2, gl.SHORT, size, offset+4);
+		gl.enableVertexAttribArray(_drawShader.attributes.aTexture);
+	} else {
+		gl.vertexAttribI4i(_drawShader.attributes.aTexture, 0, 0, 0, 0);
+		gl.disableVertexAttribArray(_drawShader.attributes.aTexture);
+	}
+
+	if (flat) {
+		gl.vertexAttribI4i(_drawShader.attributes.aColor, color, color, color, color);
+		gl.disableVertexAttribArray(_drawShader.attributes.aColor);
+	} else {
+		gl.vertexAttribIPointer(_drawShader.attributes.aColor, 1, gl.SHORT, size, offset + (textured ? 8 : 4));
+		gl.enableVertexAttribArray(_drawShader.attributes.aColor);
+	}
+
+	// Draw array
+	gl.drawArrays(type, 0, count);
+
+	// Set our dirty flag so we know to copy the shadow frame over
+	_dirty = true;
+}
+
+function _parityCopy() {
+	if (!_dirty) return ;
+
+	gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, _clipX, _clipY, _clipX, _clipY, _clipWidth, _clipHeight);
+
+	_dirty = false;
+}
+
+function _onresize () {
+	// Lookup the size the browser is displaying the canvas.
+	_viewportWidth = _canvas.clientWidth;
+	_viewportHeight = _canvas.clientHeight;
+
+	// Make the canvas the same size
+	_canvas.width  = _viewportWidth;
+	_canvas.height = _viewportHeight;
+
+	_aspectRatio = (_viewportHeight / _viewportWidth) * (4 / 3);
+
+	_requestRepaint();
+}
+
+function _requestRepaint() {
+	if (_animationFrame) {
+		return ;
+	}
+
+	_animationFrame = window.requestAnimationFrame(_repaint);
+}
+
+function _repaint () {
+	_leaveRender();
+
+	// Copy our viewport to the screen
+	gl.viewport(0, 0, _viewportWidth, _viewportHeight);
+	gl.clear(gl.COLOR_BUFFER_BIT);
+
+   	gl.uniform1f(_displayShader.uniforms.uAspectRatio, _aspectRatio);
+   	gl.uniform2f(_displayShader.uniforms.uViewportSize, _viewWidth, _viewHeight);
+   	gl.uniform2f(_displayShader.uniforms.uViewportPosition, _viewX, _viewY);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, _copyBuffer);
+	gl.vertexAttribPointer(_displayShader.attributes.aVertex, 2, gl.FLOAT, false, 0, 0);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+	_animationFrame = 0;
+}
+
+function _enterRender () {
+	if (_isRendering) return ;
+	_isRendering = true;
+
+	gl.disableVertexAttribArray(_displayShader.attributes.aVertex);
+	gl.enableVertexAttribArray(_drawShader.attributes.aVertex);
+
+	// Setup our shadow frame
+	gl.bindFramebuffer(gl.FRAMEBUFFER, _framebuffer);
+
+	// Setup our program
+	gl.useProgram(_drawShader.program);
+
+	// Select vram as TEXTURE0
+	gl.uniform1i(_drawShader.uniforms.sVram, 0);
+
+	// Setup clipping rectangle
+	gl.viewport(_clipX, _clipY, _clipWidth, _clipHeight);
+   	gl.uniform2f(_drawShader.uniforms.uClipPos, _clipX, _clipY);
+   	gl.uniform2f(_drawShader.uniforms.uClipSize, _clipWidth, _clipHeight);
+
+	// Select the new frame buffer / vram
+	gl.bindFramebuffer(gl.FRAMEBUFFER, _framebuffer);
+
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, _vram);
+	gl.uniform1i(_drawShader.uniforms.sVram, 0);
+}
+
+function _leaveRender () {
+	if (!_isRendering) return ;
+	_isRendering = false;
+
+	// Copy render buffer to target
+	_parityCopy();
+
+	// Change our attributes
+	gl.disableVertexAttribArray(_drawShader.attributes.aVertex);
+	gl.disableVertexAttribArray(_drawShader.attributes.aTexture);
+	gl.disableVertexAttribArray(_drawShader.attributes.aColor);
+	gl.enableVertexAttribArray(_displayShader.attributes.aVertex);
+
+	// ==== Setup program
+	gl.useProgram(_displayShader.program);
+
+	// Select vram as our source texture
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, _vram);
+	gl.uniform1i(_displayShader.uniforms.sVram, 0);
+
+	// Set to render to display
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+}
+
+function _createShader (vertex, fragment) {
+	var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+	var vertexShader =  gl.createShader(gl.VERTEX_SHADER);
+
+	gl.shaderSource(vertexShader, vertex);
+	gl.compileShader(vertexShader);
+
+	if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+		console.error(gl.getShaderInfoLog(vertexShader));
+		return null;
+	}
+
+	gl.shaderSource(fragmentShader, fragment);
+	gl.compileShader(fragmentShader);
+
+	if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+		console.error(gl.getShaderInfoLog(fragmentShader));
+		return null;
+	}
+
+	let shaderProgram = gl.createProgram();
+	gl.attachShader(shaderProgram, vertexShader);
+	gl.attachShader(shaderProgram, fragmentShader);
+	gl.linkProgram(shaderProgram);
+
+	if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+		console.error(gl.getError());
+		return null;
+	}
+
+	const attrCount = gl.getProgramParameter(shaderProgram, gl.ACTIVE_ATTRIBUTES);
+	const attributes = {};
+
+	for (var i = 0; i < attrCount; i++) {
+		const attr = gl.getActiveAttrib(shaderProgram, i);
+		attributes[attr.name] = i;
+	}
+
+	const uniCount= gl.getProgramParameter(shaderProgram, gl.ACTIVE_UNIFORMS);
+	const uniforms = {};
+
+	for (var i = 0; i < uniCount; i++) {
+		const uni = gl.getActiveUniform(shaderProgram, i);
+		uniforms[uni.name] = gl.getUniformLocation(shaderProgram, uni.name);
+	}
+
+	return {
+		attributes: attributes,
+		uniforms: uniforms,
+		program: shaderProgram
+	};
+}
+

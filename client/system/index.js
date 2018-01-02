@@ -1,14 +1,18 @@
 import MIPS from "./mips";
-import GPU from "./gpu";
+import { attach, test } from "./gpu";
 
 import { Exceptions } from "./mips/consts";
 
 export default class extends MIPS {
-	constructor (container) {
+	constructor () {
 		super();
 
-		this.gpu = new GPU();
 		this.tick = this.tick.bind(this);
+	}
+
+	attach(container) {
+		attach(container);
+		test();
 	}
 
 	start () {
