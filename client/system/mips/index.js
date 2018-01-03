@@ -38,10 +38,9 @@ const _environment = {
 };
 
 export var registers;
+export const regions = [];
 
-const cache = [];
-const regions = [];
-
+var cache = [];
 var wasm_exports;
 var timer;
 
@@ -89,6 +88,7 @@ export function initialize() {
 // Execution core
 export function reset() {
 	timer = 0;
+	cache = [];
 
 	wasm_exports.reset();
 }
