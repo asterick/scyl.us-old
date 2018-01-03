@@ -307,6 +307,8 @@ export function compile(start, length, locate) {
 		}]
 	};
 
+	_functions = null;
+
 	return Export(module);
 }
 
