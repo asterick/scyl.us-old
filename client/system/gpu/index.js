@@ -16,7 +16,15 @@ setMask(true, false);
 setDither(true);
 setBlend(false, 0, 0, 0, 0);
 
-// This is a gross test bench to see if the GPU works
+export function read (code, address) {
+    throw code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData;
+}
+
+export function write (address, value, mask = ~0) {
+    throw Exceptions.BusErrorData;
+}
+
+/* This is a gross test bench to see if the GPU works
 export function test () {
     setClut(true, 2, 0, 220);
     render(WebGL2RenderingContext.TRIANGLE_FAN, 0, 4, false, -1, new Int16Array([
@@ -58,3 +66,4 @@ export function test () {
        160, 160,
     ]));
 }
+*/

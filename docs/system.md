@@ -20,9 +20,9 @@ All unmapped spaces will produce a bus exception
 
 | Start      | End        | Length | System |
 | ---------- | ---------- | ------ | ------ |
-| 0x18000000 | 0x180FFFFF |        |        |
-| 0x18100000 |            |        |        |
-| 0x18200000 |            |        |        |
+| 0x1F000000 | 0x1F0FFFFF |        |        |
+| 0x1F100000 |            |        |        |
+| 0x1F200000 |            |        |        |
 
 CPU (MIPS R3000)
 -----
@@ -40,7 +40,7 @@ Cedar Bus
 ----------
 Used for removable devices / media
 
-SPU
+DSP Engine
 ---
 
 TODO
