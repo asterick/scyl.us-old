@@ -38,7 +38,7 @@ const _environment = {
 };
 
 export var registers;
-export const regions = [];
+export var regions = [];
 
 var cache = [];
 var wasm_exports;
@@ -65,6 +65,7 @@ export function initialize() {
 			let addr = wasm_exports.getMemoryRegions();
 			let flags;
 
+			regions = [];
 			do {
 				let region = new Uint32Array(memory, addr, 4);
 				flags = region[3];
