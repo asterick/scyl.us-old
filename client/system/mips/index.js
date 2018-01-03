@@ -12,239 +12,230 @@ import { MAX_COMPILE_SIZE, MIN_COMPILE_SIZE, Exceptions } from "./consts";
  ** 36: clocks (int)
  **/
 
-export default class MIPS {
-	/*******
-	 ** Runtime section
-	 *******/
-	constructor() {
-		// Compiler cache
-		this._cache = [];
+const _environment = {
+	exception: (code, pc, delayed, cop) => {
+		throw new Exception(code, pc, delayed, cop);
+	},
+	execute: (pc, delayed) => _execute(pc, delayed),
+	read: (physical, code, pc, delayed) => {
+		try {
+			return read(code, physical >>> 0);
+		} catch (e) {
+			throw new Exception(e, pc, delayed, 0);
+		}
+	},
+	write: (physical, value, mask, pc, delayed) => {
+		try {
+			write(physical, value, mask);
+		} catch (e) {
+			throw new Exception(e, pc, delayed, 0);
+		}
+	},
+	invalidate: (physical, logical) => {
+		// Invalidate cache line
+		const cache_line = physical & ~(_blockSize(logical) - 1);
+		const entry = _cache[cache_line];
 
-		this._environment = {
-	        exception: (code, pc, delayed, cop) => {
-	        	throw new Exception(code, pc, delayed, cop);
-	        },
-			execute: (pc, delayed) => this._execute(pc, delayed),
-	    	read: (physical, code, pc, delayed) => {
-				try {
-					return this.read(code, physical >>> 0);
-				} catch (e) {
-					throw new Exception(e, pc, delayed, 0);
-				}
-	    	},
-	    	write: (physical, value, mask, pc, delayed) => {
-				try {
-					this.write(physical, value, mask);
-				} catch (e) {
-					throw new Exception(e, pc, delayed, 0);
-				}
-			},
-	    	invalidate: (physical, logical) => {
-				// Invalidate cache line
-				const cache_line = physical & ~(this._blockSize(logical) - 1);
-				const entry = this._cache[cache_line];
+		// Clear this row out (de-reference the function so we don't leak)
+		if (entry) {
+			entry.code = null;
+			_cache[cache_line] = null;
+		}
+	}
+};
 
-				// Clear this row out (de-reference the function so we don't leak)
-				if (entry) {
-					entry.code = null;
-					this._cache[cache_line] = null;
-				}
-	    	}
-    	};
+const _cache = [];
+const regions = [];
 
-		// Load in WASM definitions for step through memory
-		fetch("core.wasm")
-			.then((blob) => blob.arrayBuffer())
-			.then((ab) => {
-				this._compiler = new Compiler(ab);
+var _compiler, _exports;
+var registers;
+var timer;
 
-				return WebAssembly.instantiate(ab, {
-					env: this._environment
-				});
-			})
-			.then((module) => {
-				this._exports =  module.instance.exports;
+/*******
+** Runtime section
+*******/
+export function initialize() {
+	return fetch("core.wasm")
+		.then((blob) => blob.arrayBuffer())
+		.then((ab) => {
+			_compiler = new Compiler(ab);
 
-				const memory = this._exports.memory.buffer;
-
-				let addr = this._exports.getMemoryRegions();
-				let flags;
-
-				this.regions = [];
-
-				do {
-					let region = new Uint32Array(memory, addr, 4);
-					flags = region[3];
-					addr += 16;
-
-					this.regions.push({
-						start: region[0],
-						length: region[1],
-						end: region[0]+region[1],
-						flags: region[3],
-						buffer: new Uint8Array(memory, region[2], region[1])
-					});
-				} while(~flags & 4);
-
-				this.registers = new Uint32Array(memory, this._exports.getRegisterAddress(), 64);
-				this.add_clocks = this._exports.add_clocks;
-				this.load = this._exports.load;
-				this.store = this._exports.store;
-				this.cop_enabled = this._exports.cop_enabled;
-				this.translate = this._exports.translate;
-				this.interrupt = this._exports.interrupt;
-				this.handle_interrupt = this._exports.handle_interrupt;
-				this.trap = this._exports.trap;
-
-				this.reset();
-				this.onReady && this.onReady();
+			return WebAssembly.instantiate(ab, {
+				env: _environment
 			});
+		})
+		.then((module) => {
+			_exports =  module.instance.exports;
+
+			const memory = _exports.memory.buffer;
+
+			let addr = _exports.getMemoryRegions();
+			let flags;
+
+			do {
+				let region = new Uint32Array(memory, addr, 4);
+				flags = region[3];
+				addr += 16;
+
+				regions.push({
+					start: region[0],
+					length: region[1],
+					end: region[0]+region[1],
+					flags: region[3],
+					buffer: new Uint8Array(memory, region[2], region[1])
+				});
+			} while(~flags & 4);
+
+			reset();
+		});
+}
+
+// Helper values for the magic registers
+export class Registers {
+	static get lo() {
+		return registers[32];
 	}
 
-	// Helper values for the magic registers
-	get lo() {
-		return this.registers[32];
+	static get hi() {
+		return registers[33];
 	}
 
-	get hi() {
-		return this.registers[33];
+	static get pc() {
+		return registers[34];
 	}
 
-	get pc() {
-		return this.registers[34];
+	static set pc(v) {
+		registers[34] = v;
 	}
 
-	set pc(v) {
-		this.registers[34] = v;
+	static get start_pc() {
+		return registers[35];
 	}
 
-	get start_pc() {
-		return this.registers[35];
+	static set start_pc(v) {
+		registers[35] = v;
 	}
 
-	set start_pc(v) {
-		this.registers[35] = v;
+	static get clocks() {
+		return registers[36] >> 0;
 	}
 
-	get clocks() {
-		return this.registers[36] >> 0;
+	static set clocks(v) {
+		registers[36] = v;
 	}
+}
 
-	set clocks(v) {
-		this.registers[36] = v;
-	}
+// Execution core
+export function reset() {
+	timer = 0;
 
-	// Execution core
-	reset() {
-		this.timer = 0;
-
-		this._exports.reset();
-	}
+	_exports.reset();
+}
 
 	// Execute a single frame
-	_tick (ticks) {
-		// Advance clock, with 0.1 sec a max 'lag' time
-		const _prev = this.add_clocks(ticks);
+export function tick (ticks) {
+	// Advance clock, with 0.1 sec a max 'lag' time
+	const _prev = _exports.add_clocks(ticks);
 
-		while (this.clocks > 0) {
-			const block_size = this._blockSize(this.pc);
-			const block_mask = ~(block_size - 1);
-			const physical = (this.translate(this.pc, false, this.pc, false) & block_mask) >>> 0;
-			const logical = (this.pc & block_mask) >>> 0;
+	while (clocks > 0) {
+		const block_size = _blockSize(pc);
+		const block_mask = ~(block_size - 1);
+		const physical = (translate(pc, false, pc, false) & block_mask) >>> 0;
+		const logical = (pc & block_mask) >>> 0;
 
-			var funct = this._cache[physical];
+		var funct = _cache[physical];
 
-			if (funct === undefined || !funct.code || funct.logical !== logical) {
-				const defs = this._compiler.compile(logical, block_size / 4, (address) => {
-					// Do not assemble past block end (fallback to intepret)
-					if (address >= logical + block_size) {
-						return null;
-					}
-
-					try {
-						var word = this.load(address);
-						return locate(word);
-					} catch(e) {
-						// There was a loading error, fallback to interpret
-						return null;
-					}
-				});
-
-				WebAssembly.instantiate(defs, {
-					env: this._environment,
-					core: this._exports
-				}).then((result) => {
-					const funct = {
-						code: result.instance.exports.block,
-						logical: logical
-					};
-
-					for (let start = physical; start < physical + block_size; start += MIN_COMPILE_SIZE) {
-						this._cache[start] = funct;
-					}
-
-					// Resume execution after the JIT core completes
-					this.tick();
-				});
-
-				// Execution has paused, waiting for compiler to finish
-				return false;
-			}
-
-			try {
-				funct.code();
-			} catch (e) {
-				if (e instanceof Exception) {
-					this.trap(e.exception, e.pc, e.delayed, e.coprocessor);
-				} else {
-					throw e;
+		if (funct === undefined || !funct.code || funct.logical !== logical) {
+			const defs = _compiler.compile(logical, block_size / 4, (address) => {
+				// Do not assemble past block end (fallback to intepret)
+				if (address >= logical + block_size) {
+					return null;
 				}
-			}
+
+				try {
+					var word = load(address);
+					return locate(word);
+				} catch(e) {
+					// There was a loading error, fallback to interpret
+					return null;
+				}
+			});
+
+			WebAssembly.instantiate(defs, {
+				env: _environment,
+				core: _exports
+			}).then((result) => {
+				const funct = {
+					code: result.instance.exports.block,
+					logical: logical
+				};
+
+				for (let start = physical; start < physical + block_size; start += MIN_COMPILE_SIZE) {
+					_cache[start] = funct;
+				}
+
+				// Resume execution after the JIT core completes
+				tick();
+			});
+
+			// Execution has paused, waiting for compiler to finish
+			return false;
 		}
 
-		this.timer += _prev - this.clocks;
-		this.handle_interrupt();
-		return true;
-	}
-
-	step () {
-		const _prev = this.clocks;
-
 		try {
-			this.start_pc = this.pc;
-			this.pc += 4;
-
-			this._execute(this.start_pc, false);
-			this.clocks--;	// Could be off by one, don't mind that much
+			funct.code();
 		} catch (e) {
 			if (e instanceof Exception) {
-				this.trap(e.exception, e.pc, e.delayed, e.coprocessor);
+				trap(e.exception, e.pc, e.delayed, e.coprocessor);
 			} else {
 				throw e;
 			}
 		}
-
-		this.timer += _prev - this.clocks;
-		this.handle_interrupt();
 	}
 
-	// This forces delay slots at the end of a page to
-	// be software interpreted so TLB changes don't
-	// cause cache failures
-	_execute(pc, delayed) {
-		const data = this.load(pc, true, pc, delayed);
-		const call = locate(data);
+	timer += _prev - clocks;
+	handle_interrupt();
+	return true;
+}
 
-		this._exports[call.name](pc, data, delayed);
-	}
+export function step () {
+	const _prev = clocks;
 
-	_blockSize(address) {
-		if ((address & 0xC0000000) !== (0x80000000 >> 0)) {
-			return MIN_COMPILE_SIZE;
-		} else if (address >= 0x1FC00000 && address < 0x1FC80000) {
-			return MAX_COMPILE_SIZE;
+	try {
+		start_pc = pc;
+		pc += 4;
+
+		_execute(start_pc, false);
+		clocks--;	// Could be off by one, don't mind that much
+	} catch (e) {
+		if (e instanceof Exception) {
+			trap(e.exception, e.pc, e.delayed, e.coprocessor);
 		} else {
-			return MIN_COMPILE_SIZE;
+			throw e;
 		}
 	}
+
+	timer += _prev - clocks;
+	handle_interrupt();
 }
+
+// This forces delay slots at the end of a page to
+// be software interpreted so TLB changes don't
+// cause cache failures
+function _execute(pc, delayed) {
+	const data = load(pc, true, pc, delayed);
+	const call = locate(data);
+
+	_exports[call.name](pc, data, delayed);
+}
+
+function _blockSize(address) {
+	if ((address & 0xC0000000) !== (0x80000000 >> 0)) {
+		return MIN_COMPILE_SIZE;
+	} else if (address >= 0x1FC00000 && address < 0x1FC80000) {
+		return MAX_COMPILE_SIZE;
+	} else {
+		return MIN_COMPILE_SIZE;
+	}
+}
+

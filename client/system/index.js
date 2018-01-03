@@ -1,48 +1,43 @@
-import MIPS from "./mips";
-import { attach, test } from "./gpu";
-
+import { tick as system_tick } from "./mips";
 import { Exceptions } from "./mips/consts";
 
-export default class extends MIPS {
-	constructor () {
-		super();
+export { attach, test } from "./gpu";
+export { initialize, Registers } from "./mips";
 
-		this.tick = this.tick.bind(this);
+var running = false;
+var _adjust_clock;
+
+export function isRunning() {
+	return running;
+}
+
+export function start () {
+	if (running) return ;
+
+	_adjust_clock = +new Date();
+	running = true;
+	tick();
+}
+
+export function stop () {
+	running = false;
+}
+
+export function tick () {
+	const newClock = Date.now();
+	const cycles = (newClock - _adjust_clock) * (15000000 / 1000);
+	_adjust_clock = newClock;
+
+	if (running && system_tick(cycles)) {
+		// Schedule next tick when the CPU is free
+		setTimeout(tick, 0);
 	}
+}
 
-	attach(container) {
-		attach(container);
-		test();
-	}
+export function read (code, address) {
+	throw code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData;
+}
 
-	start () {
-		if (this.running) return ;
-
-		this._adjust_clock = +new Date();
-		this.running = true;
-		this.tick();
-	}
-
-	stop () {
-		this.running = false;
-	}
-
-	tick () {
-		const newClock = Date.now();
-		const cycles = (newClock - this._adjust_clock) * (15000000 / 1000);
-		this._adjust_clock = newClock;
-
-		if (this.running && this._tick(cycles)) {
-			// Schedule next tick when the CPU is free
-			setTimeout(this.tick, 0);
-		}
-	}
-
-	read (code, address) {
-		throw code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData;
-	}
-
-	write (address, value, mask = ~0) {
-		throw Exceptions.BusErrorData;
-	}
+export function write (address, value, mask = ~0) {
+	throw Exceptions.BusErrorData;
 }

@@ -5,22 +5,24 @@ import Memory from "./memory";
 import Assembly from "./assembly";
 import Registers from "./registers";
 
+import { isRunning, start, stop, step } from "../system";
+
 export default class extends Component {
 	render() {
 		return <div class="debugger">
 			<div style="display: inline-block">
-				{ this.props.runtime.running
+				{ isRunning()
 					? <input type="button" value="stop" onClick={() => {
-						this.props.runtime.stop();
+						stop();
 						this.forceUpdate();
 					}}/>
 					: <input type="button" value="start" onClick={() => {
-						this.props.runtime.start();
+						start();
 						this.forceUpdate();
 					}}/>
 				}
 				<input type="button" value="step" onClick={() => {
-					this.props.runtime.step();
+					step();
 					this.forceUpdate();
 				}}/>
 			</div>
