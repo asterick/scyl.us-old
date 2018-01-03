@@ -6,7 +6,7 @@ import {
 
 export { attach as attach };
 
-// Initialization code
+// Initialization state
 setViewport(0, 0, 256, 240);
 setClip(0, 0, 256, 240);
 setDraw(0, 0);
