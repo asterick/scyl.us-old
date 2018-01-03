@@ -2,7 +2,7 @@ import { tick as system_tick } from "./mips";
 import { Exceptions } from "./mips/consts";
 
 export { attach, test } from "./gpu";
-export { initialize, Registers, load, step } from "./mips";
+export { initialize, registers, load, step } from "./mips";
 
 var running = false;
 var _adjust_clock;

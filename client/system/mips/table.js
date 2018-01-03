@@ -1,6 +1,6 @@
 import { Registers, COP0Registers } from "./consts";
 
-export const Disassembly = {
+export const disassembly = {
     ReservedInstruction: (fields, pc) => `---`,
     CopUnusable: (fields, pc) => `COP${fields.cop}\tunusable`,
 
@@ -84,7 +84,7 @@ export const Disassembly = {
     SWC0: (fields, pc) => `swc0\t${COP0Registers[fields.rt]}, ${fields.imm16}(${Registers[fields.rs]})`
 };
 
-export const Instructions = {
+export const instructions = {
     field: "opcode",
     fallback: "ReservedInstruction",
     0x00: {

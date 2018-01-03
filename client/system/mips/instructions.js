@@ -1,5 +1,5 @@
 import { Fields } from "./fields";
-import { Disassembly, Instructions } from "./table";
+import { disassembly, instructions } from "./table";
 
 import Export from "../../dynast/export";
 import Import from "../../dynast/import";
@@ -67,7 +67,7 @@ export function initialize(ab) {
 	});
 	_function_base = index;
 
-	const targets = names(Instructions).concat("execute_call", "finalize_call", "adjust_clock");
+	const targets = names(instructions).concat("execute_call", "finalize_call", "adjust_clock");
 
 	_templates = {};
 	defs.export_section.forEach((exp) => {
@@ -312,7 +312,7 @@ export function compile(start, length, locate) {
 
 export function locate(word) {
 	const fields = new Fields(word);
-	var entry = Instructions;
+	var entry = instructions;
 	var fallback = null;
 
 	while (typeof entry === "object") {
@@ -327,5 +327,5 @@ export function locate(word) {
 
 export function disassemble(word, address) {
 	const op = locate(word);
-	return Disassembly[op.name](op, address);
+	return disassembly[op.name](op, address);
 }

@@ -5,7 +5,8 @@ import { hex } from "../util";
 
 import locate from "../system/mips/instructions";
 
-import { load, Registers } from "../system";
+import { load } from "../system";
+import Registers from "../system/mips/registers";
 
 export default class extends Component {
 	disassemble(pc) {

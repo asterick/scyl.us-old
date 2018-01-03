@@ -5,7 +5,8 @@ import { hex } from "../util";
 
 import { disassemble } from "../system/mips/instructions";
 
-import { load, Registers } from "../system";
+import { load } from "../system";
+import Registers from "../system/mips/registers";
 
 export default class extends Component {
 	disassemble(pc) {
@@ -13,7 +14,6 @@ export default class extends Component {
 			const word = load(pc) >>> 0;
 			return <tr><td>{hex(pc)}</td> <td>{hex(word)}</td> { disassemble(word, pc) }</tr>;
 		} catch(e) {
-			throw e;
 			return <tr><td>{hex(pc)}</td> <td colSpan="3">Bus error</td></tr>;
 		}
 	}
