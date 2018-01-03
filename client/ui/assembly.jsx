@@ -12,7 +12,8 @@ export default class extends Component {
 		try {
 			const word = load(pc) >>> 0;
 			return <tr><td>{hex(pc)}</td> <td>{hex(word)}</td> { disassemble(word, pc) }</tr>;
-		} catch(E) {
+		} catch(e) {
+			throw e;
 			return <tr><td>{hex(pc)}</td> <td colSpan="3">Bus error</td></tr>;
 		}
 	}

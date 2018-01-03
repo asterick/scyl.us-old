@@ -1,16 +1,8 @@
 import Exception from "./exception";
 import { locate, Compiler } from "./instructions";
+import { read, write } from "..";
 
 import { MAX_COMPILE_SIZE, MIN_COMPILE_SIZE, Exceptions } from "./consts";
-
-/**
- Register mapping:
- ** 32: lo
- ** 33: hi
- ** 34: pc
- ** 35: start_pc
- ** 36: clocks (int)
- **/
 
 const _environment = {
 	exception: (code, pc, delayed, cop) => {
@@ -34,20 +26,20 @@ const _environment = {
 	invalidate: (physical, logical) => {
 		// Invalidate cache line
 		const cache_line = physical & ~(_blockSize(logical) - 1);
-		const entry = _cache[cache_line];
+		const entry = cache[cache_line];
 
 		// Clear this row out (de-reference the function so we don't leak)
 		if (entry) {
 			entry.code = null;
-			_cache[cache_line] = null;
+			cache[cache_line] = null;
 		}
 	}
 };
 
-const _cache = [];
+const cache = [];
 const regions = [];
 
-var _compiler, _exports;
+var compiler, wasm_exports;
 var registers;
 var timer;
 
@@ -58,18 +50,18 @@ export function initialize() {
 	return fetch("core.wasm")
 		.then((blob) => blob.arrayBuffer())
 		.then((ab) => {
-			_compiler = new Compiler(ab);
+			compiler = new Compiler(ab);
 
 			return WebAssembly.instantiate(ab, {
 				env: _environment
 			});
 		})
 		.then((module) => {
-			_exports =  module.instance.exports;
+			wasm_exports =  module.instance.exports;
 
-			const memory = _exports.memory.buffer;
+			const memory = wasm_exports.memory.buffer;
 
-			let addr = _exports.getMemoryRegions();
+			let addr = wasm_exports.getMemoryRegions();
 			let flags;
 
 			do {
@@ -86,12 +78,22 @@ export function initialize() {
 				});
 			} while(~flags & 4);
 
+			registers = new Uint32Array(memory, wasm_exports.getRegisterAddress(), 64);
+
 			reset();
 		});
 }
 
 // Helper values for the magic registers
 export class Registers {
+	/**
+	 Register mapping:
+	 ** 32: lo
+	 ** 33: hi
+	 ** 34: pc
+	 ** 35: start_pc
+	 ** 36: clocks (int)
+	 **/
 	static get lo() {
 		return registers[32];
 	}
@@ -120,6 +122,10 @@ export class Registers {
 		return registers[36] >> 0;
 	}
 
+	static get (index) {
+		return registers[index];
+	}
+
 	static set clocks(v) {
 		registers[36] = v;
 	}
@@ -129,24 +135,24 @@ export class Registers {
 export function reset() {
 	timer = 0;
 
-	_exports.reset();
+	wasm_exports.reset();
 }
 
 	// Execute a single frame
 export function tick (ticks) {
 	// Advance clock, with 0.1 sec a max 'lag' time
-	const _prev = _exports.add_clocks(ticks);
+	const _prev = wasm_exports.add_clocks(ticks);
 
-	while (clocks > 0) {
-		const block_size = _blockSize(pc);
+	while (Registers.clocks > 0) {
+		const block_size = _blockSize(Registers.pc);
 		const block_mask = ~(block_size - 1);
-		const physical = (translate(pc, false, pc, false) & block_mask) >>> 0;
-		const logical = (pc & block_mask) >>> 0;
+		const physical = (wasm_exports.translate(Registers.pc, false, Registers.pc, false) & block_mask) >>> 0;
+		const logical = (Registers.pc & block_mask) >>> 0;
 
-		var funct = _cache[physical];
+		var funct = cache[physical];
 
 		if (funct === undefined || !funct.code || funct.logical !== logical) {
-			const defs = _compiler.compile(logical, block_size / 4, (address) => {
+			const defs = compiler.compile(logical, block_size / 4, (address) => {
 				// Do not assemble past block end (fallback to intepret)
 				if (address >= logical + block_size) {
 					return null;
@@ -163,7 +169,7 @@ export function tick (ticks) {
 
 			WebAssembly.instantiate(defs, {
 				env: _environment,
-				core: _exports
+				core: wasm_exports
 			}).then((result) => {
 				const funct = {
 					code: result.instance.exports.block,
@@ -171,7 +177,7 @@ export function tick (ticks) {
 				};
 
 				for (let start = physical; start < physical + block_size; start += MIN_COMPILE_SIZE) {
-					_cache[start] = funct;
+					cache[start] = funct;
 				}
 
 				// Resume execution after the JIT core completes
@@ -186,37 +192,41 @@ export function tick (ticks) {
 			funct.code();
 		} catch (e) {
 			if (e instanceof Exception) {
-				trap(e.exception, e.pc, e.delayed, e.coprocessor);
+				wasm_exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
 			} else {
 				throw e;
 			}
 		}
 	}
 
-	timer += _prev - clocks;
-	handle_interrupt();
+	timer += _prev - Registers.clocks;
+	wasm_exports.handle_interrupt();
 	return true;
 }
 
 export function step () {
-	const _prev = clocks;
+	const _prev = Registers.clocks;
 
 	try {
-		start_pc = pc;
-		pc += 4;
+		Registers.start_pc = Registers.pc;
+		Registers.pc += 4;
 
-		_execute(start_pc, false);
-		clocks--;	// Could be off by one, don't mind that much
+		_execute(Registers.start_pc, false);
+		Registers.clocks--;	// Could be off by one, don't mind that much
 	} catch (e) {
 		if (e instanceof Exception) {
-			trap(e.exception, e.pc, e.delayed, e.coprocessor);
+			wasm_exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
 		} else {
 			throw e;
 		}
 	}
 
-	timer += _prev - clocks;
-	handle_interrupt();
+	timer += _prev - Registers.clocks;
+	wasm_exports.handle_interrupt();
+}
+
+export function load (word, pc) {
+	return wasm_exports.load(word, pc);
 }
 
 // This forces delay slots at the end of a page to
@@ -226,7 +236,7 @@ function _execute(pc, delayed) {
 	const data = load(pc, true, pc, delayed);
 	const call = locate(data);
 
-	_exports[call.name](pc, data, delayed);
+	wasm_exports[call.name](pc, data, delayed);
 }
 
 function _blockSize(address) {
