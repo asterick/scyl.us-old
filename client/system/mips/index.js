@@ -1,5 +1,5 @@
 import Exception from "./exception";
-import { locate, Compiler } from "./instructions";
+import { locate, compile, initialize as initialize_compiler } from "./instructions";
 import { read, write } from "..";
 
 import { MAX_COMPILE_SIZE, MIN_COMPILE_SIZE, Exceptions } from "./consts";
@@ -25,7 +25,7 @@ const _environment = {
 	},
 	invalidate: (physical, logical) => {
 		// Invalidate cache line
-		const cache_line = physical & ~(_blockSize(logical) - 1);
+		const cache_line = physical & ~(blockSize(logical) - 1);
 		const entry = cache[cache_line];
 
 		// Clear this row out (de-reference the function so we don't leak)
@@ -39,7 +39,7 @@ const _environment = {
 const cache = [];
 const regions = [];
 
-var compiler, wasm_exports;
+var wasm_exports;
 var registers;
 var timer;
 
@@ -50,7 +50,7 @@ export function initialize() {
 	return fetch("core.wasm")
 		.then((blob) => blob.arrayBuffer())
 		.then((ab) => {
-			compiler = new Compiler(ab);
+			initialize_compiler(ab);
 
 			return WebAssembly.instantiate(ab, {
 				env: _environment
@@ -144,7 +144,7 @@ export function tick (ticks) {
 	const _prev = wasm_exports.add_clocks(ticks);
 
 	while (Registers.clocks > 0) {
-		const block_size = _blockSize(Registers.pc);
+		const block_size = blockSize(Registers.pc);
 		const block_mask = ~(block_size - 1);
 		const physical = (wasm_exports.translate(Registers.pc, false, Registers.pc, false) & block_mask) >>> 0;
 		const logical = (Registers.pc & block_mask) >>> 0;
@@ -152,7 +152,7 @@ export function tick (ticks) {
 		var funct = cache[physical];
 
 		if (funct === undefined || !funct.code || funct.logical !== logical) {
-			const defs = compiler.compile(logical, block_size / 4, (address) => {
+			const defs = compile(logical, block_size / 4, (address) => {
 				// Do not assemble past block end (fallback to intepret)
 				if (address >= logical + block_size) {
 					return null;
@@ -239,7 +239,7 @@ function _execute(pc, delayed) {
 	wasm_exports[call.name](pc, data, delayed);
 }
 
-function _blockSize(address) {
+export function blockSize(address) {
 	if ((address & 0xC0000000) !== (0x80000000 >> 0)) {
 		return MIN_COMPILE_SIZE;
 	} else if (address >= 0x1FC00000 && address < 0x1FC80000) {
