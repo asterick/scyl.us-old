@@ -3,8 +3,6 @@ import Component from 'inferno-component';
 
 import { hex } from "../util";
 
-import locate from "../system/mips/instructions";
-
 import { load } from "../system";
 import Registers from "../system/mips/registers";
 

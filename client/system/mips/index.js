@@ -94,7 +94,7 @@ export function reset() {
 	wasm_exports.reset();
 }
 
-	// Execute a single frame
+// Execute a single frame
 export function tick (ticks) {
 	// Advance clock, with 0.1 sec a max 'lag' time
 	const _prev = wasm_exports.add_clocks(ticks);
@@ -108,20 +108,7 @@ export function tick (ticks) {
 		var funct = cache[physical];
 
 		if (funct === undefined || !funct.code || funct.logical !== logical) {
-			const defs = compile(logical, block_size / 4, (address) => {
-				// Do not assemble past block end (fallback to intepret)
-				if (address >= logical + block_size) {
-					return null;
-				}
-
-				try {
-					var word = load(address);
-					return locate(word);
-				} catch(e) {
-					// There was a loading error, fallback to interpret
-					return null;
-				}
-			});
+			const defs = compile(logical, block_size / 4);
 
 			WebAssembly.instantiate(defs, {
 				env: _environment,
@@ -204,4 +191,3 @@ export function blockSize(address) {
 		return MIN_COMPILE_SIZE;
 	}
 }
-

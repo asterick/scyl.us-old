@@ -1,5 +1,6 @@
 import { Fields } from "./fields";
 import { disassembly, instructions } from "./table";
+import { load } from ".";
 
 import Export from "../../dynast/export";
 import Import from "../../dynast/import";
@@ -12,7 +13,9 @@ var _imports;
 var _functions;
 var _function_base;
 var _templates;
-var _locate;
+
+var _block_start;
+var _block_end;
 
 function names(table) {
 	return Object.keys(table).reduce((acc, key) => {
@@ -43,16 +46,16 @@ export function initialize(ab) {
 			switch (i.kind) {
 			case 'memory_type':
 				return {
-            			"module": "core",
-            			"field": i.field,
-            			"type": defs.memory_section[i.index]
-            		};
+        			"module": "core",
+        			"field": i.field,
+        			"type": defs.memory_section[i.index]
+        		};
             case 'func_type':
 				return {
-            			"module": "core",
-            			"field": i.field,
-            			"type": defs.function_section[i.index - imported_functions].type
-            		};
+        			"module": "core",
+        			"field": i.field,
+        			"type": defs.function_section[i.index - imported_functions].type
+        		};
             default:
             	throw new Error(`Cannot import ${i.kind}`);
             }
@@ -219,49 +222,61 @@ function process(template, values, naked = false) {
 	};
 }
 
+function fallback(pc, delayed) {
+	return {
+		type: { type: "func_type", parameters: [], returns: [] },
+		locals: [],
+		code: [
+			{ op: 'i32.const', value: pc >> 0 },
+			{ op: 'i32.const', value: delayed ? 1 : 0 },
+	        { op: "call", function_index: _imports.execute },
+		]
+	};
+}
+
 function instruction(pc, delayed, tailcall = null) {
-	const op = _locate(pc);
+	var funct;
 
-	if (op === null) {
-		_functions.push({
-			type: { type: "func_type", parameters: [], returns: [] },
-			locals: [],
-			code: [
-				{ op: 'i32.const', value: pc >> 0 },
-				{ op: 'i32.const', value: delayed ? 1 : 0 },
-		        { op: "call", function_index: _imports.execute }
-			]
-		});
+	// Do not assemble past block end (fallback to intepret)
+	if (pc < _block_end && pc >= _block_start) {
+		try {
+			const op = locate(load(pc));
+			const template = _templates[op.name];
+			const body = process(template, [pc, op.word, delayed], true);
 
-		return _function_base + _functions.length - 1;
+			funct = {
+				type: { type: "func_type", parameters: [], returns: [] },
+				locals: template.locals,
+				code: body
+			};
+		} catch (e) {
+			// fall back to interpreted
+			funct = fallback(pc, delayed);
+		}
+	} else {
+		funct = fallback(pc, delayed);
 	}
-
-	const template = _templates[op.name];
-	const body = process(template, [pc, op.word, delayed], true);
 
 	if (tailcall !== null) {
-		body.push({ op: 'call', function_index: tailcall });
+		funct.code.push({ op: 'call', function_index: tailcall });
 	}
 
-	body.push("end");
+	funct.code.push("end");
 
-	_functions.push({
-		type: { type: "func_type", parameters: [], returns: [] },
-		locals: template.locals,
-		code: body
-	});
+	_functions.push(funct);
 
 	return _function_base + _functions.length - 1;
 }
 
-export function compile(start, length, locate) {
-	const end = start + length * 4;
+export function compile(start, length) {
 	const table = [];
 
-	_locate = locate;
+	_block_start = start;
+	_block_end = start + length * 4;
+
 	_functions = [
 		process(_templates.execute_call, [start, length]),
-		process(_templates.finalize_call, [end])
+		process(_templates.finalize_call, [_block_end])
 	];
 
 	// Prime function table with the "Tail"
