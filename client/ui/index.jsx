@@ -5,13 +5,13 @@ import Memory from "./memory";
 import Assembly from "./assembly";
 import Registers from "./registers";
 
-import { isRunning, start, stop, step } from "../system";
+import { running, start, stop, step } from "../system";
 
 export default class extends Component {
 	render() {
 		return <div class="debugger">
 			<div style="display: inline-block">
-				{ isRunning()
+				{ running
 					? <input type="button" value="stop" onClick={() => {
 						stop();
 						this.forceUpdate();

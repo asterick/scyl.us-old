@@ -9,7 +9,7 @@ const _environment = {
 	exception: (code, pc, delayed, cop) => {
 		throw new Exception(code, pc, delayed, cop);
 	},
-	execute: (pc, delayed) => _execute(pc, delayed),
+	execute: execute,
 	read: (physical, code, pc, delayed) => {
 		try {
 			return read(code, physical >>> 0);
@@ -26,7 +26,7 @@ const _environment = {
 	},
 	invalidate: (physical, logical) => {
 		// Invalidate cache line
-		const cache_line = physical & ~(blockSize(logical) - 1);
+		const cache_line = physical & -blockSize(logical);  // equilivant to ~(block_size - 1)
 		const entry = cache[cache_line];
 
 		// Clear this row out (de-reference the function so we don't leak)
@@ -101,7 +101,7 @@ export function tick (ticks) {
 
 	while (Registers.clocks > 0) {
 		const block_size = blockSize(Registers.pc);
-		const block_mask = ~(block_size - 1);
+		const block_mask = -block_size; // equilivant to ~(block_size - 1)
 		const physical = (wasm_exports.translate(Registers.pc, false, Registers.pc, false) & block_mask) >>> 0;
 		const logical = (Registers.pc & block_mask) >>> 0;
 
@@ -154,7 +154,7 @@ export function step () {
 		Registers.start_pc = Registers.pc;
 		Registers.pc += 4;
 
-		_execute(Registers.start_pc, false);
+		execute(Registers.start_pc, false);
 		Registers.clocks--;	// Could be off by one, don't mind that much
 	} catch (e) {
 		if (e instanceof Exception) {
@@ -175,7 +175,7 @@ export function load (word, pc) {
 // This forces delay slots at the end of a page to
 // be software interpreted so TLB changes don't
 // cause cache failures
-function _execute(pc, delayed) {
+function execute(pc, delayed) {
 	const data = load(pc, true, pc, delayed);
 	const call = locate(data);
 
