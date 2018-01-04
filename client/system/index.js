@@ -47,14 +47,14 @@ export function read (code, address) {
 		case 0x1F100000: return timer_read(code, address);
 		case 0x1F200000: return cedar_read(code, address);
 		case 0x1F300000: return gpu_read(code, address);
-		case 0x1F400000:
-		case 0x1F500000:
-		case 0x1F600000:
-		case 0x1F700000:
-		case 0x1F800000: return dsp_read(code, address);
-		case 0x1F900000: return spu_read(code, address);
-		case 0x1FA00000:
-		case 0x1FB00000:
+		case 0x1F400000: return dsp_read(code, address);
+		case 0x1F500000: break ;
+		case 0x1F600000: break ;
+		case 0x1F700000: break ;
+		case 0x1F800000: break ;
+		case 0x1F900000: // SPU
+		case 0x1FA00000: // SPU
+		case 0x1FB00000: return spu_read(code, address);
 	}
 
 	throw code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData;
@@ -66,14 +66,14 @@ export function write (address, value, mask = ~0) {
 		case 0x1F100000: timer_write(address, value, mask); break ;
 		case 0x1F200000: cedar_write(address, value, mask); break ;
 		case 0x1F300000: gpu_write(address, value, mask); break ;
-		case 0x1F400000:
-		case 0x1F500000:
-		case 0x1F600000:
-		case 0x1F700000:
-		case 0x1F800000: dsp_write(address, value, mask); break ;
-		case 0x1F900000: spu_write(address, value, mask); break ;
-		case 0x1FA00000:
-		case 0x1FB00000:
+		case 0x1F400000: dsp_write(address, value, mask); break ;
+		case 0x1F500000: break ;
+		case 0x1F600000: break ;
+		case 0x1F700000: break ;
+		case 0x1F800000: break ;
+		case 0x1F900000: // SPU
+		case 0x1FA00000: // SPU
+		case 0x1FB00000: spu_write(address, value, mask); break ;
 	}
 
 	throw Exceptions.BusErrorData;
