@@ -2,7 +2,7 @@ import { tick as system_tick } from "./mips";
 import { Exceptions } from "./mips/consts";
 
 export { attach } from "./gpu";
-export { initialize, registers, load, step } from "./mips";
+export { reset as cpu_reset, initialize, registers, load, step } from "./mips";
 
 import { read as dma_read, write as dma_write } from "./dma";
 import { read as timer_read, write as timer_write } from "./timer";
@@ -12,7 +12,15 @@ import { read as dsp_read, write as dsp_write } from "./dsp";
 import { read as gpu_read, write as gpu_write } from "./gpu";
 
 export var running = false;
+
+const MAX_CLOCK_LAG = 60000;
+
+var _clock;
 var _adjust_clock;
+
+export function reset () {
+	cpu_reset();
+}
 
 export function start () {
 	if (running) return ;

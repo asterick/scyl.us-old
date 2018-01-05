@@ -41,10 +41,10 @@ const _environment = {
 
 export var registers;
 export var regions = [];
+export var timer;
 
 var cache = [];
 var wasm_exports;
-var timer;
 
 /*******
 ** Runtime section
@@ -99,9 +99,11 @@ export function reset() {
 // Execute a single frame
 export function tick (ticks) {
 	// Advance clock, with 0.1 sec a max 'lag' time
-	const _prev = Registers.clocks = Math.min(ticks + Registers.clocks, MAX_CLOCK_LAG);
+	Registers.clocks += ticks;
 
 	while (Registers.clocks > 0) {
+		var _prev = Registers.clocks;
+
 		const block_size = blockSize(Registers.pc);
 		const block_mask = -block_size; // equilivant to ~(block_size - 1)
 		const physical = (wasm_exports.translate(Registers.pc, false, Registers.pc, false) & block_mask) >>> 0;
@@ -110,9 +112,7 @@ export function tick (ticks) {
 		var funct = cache[physical];
 
 		if (funct === undefined || !funct.code || funct.logical !== logical) {
-			const defs = compile(logical, block_size / 4);
-
-			WebAssembly.instantiate(defs, {
+			WebAssembly.instantiate(compile(logical, block_size / 4), {
 				env: _environment,
 				core: wasm_exports
 			}).then((result) => {
