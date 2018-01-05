@@ -5,6 +5,8 @@ import Registers from "./registers";
 
 import { MAX_COMPILE_SIZE, MIN_COMPILE_SIZE, Exceptions } from "./consts";
 
+const MAX_CLOCK_LAG = 60000;
+
 const _environment = {
 	exception: (code, pc, delayed, cop) => {
 		throw new Exception(code, pc, delayed, cop);
@@ -97,7 +99,7 @@ export function reset() {
 // Execute a single frame
 export function tick (ticks) {
 	// Advance clock, with 0.1 sec a max 'lag' time
-	const _prev = wasm_exports.add_clocks(ticks);
+	const _prev = Registers.clocks = Math.min(ticks + Registers.clocks, MAX_CLOCK_LAG);
 
 	while (Registers.clocks > 0) {
 		const block_size = blockSize(Registers.pc);
@@ -140,10 +142,11 @@ export function tick (ticks) {
 				throw e;
 			}
 		}
+
+		timer += _prev - Registers.clocks;
+		wasm_exports.handle_interrupt();
 	}
 
-	timer += _prev - Registers.clocks;
-	wasm_exports.handle_interrupt();
 	return true;
 }
 

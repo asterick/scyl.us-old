@@ -1,8 +1,8 @@
 /**
  ** | opcode |  target | source | dest |
- ** opcode   = 5
- ** target   = 3 (vector) + 4 (mask out) + 8 (in swizzle)
- ** source b = 4 (vector) + 8 (swizzle)
+ ** opcode = 5
+ ** target = 3 (vector) + 4 (mask out) + 8 (in swizzle)
+ ** source = 4 (vector) + 8 (swizzle)
  **
  ** Opcodes
  **   0: mov
@@ -30,9 +30,9 @@
 
 import Export from "../../dynast/export";
 
-const DSP_Memory = WebAssembly.Memory({ initial: 1 });
+const DSP_Memory = new WebAssembly.Memory({ initial: 1 });
 const DSP_Program = new Uint32Array(1024);
-const DSP_Vectors = new Uint32Array(DSP_Memory.buffer, 0, 256 * 4);
+const DSP_Vectors = new Uint32Array(DSP_Memory.buffer, 0, 16 * 4);
 
 const Environment = { env: { memory: DSP_Memory } };
 

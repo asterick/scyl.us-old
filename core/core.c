@@ -42,10 +42,3 @@ void reset() {
 uint32_t getRegisterAddress() {
     return (uint32_t)&registers;
 }
-
-int32_t add_clocks(int32_t time) {
-    registers.clocks += time;
-    if (registers.clocks > MAX_CLOCK_LAG) registers.clocks = MAX_CLOCK_LAG;
-
-    return registers.clocks;
-}
