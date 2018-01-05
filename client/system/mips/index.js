@@ -1,6 +1,6 @@
 import Exception from "./exception";
 import { locate, compile, initialize as initialize_compiler } from "./instructions";
-import { read, write } from "..";
+import { read, write, tick } from "..";
 import Registers from "./registers";
 
 import { MAX_COMPILE_SIZE, MIN_COMPILE_SIZE, Exceptions } from "./consts";
@@ -41,7 +41,6 @@ const _environment = {
 
 export var registers;
 export var regions = [];
-export var timer;
 
 var cache = [];
 var wasm_exports;
@@ -90,20 +89,16 @@ export function initialize() {
 
 // Execution core
 export function reset() {
-	timer = 0;
 	cache = [];
 
 	wasm_exports.reset();
 }
 
 // Execute a single frame
-export function tick (ticks) {
-	// Advance clock, with 0.1 sec a max 'lag' time
-	Registers.clocks += ticks;
+export function block_execute () {
+	wasm_exports.handle_interrupt();
 
 	while (Registers.clocks > 0) {
-		var _prev = Registers.clocks;
-
 		const block_size = blockSize(Registers.pc);
 		const block_mask = -block_size; // equilivant to ~(block_size - 1)
 		const physical = (wasm_exports.translate(Registers.pc, false, Registers.pc, false) & block_mask) >>> 0;
@@ -130,7 +125,7 @@ export function tick (ticks) {
 			});
 
 			// Execution has paused, waiting for compiler to finish
-			return false;
+			return true;
 		}
 
 		try {
@@ -142,17 +137,16 @@ export function tick (ticks) {
 				throw e;
 			}
 		}
-
-		timer += _prev - Registers.clocks;
-		wasm_exports.handle_interrupt();
 	}
 
-	return true;
+	// CPU is caught up
+	return false;
 }
 
-export function step () {
-	const _prev = Registers.clocks;
+// NOTE: This does not advance the system clock
+// this is only here for debugging purposes
 
+export function step () {
 	try {
 		Registers.start_pc = Registers.pc;
 		Registers.pc += 4;
@@ -167,7 +161,6 @@ export function step () {
 		}
 	}
 
-	timer += _prev - Registers.clocks;
 	wasm_exports.handle_interrupt();
 }
 

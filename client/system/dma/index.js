@@ -26,7 +26,7 @@
  ****/
 
 import { regions } from "../mips";
-import { read, write } from "..";
+import { read as system_read, write as system_write } from "..";
 
 export function read (code, address) {
 	throw code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData;

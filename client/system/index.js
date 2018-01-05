@@ -1,5 +1,5 @@
-import { tick as system_tick } from "./mips";
-import { Exceptions } from "./mips/consts";
+import { block_execute } from "./mips";
+import { Exceptions, SYSTEM_CLOCK, MAX_CLOCK_LATENCY } from "./mips/consts";
 
 export { attach } from "./gpu";
 export { reset as cpu_reset, initialize, registers, load, step } from "./mips";
@@ -11,9 +11,9 @@ import { read as spu_read, write as spu_write } from "./spu";
 import { read as dsp_read, write as dsp_write } from "./dsp";
 import { read as gpu_read, write as gpu_write } from "./gpu";
 
-export var running = false;
+import Registers from "./mips/registers";
 
-const MAX_CLOCK_LAG = 60000;
+export var running = false;
 
 var _clock;
 var _adjust_clock;
@@ -35,14 +35,24 @@ export function stop () {
 }
 
 export function tick () {
+	// We have deferred execution (JIT compiler delay)
+	if (block_execute()) {
+		return ;
+	}
+
+	// TODO: Time out perfs
+
+	// System is caught up, advance our CPU clock since last execution
 	const newClock = Date.now();
-	const cycles = (newClock - _adjust_clock) * (15000000 / 1000);
+	const cycles = Math.min(MAX_CLOCK_LATENCY, (newClock - _adjust_clock) * (SYSTEM_CLOCK / 1000));
 	_adjust_clock = newClock;
 
-	if (running && system_tick(cycles)) {
-		// Schedule next tick when the CPU is free
-		setTimeout(tick, 0);
-	}
+	// Allocate some more cycles for the CPU
+	Registers.clocks += cycles;
+	_clock += cycles;
+
+	// Schedule next tick when the CPU is free
+	if (running) setTimeout(tick, 0);
 }
 
 export function read (code, address) {
