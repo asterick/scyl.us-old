@@ -1,7 +1,7 @@
 /**
  ** | opcode | target | source |
  ** opcode = 8
- ** target = 8 (vector) + 4 (mask out) 
+ ** target = 8 (vector) + 4 (mask out)
  ** left = 8 (vector) + 8 (swizzle)
  ** right = 8 (vector) + 8 (swizzle)
  **/
@@ -217,10 +217,6 @@ function compile() {
 			run ();
 		});
 }
-
-DSP_Program[0] = 0x0000FF0F;
-DSP_Program[1] = 0x80274027;
-compile();
 
 export function read (code, address) {
 	// TODO: CONTROL REGISTER

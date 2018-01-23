@@ -9,7 +9,7 @@ static const uint32_t RAM_BASE = 0;				// 4MB of RAM
 static const uint32_t RAM_SIZE = 4*1024*1024;	// 4MB of RAM
 
 static uint32_t ram[RAM_SIZE / sizeof(uint32_t)];
-static const uint32_t rom[ROM_SIZE / sizeof(uint32_t)] = {'ESNI','!!TR'};
+static uint32_t rom[ROM_SIZE / sizeof(uint32_t)];
 
 enum MemoryRegionFlags {
 	FLAG_R = 1,
@@ -18,6 +18,7 @@ enum MemoryRegionFlags {
 };
 
 typedef struct {
+	const char*			name;
 	uint32_t 			start;
 	uint32_t 			end;
 	const uint32_t* 	data;
@@ -25,8 +26,8 @@ typedef struct {
 } MemoryRegion;
 
 const MemoryRegion memory_regions[] = {
-	{ RAM_BASE, RAM_SIZE, ram, FLAG_R | FLAG_W    },
-	{ ROM_BASE, ROM_SIZE, rom, FLAG_R | FLAG_LAST },
+	{ "boot",  ROM_BASE, ROM_SIZE, rom, FLAG_R },
+	{ "m_ram", RAM_BASE, RAM_SIZE, ram, FLAG_R | FLAG_W | FLAG_LAST },
 };
 
 const MemoryRegion* getMemoryRegions() {
