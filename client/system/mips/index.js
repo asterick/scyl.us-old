@@ -24,25 +24,20 @@ const _environment = {
 
 		let flags;
 
-		regions = {};
+		regions = [];
 
 		while (true) {
 			let region = new Uint32Array(memory, address, 5);
-			flags = region[4];
-			address += 20;
+			flags = region[3];
+			address += 16;
 
-
-			const decoder = new TextDecoder('utf-8');
-			for (var i = region[0]; bytes[i]; i++) ;
-			const name = decoder.decode(bytes.subarray(region[0], i));
-
-			regions[name] = {
-				start: region[1],
-				length: region[2],
-				end: region[1]+region[2],
-				flags: region[4],
-				buffer: new Uint32Array(memory, region[3], region[2] / 4)
-			};
+			regions.push({
+				start: region[0],
+				length: region[1],
+				end: region[0]+region[1],
+				flags: flags,
+				buffer: new Uint32Array(memory, region[2], region[1] / 4)
+			});
 
 			if (flags & 4) break ;
 		}
@@ -85,7 +80,7 @@ export function initialize() {
 	return fetch("core.wasm")
 		.then((blob) => blob.arrayBuffer())
 		.then((ab) => {
-			initialize_compiler(ab);
+			//initialize_compiler(ab);
 
 			return WebAssembly.instantiate(ab, {
 				env: _environment
@@ -100,8 +95,9 @@ export function initialize() {
 		.then((blob) => blob.arrayBuffer())
 		.then((ab) => {
 			const data = new Uint32Array(ab);
+			const boot = regions[0].buffer;
 
-			for (var i = 0; i < data.length; i++) { regions.boot.buffer[i] = data[i]; }
+			for (var i = 0; i < data.length; i++) { boot[i] = data[i]; }
 		});
 }
 

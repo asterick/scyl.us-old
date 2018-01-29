@@ -1,0 +1,10 @@
+[package]
+name = "scylus"
+version = "0.1.0"
+authors = ["Bryon Vandiver <unicdk@gmail.com>"]
+
+[lib]
+path = "core-rs/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
