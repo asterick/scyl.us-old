@@ -1,5 +1,8 @@
 #pragma once
 #define STATIC_FUNCTION __attribute__((always_inline)) static
+#ifndef EXTERN
+#define EXTERN extern
+#endif
 
 typedef unsigned long long uint64_t;
 typedef signed long long int64_t;

@@ -1,9 +1,5 @@
 #pragma once
 
-#ifndef EXTERN
-#define EXTERN extern
-#endif
-
 EXTERN union {
     struct {
 		uint32_t regs[32];

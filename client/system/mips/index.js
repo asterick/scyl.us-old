@@ -7,7 +7,46 @@ import { MAX_COMPILE_SIZE, MIN_COMPILE_SIZE, Exceptions } from "./consts";
 
 const MAX_CLOCK_LAG = 60000;
 
+export var registers;
+export var regions = null;
+
+var cache = [];
+var wasm_exports;
+
 const _environment = {
+	setRegisterSpace: (address) => {
+		const memory = wasm_exports.memory.buffer;
+		registers = new Uint32Array(memory, address, 64);
+	},
+	setMemoryRegions: (address) => {
+		const memory = wasm_exports.memory.buffer;
+		const bytes = new Uint8Array(wasm_exports.memory.buffer);
+
+		let flags;
+
+		regions = {};
+
+		while (true) {
+			let region = new Uint32Array(memory, address, 5);
+			flags = region[4];
+			address += 20;
+
+
+			const decoder = new TextDecoder('utf-8');
+			for (var i = region[0]; bytes[i]; i++) ;
+			const name = decoder.decode(bytes.subarray(region[0], i));
+
+			regions[name] = {
+				start: region[1],
+				length: region[2],
+				end: region[1]+region[2],
+				flags: region[4],
+				buffer: new Uint32Array(memory, region[3], region[2] / 4)
+			};
+
+			if (flags & 4) break ;
+		}
+	},
 	exception: (code, pc, delayed, cop) => {
 		throw new Exception(code, pc, delayed, cop);
 	},
@@ -39,12 +78,6 @@ const _environment = {
 	}
 };
 
-export var registers;
-export var regions = null;
-
-var cache = [];
-var wasm_exports;
-
 /*******
 ** Runtime section
 *******/
@@ -60,45 +93,15 @@ export function initialize() {
 		})
 		.then((module) => {
 			wasm_exports =  module.instance.exports;
-
-			const memory = wasm_exports.memory.buffer;
-			const bytes = new Uint8Array(wasm_exports.memory.buffer);
-
-			let addr = wasm_exports.getMemoryRegions();
-			let flags;
-
-			regions = {};
-
-			do {
-				let region = new Uint32Array(memory, addr, 5);
-				flags = region[4];
-				addr += 20;
-
-
-				const decoder = new TextDecoder('utf-8');
-				for (var i = region[0]; bytes[i]; i++) ;
-				const name = decoder.decode(bytes.subarray(region[0], i));
-
-				regions[name] = {
-					start: region[1],
-					length: region[2],
-					end: region[1]+region[2],
-					flags: region[4],
-					buffer: new Uint8Array(memory, region[3], region[2])
-				};
-			} while(~flags & 4);
-
-			registers = new Uint32Array(memory, wasm_exports.getRegisterAddress(), 64);
+			reset();
 
 			return fetch("system0.bin");
 		})
 		.then((blob) => blob.arrayBuffer())
 		.then((ab) => {
-			const bytes = new Uint8Array(ab);
+			const data = new Uint32Array(ab);
 
-			for (var i = 0; i < bytes.length; i++) { regions.boot.buffer[i] = bytes[i]; }
-
-			reset();
+			for (var i = 0; i < data.length; i++) { regions.boot.buffer[i] = data[i]; }
 		});
 }
 

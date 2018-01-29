@@ -1,11 +1,17 @@
+#define EXTERN
+
 #include "types.h"
 #include "imports.h"
 
-#define EXTERN
-
 #include "cop0.h"
+#include "memory.h"
 
 #include "registers.h"
+
+const MemoryRegion memory_regions[] = {
+    { "boot",  ROM_BASE, ROM_SIZE, rom, FLAG_R },
+    { "m_ram", RAM_BASE, RAM_SIZE, ram, FLAG_R | FLAG_W | FLAG_LAST },
+};
 
 static const int32_t MAX_CLOCK_LAG = 60000;
 typedef void (*exec_block)();
@@ -33,12 +39,12 @@ void adjust_clock(uint32_t end) {
 }
 
 void reset() {
+    setRegisterSpace(&registers);
+    setMemoryRegions(&memory_regions);
+
     registers.pc = 0xBFC00000;
     registers.clocks = 0;
 
     reset_cop0();
 }
 
-uint32_t getRegisterAddress() {
-    return (uint32_t)&registers;
-}
