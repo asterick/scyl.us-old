@@ -27,7 +27,7 @@ const _environment = {
 		regions = [];
 
 		while (true) {
-			let region = new Uint32Array(memory, address, 5);
+			let region = new Uint32Array(memory, address, 4);
 			flags = region[3];
 			address += 16;
 

@@ -1,15 +1,14 @@
 #[repr(C)]
 pub struct RegisterSpace {
-	pub registers: [u32; 32],
+	pub regs: [usize; 32],
 	pub wide: u64,
-	pub pc: u32,
-	pub start_pc: u32,
-	pub clocks: i32
+	pub pc: usize,
+	pub start_pc: usize,
+	pub clocks: isize
 }
 
-
 pub static mut REGISTERS: RegisterSpace = RegisterSpace {
-	registers: [0; 32],
+	regs: [0; 32],
 	wide: 0,
 	pc: 0,
 	start_pc: 0,
@@ -17,14 +16,13 @@ pub static mut REGISTERS: RegisterSpace = RegisterSpace {
 };
 
 extern {
-	fn setRegisterSpace(address: &RegisterSpace);
+	fn setRegisterSpace(space: *const RegisterSpace);
 }
 
 pub fn reset() {
-	unsafe {
-		setRegisterSpace(&REGISTERS);
-
-    	REGISTERS.pc = 0xBFC00000;
-    	REGISTERS.clocks = 0;
-	}
+    unsafe {
+        REGISTERS.pc = 0xBFC00000;
+        REGISTERS.clocks = 0;
+        setRegisterSpace(&REGISTERS);
+    }
 }

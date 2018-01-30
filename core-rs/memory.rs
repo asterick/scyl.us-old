@@ -1,76 +1,85 @@
+use std::mem::size_of_val;
+
+const FLAG_R: usize 	= 1;
+const FLAG_W: usize 	= 2;
+const FLAG_LAST: usize 	= 4;
+
+const ROM_BASE: usize	= 0x1FC00000;
+const ROM_SIZE: usize	= 512*1024;
+const RAM_BASE: usize	= 0;
+const RAM_SIZE: usize	= 4*1024*1024;
+
 #[repr(C)]
-struct Region {
-	base: u32,
-	length: usize,
-	address: *const u32,
-	flags: u32
+struct MemoryRegion {
+	base: usize,
+	size: usize,
+	data: *const usize,
+	flags: usize
 }
+
+const  ROM_DATA: [usize; ROM_SIZE / 4] = [0; ROM_SIZE / 4];
+static mut RAM_DATA: [usize; RAM_SIZE / 4] = [0; RAM_SIZE / 4];
 
 extern {
-	fn setMemoryRegions(address: &[Region; 2]);
+	fn setMemoryRegions(address: &[MemoryRegion; 2]);
+	fn read(address: usize, code: usize, pc: usize, delayed: usize) -> usize;
+	fn write(address: usize, value: usize, mask: usize, pc: usize, delayed: usize) -> usize;
+	fn invalidate(physical: usize, logical: usize);
 }
-
-const FLAG_R: u32 = 1;
-const FLAG_W: u32 = 2;
-const FLAG_LAST: u32 = 4;
-
-const ROM_BASE:u32 		= 0x1FC00000;
-const ROM_SIZE:usize 	= 512*1024;
-const RAM_BASE:u32 		= 0;
-const RAM_SIZE:usize 	= 4*1024*1024;
-
-const  BOOT_ROM: [u32; ROM_SIZE] = [0; ROM_SIZE];
-static mut MAIN_RAM: [u32; RAM_SIZE] = [0; RAM_SIZE];
 
 pub fn reset() {
 	unsafe {
-		let regions: [Region; 2] = [
-			Region {
-				//name: "boot".as_ptr(),
-				base: ROM_BASE,
-				length: ROM_SIZE,
-				flags: FLAG_R,
-				address: &BOOT_ROM[0]
-			},
-			Region {
-				//name: "m_ram".as_ptr(),
-				base: RAM_BASE,
-				length: RAM_SIZE,
-				flags: FLAG_R | FLAG_W | FLAG_LAST,
-				address: &MAIN_RAM[0]
-			}
+		let memory_regions: [MemoryRegion; 2] = [
+		    MemoryRegion { base: ROM_BASE, size: size_of_val(&ROM_DATA), data: &ROM_DATA[0], flags: FLAG_R },
+		    MemoryRegion { base: RAM_BASE, size: size_of_val(&RAM_DATA), data: &RAM_DATA[0], flags: FLAG_R | FLAG_W | FLAG_LAST },
 		];
 
-		setMemoryRegions(&regions);
+		setMemoryRegions(&memory_regions);
 	}
 }
 
-/*
-uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t delayed) {
-	uint32_t physical = translate(logical, code, pc, delayed);
+fn translate (logical: usize, _code: usize, _pc: usize, _delayed: usize) -> usize { logical }
 
-	if (physical < sizeof(ram)) {
-		return ram[physical >> 2];
-	} else if (physical >= ROM_BASE && physical < (ROM_BASE + ROM_SIZE)) {
-		physical = physical - ROM_BASE;
+#[no_mangle]
+pub fn load (logical: usize, code: usize, pc: usize, delayed: usize) -> usize {
+	//let physical: usize = translate(logical, code, pc, delayed);
 
-		if (physical >= sizeof(rom)) return 0;
+	/*
+	unsafe {
+		if physical < RAM_SIZE {
+			RAM_DATA[physical >> 2]
+		} else if physical >= ROM_BASE && physical < (ROM_BASE + ROM_SIZE) {
+			let rom_address = (physical - ROM_BASE) >> 2;
 
-		return rom[physical >> 2];
-	} else {
-		return read(physical, code, pc, delayed);
+			if rom_address < ROM_SIZE {
+				ROM_DATA[rom_address]
+			} else {
+				0xFF00FF00
+			}
+		} else {
+			read(physical, code, pc, delayed)
+		}
 	}
+	*/
+	ROM_DATA[logical]
 }
 
-void store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed) {
-	uint32_t physical = translate(logical, 1, pc, delayed);
+#[no_mangle]
+pub fn store (logical: usize, value: usize, mask: usize, pc: usize, delayed: usize) {
+	let physical: usize = translate(logical, 1, pc, delayed) >> 2;
 
-	if (physical < sizeof(ram)) {
-		physical >>= 2;
-		invalidate(physical, logical);
-		ram[physical] = (ram[physical] & ~mask) | (value & mask);
-	} else if (physical < ROM_BASE || physical >= (ROM_BASE + ROM_SIZE)) {
-		write(physical, value, mask, pc, delayed);
+	unsafe {
+		if physical < RAM_SIZE {
+			let ram_address = physical >> 2;
+			invalidate(ram_address, logical);
+
+			RAM_DATA[ram_address] = (RAM_DATA[ram_address] & !mask) | (value & mask);
+		} else {
+			let rom_address = (physical - ROM_BASE) >> 2;
+
+			if rom_address < ROM_SIZE {
+				write(physical, value, mask, pc, delayed);
+			}
+		}
 	}
 }
-*/
