@@ -17,7 +17,7 @@ struct MemoryRegion {
 	flags: usize
 }
 
-const  ROM_DATA: [usize; ROM_SIZE / 4] = [0; ROM_SIZE / 4];
+static mut ROM_DATA: [usize; ROM_SIZE / 4] = [0; ROM_SIZE / 4];
 static mut RAM_DATA: [usize; RAM_SIZE / 4] = [0; RAM_SIZE / 4];
 
 extern {
@@ -38,30 +38,22 @@ pub fn reset() {
 	}
 }
 
-fn translate (logical: usize, _code: usize, _pc: usize, _delayed: usize) -> usize { logical }
+// TODO: THIS SHOULD BE IMPORTED FROM COP0
+fn translate (logical: usize, _code: usize, _pc: usize, _delayed: usize) -> usize { logical & 0x1FFFFFFF }
 
 #[no_mangle]
 pub fn load (logical: usize, code: usize, pc: usize, delayed: usize) -> usize {
-	//let physical: usize = translate(logical, code, pc, delayed);
+	let physical: usize = translate(logical, code, pc, delayed);
 
-	/*
 	unsafe {
 		if physical < RAM_SIZE {
 			RAM_DATA[physical >> 2]
 		} else if physical >= ROM_BASE && physical < (ROM_BASE + ROM_SIZE) {
-			let rom_address = (physical - ROM_BASE) >> 2;
-
-			if rom_address < ROM_SIZE {
-				ROM_DATA[rom_address]
-			} else {
-				0xFF00FF00
-			}
+			ROM_DATA[(physical - ROM_BASE) >> 2]
 		} else {
 			read(physical, code, pc, delayed)
 		}
 	}
-	*/
-	ROM_DATA[logical]
 }
 
 #[no_mangle]

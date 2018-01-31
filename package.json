@@ -5,7 +5,7 @@
   "main": "server/index.js",
   "scripts": {
     "core": "make -C core",
-    "core-rs": "rm -Rf target && cargo build --target=wasm32-unknown-unknown && cp ./target/wasm32-unknown-unknown/debug/scylus.wasm ./assets/core.wasm",
+    "core-rs": "rm -Rf target && cargo build --target=wasm32-unknown-unknown --release && cp ./target/wasm32-unknown-unknown/release/scylus.wasm ./assets/core.wasm",
     "system0": "make -C system0",
     "start": "node server",
     "build": "BABEL_ENV=production webpack"

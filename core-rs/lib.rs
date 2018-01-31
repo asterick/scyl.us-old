@@ -37,6 +37,11 @@ void adjust_clock(uint32_t end) {
 */
 
 #[no_mangle]
+pub fn exp (logical: u32) -> u32 {
+    logical
+}
+
+#[no_mangle]
 pub fn reset() {
     registers::reset();
     memory::reset();
