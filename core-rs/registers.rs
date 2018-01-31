@@ -26,3 +26,24 @@ pub fn reset() {
         setRegisterSpace(&REGISTERS);
     }
 }
+
+// These are the functions that get inlined
+macro_rules! read_reg {
+	($x:expr) => ({
+		let k = $x;
+		unsafe {
+			if k != 0 { REGISTERS.regs[$x] } else { 0 }
+		}
+	})
+}
+
+macro_rules! write_reg {
+	($x:expr, $y:expr) => {
+		let k = $x;
+		let v = $y as usize;
+
+		unsafe {
+			if k != 0 { REGISTERS.regs[k] = v };
+		}
+	}
+}

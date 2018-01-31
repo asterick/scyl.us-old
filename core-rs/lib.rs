@@ -1,13 +1,20 @@
 #[macro_use]
 extern crate lazy_static;
 
+#[macro_use]
 mod registers;
+
+#[macro_use]
+mod fields;
+
+
 mod memory;
-
+mod base;
 mod cop0;
+mod exceptions;
 
-pub use memory::load;
-pub use memory::store;
+pub use memory::{load, store};
+pub use base::*;
 
 /*
 static const int32_t MAX_CLOCK_LAG = 60000;
@@ -35,11 +42,6 @@ void adjust_clock(uint32_t end) {
     registers.clocks -= (end - registers.start_pc) >> 2;
 }
 */
-
-#[no_mangle]
-pub fn exp (logical: u32) -> u32 {
-    logical
-}
 
 #[no_mangle]
 pub fn reset() {
