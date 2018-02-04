@@ -1,5 +1,5 @@
 macro_rules! opcode {
-    ($word:ident) => (($word >> 26) & 0b111111);
+    ($word:ident) => (($word >> 26) & 0b111111)
 }
 
 macro_rules! funct {

@@ -5,6 +5,9 @@ lazy_static! {
     static ref HASHMAP: Mutex<HashMap<u32, u32>> = Mutex::new(HashMap::new());
 }
 
+// TODO: PROPER PORT
+pub fn translate (logical: usize, _code: usize, _pc: usize, _delayed: usize) -> usize { logical & 0x1FFFFFFF }
+
 /*
 #include "types.h"
 #include "fields.h"

@@ -1,4 +1,5 @@
 use std::mem::size_of_val;
+use cop0::translate;
 
 const FLAG_R: usize 	= 1;
 const FLAG_W: usize 	= 2;
@@ -37,9 +38,6 @@ pub fn reset() {
 		setMemoryRegions(&memory_regions);
 	}
 }
-
-// TODO: THIS SHOULD BE IMPORTED FROM COP0
-fn translate (logical: usize, _code: usize, _pc: usize, _delayed: usize) -> usize { logical & 0x1FFFFFFF }
 
 #[no_mangle]
 pub fn load (logical: usize, code: usize, pc: usize, delayed: usize) -> usize {

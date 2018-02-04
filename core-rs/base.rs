@@ -6,301 +6,270 @@ use registers::REGISTERS;
 // ** Load/Store instructions
 // ******
 
-#[no_mangle]
 pub fn lb(address: usize, word: usize, delayed: usize) {
-    let target: usize = read_reg! (rs!(word)) + imm16!(word);
-    let data: usize = load(target, 0, address, delayed);
+    let target = read_reg! (rs! (word)) + imm16! (word);
+    let data = load(target, 0, address, delayed) as isize;
 
-    write_reg! (rt!(word), (data << (24 - (target & 3) * 8)) as isize >> 24);
+    write_reg! (rt! (word), data << (24 - (target & 3) * 8) >> 24);
 }
 
-#[no_mangle]
-pub fn LBU(address: usize, word: usize, delayed: usize) {
+pub fn lbu(address: usize, word: usize, delayed: usize) {
     let target = read_reg! (rs! (word)) + imm16! (word);
     let data = load(target, 0, address, delayed);
 
     write_reg! (rt! (word), (data >> (target & 3) * 8) & 0xFF);
 }
 
-#[no_mangle]
-pub fn LH(address: usize, word: usize, delayed: usize) {
+pub fn lh(address: usize, word: usize, delayed: usize) {
     let target = read_reg! (rs! (word)) + imm16! (word);
 
-    if (target & 1) { throw(Exception::ADDRESSLOAD, address, delayed, 0); }
+    if (target & 1) != 0 {
+        throw(Exception::ADDRESSLOAD, address, delayed, 0);
+    }
 
-    let data = load(target, 0, address, delayed);
+    let data = load(target, 0, address, delayed) as isize;
 
-    write_reg! (rt! (word), (int32_t)(data << (16 - (target & 2) * 8)) >> 16);
+    write_reg! (rt! (word), (data << (16 - (target & 2) * 8)) >> 16);
 }
 
-#[no_mangle]
-pub fn LHU(address: usize, word: usize, delayed: usize) {
+pub fn lhu(address: usize, word: usize, delayed: usize) {
     let target = read_reg! (rs! (word)) + imm16! (word);
 
-    if (target & 1) { throw(Exception::ADDRESSLOAD, address, delayed, 0); }
+    if (target & 1) != 0 {
+        throw(Exception::ADDRESSLOAD, address, delayed, 0);
+    }
 
     let data = load(target, 0, address, delayed);
 
     write_reg! (rt! (word), (data >> (target & 2) * 8) & 0xFFFF);
 }
 
-#[no_mangle]
-pub fn LW(address: usize, word: usize, delayed: usize) {
+pub fn lw(address: usize, word: usize, delayed: usize) {
     let target = read_reg! (rs! (word)) + imm16! (word);
 
-    if (target & 3) { throw(Exception::ADDRESSLOAD, address, delayed, 0); }
+    if (target & 3) != 0 {
+        throw(Exception::ADDRESSLOAD, address, delayed, 0);
+    }
 
     write_reg! (rt! (word), load(target, 0, address, delayed));
 }
 
-#[no_mangle]
-pub fn SB(address: usize, word: usize, delayed: usize) {
+pub fn sb(address: usize, word: usize, delayed: usize) {
     let target = read_reg! (rs! (word)) + imm16! (word);
     let shift = (target & 3) * 8;
 
     store(target, read_reg! (rt! (word)) << shift, 0xFF << shift, address, delayed);
 }
 
-#[no_mangle]
-pub fn SH(address: usize, word: usize, delayed: usize) {
+pub fn sh(address: usize, word: usize, delayed: usize) {
     let target = read_reg! (rs! (word)) + imm16! (word);
 
-    if (target & 1) { throw(Exception::ADDRESSSTORE, address, delayed, 0); }
+    if (target & 1) != 0 {
+        throw(Exception::ADDRESSSTORE, address, delayed, 0);
+    }
 
     let shift = (target & 3) * 8;
 
     store(target, read_reg! (rt! (word)) << shift, 0xFFFF << shift, address, delayed);
 }
 
-#[no_mangle]
-pub fn SW(address: usize, word: usize, delayed: usize) {
-    let target = read_reg! (rs! (word)) + imm16! (word);
+pub fn sw(address: usize, word: usize, delayed: usize) {
+    let target: usize = read_reg! (rs! (word)) + imm16! (word);
 
-    if (target & 3) { throw(Exception::ADDRESSSTORE, address, delayed, 0); }
+    if (target & 3) != 0 {
+        throw(Exception::ADDRESSSTORE, address, delayed, 0);
+    }
 
     store(target, read_reg! (rt! (word)), !0, address, delayed);
 }
 
-#[no_mangle]
-pub fn LWR(address: usize, word: usize, delayed: usize) {
+pub fn lwr(address: usize, word: usize, delayed: usize) {
     let target = read_reg! (rs! (word)) + imm16! (word);
     let data = load(target, 0, address, delayed);
     let rt = read_reg! (rt! (word));
 
     let shift = (target & 3) * 8;
-    let mask = ~0 >> shift;
+    let mask = !0 >> shift;
 
-    write_reg! (rt! (word), ((data >> shift) & mask) | (rt & ~mask));
+    write_reg! (rt! (word), ((data >> shift) & mask) | (rt & !mask));
 }
 
-#[no_mangle]
-pub fn LWL(address: usize, word: usize, delayed: usize) {
+pub fn lwl(address: usize, word: usize, delayed: usize) {
     let target = read_reg! (rs! (word)) + imm16! (word);
 
-    if ((target & 3) == 3) return ;
+    if (target & 3) != 3 {
+        let data = load(target, 0, address, delayed);
+        let rt = read_reg! (rt! (word));
 
-    let data = load(target, 0, address, delayed);
-    let rt = read_reg! (rt! (word));
+        let shift = 24 - (target & 3) * 8;
+        let mask = !0 << shift;
 
-    let shift = 24 - (target & 3) * 8;
-    let mask = ~0 << shift;
-
-    write_reg! (rt! (word), ((data << shift) & mask) | (rt & ~mask));
+        write_reg! (rt! (word), ((data << shift) & mask) | (rt & !mask));
+    }
 }
 
-#[no_mangle]
-pub fn SWR(address: usize, word: usize, delayed: usize) {
+pub fn swr(address: usize, word: usize, delayed: usize) {
     let target = read_reg! (rs! (word)) + imm16! (word);
     let shift = (target & 3) * 8;
 
-    store(target, read_reg! (rt! (word)) << shift, ~0 << shift, address, delayed);
+    store(target, read_reg! (rt! (word)) << shift, !0 << shift, address, delayed);
 }
 
-#[no_mangle]
-pub fn SWL(address: usize, word: usize, delayed: usize) {
+pub fn swl(address: usize, word: usize, delayed: usize) {
     let target = read_reg! (rs! (word)) + imm16! (word);
 
-    if ((target & 3) == 3) return ;
-
-    let shift = 24 - (target & 3) * 8;
-
-    store(target, read_reg! (rt! (word)) >> shift, ~0 >> shift, address, delayed);
+    if (target & 3) != 3 {
+        let shift = 24 - (target & 3) * 8;
+        store(target, read_reg! (rt! (word)) >> shift, !0 >> shift, address, delayed);
+    }
 }
 
 // ******
 // ** Arithmatic instructions
 // ******
 
-#[no_mangle]
-pub fn ADD(address: usize, word: usize, delayed: usize) {
-    let rs = read_reg! (rs! (word)) as i32 as i64;
-    let rt = read_reg! (rt! (word)) as i32 as i64;
-    int64_t temp = rs + rt;
+/*
+void ADD(address: usize, uint32_t word, uint32_t delayed) {
+    int64_t temp = (int64_t)(int32_t)read_reg(FIELD_RS(word)) + (int64_t)(int32_t)read_reg(FIELD_RT(word));
 
     if (temp < -0x80000000 || temp >= 0x80000000) {
-        throw(Exception::OVERFLOW, address, delayed, 0);
+        exception(EXCEPTION_OVERFLOW, address, delayed, 0);
     }
 
-    write_reg! (rd! (word), temp as usize);
+    write_reg(FIELD_RD(word), (uint32_t) temp);
 }
 
-#[no_mangle]
-pub fn ADDU(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), read_reg! (rs! (word)) + read_reg! (rt! (word)));
+void ADDU(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), read_reg(FIELD_RS(word)) + read_reg(FIELD_RT(word)));
 }
 
-#[no_mangle]
-pub fn SUB(address: usize, word: usize, delayed: usize) {
-    int64_t temp = (int64_t)(int32_t)read_reg! (rs! (word)) - (int64_t)(int32_t)read_reg! (rt! (word));
+void SUB(uint32_t address, uint32_t word, uint32_t delayed) {
+    int64_t temp = (int64_t)(int32_t)read_reg(FIELD_RS(word)) - (int64_t)(int32_t)read_reg(FIELD_RT(word));
 
     if (temp < -0x80000000 || temp >= 0x80000000) {
-        throw(Exception::OVERFLOW, address, delayed, 0);
+        exception(EXCEPTION_OVERFLOW, address, delayed, 0);
     }
 
-    write_reg! (rd! (word), (uint32_t) temp);
+    write_reg(FIELD_RD(word), (uint32_t) temp);
 }
 
-#[no_mangle]
-pub fn SUBU(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), read_reg! (rs! (word)) - read_reg! (rt! (word)));
+void SUBU(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), read_reg(FIELD_RS(word)) - read_reg(FIELD_RT(word)));
 }
 
-#[no_mangle]
-pub fn ADDI(address: usize, word: usize, delayed: usize) {
-    int64_t temp = (int64_t)(int32_t)read_reg! (rs! (word)) + (int64_t)simm16! (word);
+void ADDI(uint32_t address, uint32_t word, uint32_t delayed) {
+    int64_t temp = (int64_t)(int32_t)read_reg(FIELD_RS(word)) + (int64_t)FIELD_SIMM16(word);
 
     if (temp < -0x80000000 || temp >= 0x80000000) {
-        throw(Exception::OVERFLOW, address, delayed, 0);
+        exception(EXCEPTION_OVERFLOW, address, delayed, 0);
     }
 
-    write_reg! (rd! (word), (uint32_t) temp);
+    write_reg(FIELD_RD(word), (uint32_t) temp);
 }
 
-#[no_mangle]
-pub fn ADDIU(address: usize, word: usize, delayed: usize) {
-    write_reg! (rt! (word), read_reg! (rs! (word)) + simm16! (word));
+void ADDIU(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RT(word), read_reg(FIELD_RS(word)) + FIELD_SIMM16(word));
 }
 
 // ******
 // ** Comparison instructions
 // ******
 
-#[no_mangle]
-pub fn SLT(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), (int32_t)read_reg! (rs! (word)) < (int32_t)read_reg! (rt! (word)));
+void SLT(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), (int32_t)read_reg(FIELD_RS(word)) < (int32_t)read_reg(FIELD_RT(word)));
 }
 
-#[no_mangle]
-pub fn SLTU(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), read_reg! (rs! (word)) < read_reg! (rt! (word)));
+void SLTU(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), read_reg(FIELD_RS(word)) < read_reg(FIELD_RT(word)));
 }
 
-#[no_mangle]
-pub fn SLTI(address: usize, word: usize, delayed: usize) {
-    write_reg! (rt! (word), (int32_t)read_reg! (rs! (word)) < simm16! (word));
+void SLTI(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RT(word), (int32_t)read_reg(FIELD_RS(word)) < FIELD_SIMM16(word));
 }
 
-#[no_mangle]
-pub fn SLTIU(address: usize, word: usize, delayed: usize) {
-    write_reg! (rt! (word), read_reg! (rs! (word)) < (uint32_t)simm16! (word));
+void SLTIU(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RT(word), read_reg(FIELD_RS(word)) < (uint32_t)FIELD_SIMM16(word));
 }
 
 // ******
 // ** Logical instructions
 // ******
 
-#[no_mangle]
-pub fn AND(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), read_reg! (rs! (word)) & read_reg! (rt! (word)));
+void AND(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), read_reg(FIELD_RS(word)) & read_reg(FIELD_RT(word)));
 }
 
-#[no_mangle]
-pub fn OR(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), read_reg! (rs! (word)) | read_reg! (rt! (word)));
+void OR(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), read_reg(FIELD_RS(word)) | read_reg(FIELD_RT(word)));
 }
 
-#[no_mangle]
-pub fn XOR(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), read_reg! (rs! (word)) ^ read_reg! (rt! (word)));
+void XOR(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), read_reg(FIELD_RS(word)) ^ read_reg(FIELD_RT(word)));
 }
 
-#[no_mangle]
-pub fn NOR(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), ~(read_reg! (rs! (word)) | read_reg! (rt! (word))));
+void NOR(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), ~(read_reg(FIELD_RS(word)) | read_reg(FIELD_RT(word))));
 }
 
-#[no_mangle]
-pub fn ANDI(address: usize, word: usize, delayed: usize) {
-    write_reg! (rt! (word), read_reg! (rs! (word)) & imm16! (word));
+void ANDI(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RT(word), read_reg(FIELD_RS(word)) & FIELD_IMM16(word));
 }
 
-#[no_mangle]
-pub fn ORI(address: usize, word: usize, delayed: usize) {
-    write_reg! (rt! (word), read_reg! (rs! (word)) | imm16! (word));
+void ORI(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RT(word), read_reg(FIELD_RS(word)) | FIELD_IMM16(word));
 }
 
-#[no_mangle]
-pub fn XORI(address: usize, word: usize, delayed: usize) {
-    write_reg! (rt! (word), read_reg! (rs! (word)) ^ imm16! (word));
+void XORI(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RT(word), read_reg(FIELD_RS(word)) ^ FIELD_IMM16(word));
 }
 
 // ******
 // ** Shift instructions
 // ******
 
-#[no_mangle]
-pub fn SLLV(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), read_reg! (rt! (word)) << (read_reg! (rs! (word)) & 0x1F));
+void SLLV(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), read_reg(FIELD_RT(word)) << (read_reg(FIELD_RS(word)) & 0x1F));
 }
 
-#[no_mangle]
-pub fn SRLV(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), read_reg! (rt! (word)) >> (read_reg! (rs! (word)) & 0x1F));
+void SRLV(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), read_reg(FIELD_RT(word)) >> (read_reg(FIELD_RS(word)) & 0x1F));
 }
 
-#[no_mangle]
-pub fn SRAV(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), (int32_t)read_reg! (rt! (word)) >> (read_reg! (rs! (word)) & 0x1F));
+void SRAV(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), (int32_t)read_reg(FIELD_RT(word)) >> (read_reg(FIELD_RS(word)) & 0x1F));
 }
 
-#[no_mangle]
-pub fn SLL(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), read_reg! (rt! (word)) << shamt! (word));
+void SLL(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), read_reg(FIELD_RT(word)) << FIELD_SHAMT(word));
 }
 
-#[no_mangle]
-pub fn SRL(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), read_reg! (rt! (word)) >> shamt! (word));
+void SRL(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), read_reg(FIELD_RT(word)) >> FIELD_SHAMT(word));
 }
 
-#[no_mangle]
-pub fn SRA(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), (int32_t)read_reg! (rt! (word)) >> shamt! (word));
+void SRA(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), (int32_t)read_reg(FIELD_RT(word)) >> FIELD_SHAMT(word));
 }
 
-#[no_mangle]
-pub fn LUI(address: usize, word: usize, delayed: usize) {
-    write_reg! (rt! (word), imm16! (word) << 16);
+void LUI(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RT(word), FIELD_IMM16(word) << 16);
 }
 
 // ******
 // ** Multiply/Divide instructions
 // ******
 
-#[no_mangle]
-pub fn MULT(address: usize, word: usize, delayed: usize) {
-    registers.wide = (uint64_t)((int64_t)(int32_t)read_reg! (rs! (word)) * (int64_t)(int32_t)read_reg! (rt! (word)));
+void MULT(uint32_t address, uint32_t word, uint32_t delayed) {
+    registers.wide = (uint64_t)((int64_t)(int32_t)read_reg(FIELD_RS(word)) * (int64_t)(int32_t)read_reg(FIELD_RT(word)));
 }
 
-#[no_mangle]
-pub fn MULTU(address: usize, word: usize, delayed: usize) {
-    registers.wide = (uint64_t)read_reg! (rs! (word)) * (uint64_t)read_reg! (rt! (word));
+void MULTU(uint32_t address, uint32_t word, uint32_t delayed) {
+    registers.wide = (uint64_t)read_reg(FIELD_RS(word)) * (uint64_t)read_reg(FIELD_RT(word));
 }
 
-#[no_mangle]
-pub fn DIV(address: usize, word: usize, delayed: usize) {
-    int32_t rt = read_reg! (rt! (word));
-    int32_t rs = read_reg! (rs! (word));
+void DIV(uint32_t address, uint32_t word, uint32_t delayed) {
+    int32_t rt = read_reg(FIELD_RT(word));
+    int32_t rs = read_reg(FIELD_RS(word));
 
     if (rt == 0) {
         registers.hi = rs;
@@ -314,10 +283,9 @@ pub fn DIV(address: usize, word: usize, delayed: usize) {
     }
 }
 
-#[no_mangle]
-pub fn DIVU(address: usize, word: usize, delayed: usize) {
-    let rt = read_reg! (rt! (word));
-    let rs = read_reg! (rs! (word));
+void DIVU(uint32_t address, uint32_t word, uint32_t delayed) {
+    uint32_t rt = read_reg(FIELD_RT(word));
+    uint32_t rs = read_reg(FIELD_RS(word));
 
     if (rt) {
         registers.hi = rs;
@@ -328,142 +296,127 @@ pub fn DIVU(address: usize, word: usize, delayed: usize) {
     }
 }
 
-#[no_mangle]
-pub fn MFHI(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), registers.hi);
+void MFHI(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), registers.hi);
 }
 
-#[no_mangle]
-pub fn MFLO(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), registers.lo);
+void MFLO(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), registers.lo);
 }
 
-#[no_mangle]
-pub fn MTHI(address: usize, word: usize, delayed: usize) {
-    registers.hi = read_reg! (rs! (word));
+void MTHI(uint32_t address, uint32_t word, uint32_t delayed) {
+    registers.hi = read_reg(FIELD_RS(word));
 }
 
-#[no_mangle]
-pub fn MTLO(address: usize, word: usize, delayed: usize) {
-    registers.lo = read_reg! (rs! (word));
+void MTLO(uint32_t address, uint32_t word, uint32_t delayed) {
+    registers.lo = read_reg(FIELD_RS(word));
 }
 
 // ******
 // ** Branching instructions
 // ******
 
-#[no_mangle]
-pub fn J(address: usize, word: usize, delayed: usize) {
-    registers.pc = (address & 0xF0000000) | (imm26! (word) << 2);
+void J(uint32_t address, uint32_t word, uint32_t delayed) {
+    registers.pc = (address & 0xF0000000) | (FIELD_IMM26(word) << 2);
     execute(address + 4, 1);
 }
 
-#[no_mangle]
-pub fn JAL(address: usize, word: usize, delayed: usize) {
-    registers.pc = (address & 0xF0000000) | (imm26! (word) << 2);
-    write_reg! (REGS_RA, address + 8);
+void JAL(uint32_t address, uint32_t word, uint32_t delayed) {
+    registers.pc = (address & 0xF0000000) | (FIELD_IMM26(word) << 2);
+    write_reg(REGS_RA, address + 8);
     execute(address + 4, 1);
 }
 
-#[no_mangle]
-pub fn JR(address: usize, word: usize, delayed: usize) {
-    registers.pc = read_reg! (rs! (word)) & 0xFFFFFFFC;
+void JR(uint32_t address, uint32_t word, uint32_t delayed) {
+    registers.pc = read_reg(FIELD_RS(word)) & 0xFFFFFFFC;
     execute(address + 4, 1);
 }
 
-#[no_mangle]
-pub fn JALR(address: usize, word: usize, delayed: usize) {
-    write_reg! (rd! (word), address + 8);
-    registers.pc = read_reg! (rs! (word)) & 0xFFFFFFFC;
+void JALR(uint32_t address, uint32_t word, uint32_t delayed) {
+    write_reg(FIELD_RD(word), address + 8);
+    registers.pc = read_reg(FIELD_RS(word)) & 0xFFFFFFFC;
     execute(address + 4, 1);
 }
 
-#[no_mangle]
-pub fn BEQ(address: usize, word: usize, delayed: usize) {
-    if (read_reg! (rs! (word)) != read_reg! (rt! (word))) return ;
+void BEQ(uint32_t address, uint32_t word, uint32_t delayed) {
+    if (read_reg(FIELD_RS(word)) != read_reg(FIELD_RT(word))) return ;
 
-    registers.pc = simm16! (word) * 4 + address + 4;
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 
-#[no_mangle]
-pub fn BNE(address: usize, word: usize, delayed: usize) {
-    if (read_reg! (rs! (word)) == read_reg! (rt! (word))) return ;
+void BNE(uint32_t address, uint32_t word, uint32_t delayed) {
+    if (read_reg(FIELD_RS(word)) == read_reg(FIELD_RT(word))) return ;
 
-    registers.pc = simm16! (word) * 4 + address + 4;
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 
-#[no_mangle]
-pub fn BLTZ(address: usize, word: usize, delayed: usize) {
-    if ((int32_t)read_reg! (rs! (word)) >= 0) return ;
+void BLTZ(uint32_t address, uint32_t word, uint32_t delayed) {
+    if ((int32_t)read_reg(FIELD_RS(word)) >= 0) return ;
 
-    registers.pc = simm16! (word) * 4 + address + 4;
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 
-#[no_mangle]
-pub fn BGEZ(address: usize, word: usize, delayed: usize) {
-    if ((int32_t)read_reg! (rs! (word)) > 0) return ;
+void BGEZ(uint32_t address, uint32_t word, uint32_t delayed) {
+    if ((int32_t)read_reg(FIELD_RS(word)) > 0) return ;
 
-    registers.pc = simm16! (word) * 4 + address + 4;
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 
-#[no_mangle]
-pub fn BGTZ(address: usize, word: usize, delayed: usize) {
-    if ((int32_t)read_reg! (rs! (word)) <= 0) return ;
+void BGTZ(uint32_t address, uint32_t word, uint32_t delayed) {
+    if ((int32_t)read_reg(FIELD_RS(word)) <= 0) return ;
 
-    registers.pc = simm16! (word) * 4 + address + 4;
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 
-#[no_mangle]
-pub fn BLEZ(address: usize, word: usize, delayed: usize) {
-    if ((int32_t)read_reg! (rs! (word)) > 0) return ;
+void BLEZ(uint32_t address, uint32_t word, uint32_t delayed) {
+    if ((int32_t)read_reg(FIELD_RS(word)) > 0) return ;
 
-    registers.pc = simm16! (word) * 4 + address + 4;
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 
-#[no_mangle]
-pub fn BLTZAL(address: usize, word: usize, delayed: usize) {
-    if ((int32_t)read_reg! (rs! (word)) >= 0) return ;
+void BLTZAL(uint32_t address, uint32_t word, uint32_t delayed) {
+    if ((int32_t)read_reg(FIELD_RS(word)) >= 0) return ;
 
-    write_reg! (REGS_RA, address + 8);
-    registers.pc = simm16! (word) * 4 + address + 4;
+    write_reg(REGS_RA, address + 8);
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
 
-#[no_mangle]
-pub fn BGEZAL(address: usize, word: usize, delayed: usize) {
-    if ((int32_t)read_reg! (rs! (word)) < 0) return ;
+void BGEZAL(uint32_t address, uint32_t word, uint32_t delayed) {
+    if ((int32_t)read_reg(FIELD_RS(word)) < 0) return ;
 
-    write_reg! (REGS_RA, address + 8);
-    registers.pc = simm16! (word) * 4 + address + 4;
+    write_reg(REGS_RA, address + 8);
+    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
     execute(address + 4, 1);
 }
+*/
 
 // ******
 // ** Trap Instructions
 // ******
 
 #[no_mangle]
-pub fn ReservedInstruction(address: usize, word: usize, delayed: usize) {
+pub fn reserved_instruction(address: usize, word: usize, delayed: usize) {
     throw(Exception::RESERVEDINSTRUCTION, address, delayed, 0);
 }
 
 #[no_mangle]
-pub fn CopUnusable(address: usize, word: usize, delayed: usize) {
+pub fn cop_unusable(address: usize, word: usize, delayed: usize) {
     throw(Exception::COPROCESSORUNUSABLE, address, delayed, cop! (word));
 }
 
 #[no_mangle]
-pub fn SYSCALL(address: usize, word: usize, delayed: usize) {
+pub fn syscall(address: usize, word: usize, delayed: usize) {
     throw(Exception::SYSCALL, address, delayed, 0);
 }
 
 #[no_mangle]
-pub fn BREAK(address: usize, word: usize, delayed: usize) {
+pub fn breakpoint(address: usize, word: usize, delayed: usize) {
     throw(Exception::BREAKPOINT, address, delayed, 0);
 }
