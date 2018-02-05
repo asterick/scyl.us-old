@@ -1,6 +1,7 @@
 #include "types.h"
 #include "fields.h"
 #include "consts.h"
+#include "hash.h"
 
 #include "imports.h"
 
@@ -17,13 +18,13 @@ static HashPage* NULL = (HashPage *) 0;
 static HashPage* top_block[PAGE_SIZE];
 static HashPage base_block[MAX_UNIQUE_HASH];
 
-void reset_hash() {
+void Hash::reset() {
 	for (int i = 0; i < PAGE_SIZE; i++) {
 		top_block[i] = NULL;
 	}
 }
 
-uint32_t find_hash(uint32_t index) {
+uint32_t Hash::find(uint32_t index) {
 	uint32_t hash_top = index >> 16;
 	HashPage* block = top_block[hash_top];
 
@@ -34,7 +35,7 @@ uint32_t find_hash(uint32_t index) {
 	return block->values[hash_bottom];
 }
 
-void clear_hash(uint32_t index) {
+void Hash::clear(uint32_t index) {
 	uint32_t hash_top = index >> 16;
 
 	HashPage* block = top_block[hash_top];
@@ -57,10 +58,10 @@ void clear_hash(uint32_t index) {
 	}
 }
 
-void write_hash(uint32_t index, uint32_t value) {
+void Hash::write(uint32_t index, uint32_t value) {
 	// Zero is implicitly a cleared value
 	if (value == 0) {
-		clear_hash(index);
+		Hash::clear(index);
 		return ;
 	}
 

@@ -1,6 +1,6 @@
 #pragma once
 
-EXTERN union {
+union Registers {
     struct {
 		uint32_t regs[32];
         uint32_t lo;
@@ -13,7 +13,9 @@ EXTERN union {
     	uint32_t _align[32];
     	uint64_t wide;
 	};
-} registers;
+};
+
+EXTERN union Registers registers;
 
 // These are the functions that get inlined
 STATIC_FUNCTION uint32_t read_reg(int reg) {

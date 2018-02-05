@@ -32,13 +32,20 @@ export function initialize(ab) {
 	const defs = Import(ab);
 
 	// Validate
-	const exported_functions =
-		defs.export_section.filter((v) => v.kind === 'func_type').length;
+	const exported_functions = defs.export_section
+		.filter(v => v.kind === 'func_type')
+		.map(v => v.index)
+		;
 	const imported_functions =
 		defs.import_section.filter((v) => v.type.type === 'func_type').length;
 
-	if (exported_functions !== defs.function_section.length) {
-		throw new Error("Core module cannot contain private functions");
+	// Force all calls to be exported (for JIT compatability)
+	for (var i = 0; i < defs.function_section.length; i++) {
+		const index = i + imported_functions;
+		
+		if (exported_functions.indexOf(index) >= 0) continue ;
+
+		defs.export_section.push({ field: `@@export\$${index}`, kind: "func_type", index })
 	}
 
 	_import_section = defs.import_section.concat(
@@ -81,6 +88,8 @@ export function initialize(ab) {
 
 		_templates[exp.field] = template(func, exp.field);
 	});
+
+	return Export(defs);
 }
 
 function template(func, name) {

@@ -33,6 +33,6 @@ static const uint32_t ALL_STATUS_BITS =
 
 static const uint32_t TLB_PAGES = 64;
 
-uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed);
-void trap(int exception, int address, int delayed, int coprocessor);
+extern "C" uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed);
+extern "C" void trap(int exception, int address, int delayed, int coprocessor);
 void reset_cop0();
