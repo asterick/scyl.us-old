@@ -1,8 +1,6 @@
 OBJECTS = core.o cop0.o base.o memory.o hash.o
-LLVM_ROOT = ~/llvmwasm/bin
-TEMP_FILES = temp.wast temp.s temp.bc
 
-CFLAGS = -O3 -Iinclude -ffreestanding
+CFLAGS = -emit-llvm --target=wasm32-O3 -Iinclude -ffreestanding
 
 TARGET = "../assets/core.wasm"
 
@@ -17,14 +15,14 @@ wast: $(TARGET)
 	wasm-dis $<
 
 $(TARGET): $(OBJECTS)
-	$(LLVM_ROOT)/llvm-link -o temp.bc $(OBJECTS)
-	$(LLVM_ROOT)/llc -asm-verbose=false -o temp.s temp.bc
-	s2wasm temp.s > temp.wast
-	wasm-as temp.wast -o $@
-	rm -Rf $(TEMP_FILES)
+	mkdir -p build
+	llvm-link -o build/temp.bc $(OBJECTS)
+	llc -asm-verbose=false -o build/temp.s build/temp.bc
+	s2wasm build/temp.s > build/temp.wast
+	wasm-as build/temp.wast -o $@
 
 %.o: %.c include
-	clang -emit-llvm --target=wasm32 $(CFLAGS) $< -c -o $@
+	clang $(CFLAGS) $< -c -o $@
 
 %.o: %.cc include
-	clang -emit-llvm --target=wasm32 $(CFLAGS) $< -c -o $@
+	clang $(CFLAGS) $< -c -o $@
