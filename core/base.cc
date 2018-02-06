@@ -7,6 +7,7 @@
 
 #include "registers.h"
 #include "memory.h"
+#include "cop0.h"
 
 // ******
 // ** Load/Store instructions
@@ -29,7 +30,10 @@ extern "C" void LBU(uint32_t address, uint32_t word, uint32_t delayed) {
 extern "C" void LH(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
 
-    if (target & 1) exception(EXCEPTION_ADDRESSLOAD, address, delayed, 0);
+    if (target & 1) {
+        exception(EXCEPTION_ADDRESSLOAD, address, delayed, 0);
+        return ;
+    }
 
     uint32_t data = load(target, 0, address, delayed);
 
@@ -39,7 +43,10 @@ extern "C" void LH(uint32_t address, uint32_t word, uint32_t delayed) {
 extern "C" void LHU(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
 
-    if (target & 1) exception(EXCEPTION_ADDRESSLOAD, address, delayed, 0);
+    if (target & 1) {
+        exception(EXCEPTION_ADDRESSLOAD, address, delayed, 0);
+        return ;
+    }
 
     uint32_t data = load(target, 0, address, delayed);
 
@@ -49,7 +56,10 @@ extern "C" void LHU(uint32_t address, uint32_t word, uint32_t delayed) {
 extern "C" void LW(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
 
-    if (target & 3) exception(EXCEPTION_ADDRESSLOAD, address, delayed, 0);
+    if (target & 3) {
+        exception(EXCEPTION_ADDRESSLOAD, address, delayed, 0);
+        return ;
+    }
 
     write_reg(FIELD_RT(word), load(target, 0, address, delayed));
 }
@@ -64,7 +74,10 @@ extern "C" void SB(uint32_t address, uint32_t word, uint32_t delayed) {
 extern "C" void SH(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
 
-    if (target & 1) exception(EXCEPTION_ADDRESSSTORE, address, delayed, 0);
+    if (target & 1) {
+        exception(EXCEPTION_ADDRESSSTORE, address, delayed, 0);
+        return ;
+    }
 
     int shift = (target & 3) * 8;
 
@@ -74,7 +87,10 @@ extern "C" void SH(uint32_t address, uint32_t word, uint32_t delayed) {
 extern "C" void SW(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
 
-    if (target & 3) exception(EXCEPTION_ADDRESSSTORE, address, delayed, 0);
+    if (target & 3) {
+        exception(EXCEPTION_ADDRESSSTORE, address, delayed, 0);
+        return ;
+    }
 
     store(target, read_reg(FIELD_RT(word)), ~0, address, delayed);
 }
@@ -93,15 +109,15 @@ extern "C" void LWR(uint32_t address, uint32_t word, uint32_t delayed) {
 extern "C" void LWL(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
 
-    if ((target & 3) == 3) return ;
+    if ((target & 3) != 3) {
+        uint32_t data = load(target, 0, address, delayed);
+        uint32_t rt = read_reg(FIELD_RT(word));
 
-    uint32_t data = load(target, 0, address, delayed);
-    uint32_t rt = read_reg(FIELD_RT(word));
+        int shift = 24 - (target & 3) * 8;
+        uint32_t mask = ~0 << shift;
 
-    int shift = 24 - (target & 3) * 8;
-    uint32_t mask = ~0 << shift;
-
-    write_reg(FIELD_RT(word), ((data << shift) & mask) | (rt & ~mask));
+        write_reg(FIELD_RT(word), ((data << shift) & mask) | (rt & ~mask));
+    }
 }
 
 extern "C" void SWR(uint32_t address, uint32_t word, uint32_t delayed) {
@@ -114,25 +130,32 @@ extern "C" void SWR(uint32_t address, uint32_t word, uint32_t delayed) {
 extern "C" void SWL(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
 
-    if ((target & 3) == 3) return ;
+    if ((target & 3) != 3) {
+        int shift = 24 - (target & 3) * 8;
 
-    int shift = 24 - (target & 3) * 8;
-
-    store(target, read_reg(FIELD_RT(word)) >> shift, ~0 >> shift, address, delayed);
+        store(target, read_reg(FIELD_RT(word)) >> shift, ~0 >> shift, address, delayed);
+    }
 }
 
 // ******
 // ** Arithmatic instructions
 // ******
 
-extern "C" void ADD(uint32_t address, uint32_t word, uint32_t delayed) {
-    int64_t temp = (int64_t)(int32_t)read_reg(FIELD_RS(word)) + (int64_t)(int32_t)read_reg(FIELD_RT(word));
+static const int64_t MAX_LOW_I32 = -0x80000000L;
+static const int64_t MAX_HIGH_I32 = 0x7FFFFFFFL;
 
-    if (temp < -0x80000000 || temp >= 0x80000000) {
+extern "C" void ADD(uint32_t address, uint32_t word, uint32_t delayed) {
+    uint32_t rs = read_reg(FIELD_RS(word));
+    uint32_t rt = read_reg(FIELD_RT(word));
+    uint32_t temp = rs + rt;
+
+    if ((temp < MAX_LOW_I32) || (temp > MAX_HIGH_I32)) {
         exception(EXCEPTION_OVERFLOW, address, delayed, 0);
     }
 
-    write_reg(FIELD_RD(word), (uint32_t) temp);
+    registers.regs[0]  = (uint32_t)temp;
+
+    //write_reg(FIELD_RD(word), (uint32_t) temp);
 }
 
 extern "C" void ADDU(uint32_t address, uint32_t word, uint32_t delayed) {
@@ -140,10 +163,13 @@ extern "C" void ADDU(uint32_t address, uint32_t word, uint32_t delayed) {
 }
 
 extern "C" void SUB(uint32_t address, uint32_t word, uint32_t delayed) {
-    int64_t temp = (int64_t)(int32_t)read_reg(FIELD_RS(word)) - (int64_t)(int32_t)read_reg(FIELD_RT(word));
+    int64_t rs = (int64_t)(int32_t)read_reg(FIELD_RS(word));
+    int64_t rt = (int64_t)(int32_t)read_reg(FIELD_RT(word));
+    int64_t temp = rs - rt;
 
-    if (temp < -0x80000000 || temp >= 0x80000000) {
+    if ((temp < MAX_LOW_I32) || (temp > MAX_HIGH_I32)) {
         exception(EXCEPTION_OVERFLOW, address, delayed, 0);
+        return ;
     }
 
     write_reg(FIELD_RD(word), (uint32_t) temp);
@@ -156,8 +182,9 @@ extern "C" void SUBU(uint32_t address, uint32_t word, uint32_t delayed) {
 extern "C" void ADDI(uint32_t address, uint32_t word, uint32_t delayed) {
     int64_t temp = (int64_t)(int32_t)read_reg(FIELD_RS(word)) + (int64_t)FIELD_SIMM16(word);
 
-    if (temp < -0x80000000 || temp >= 0x80000000) {
+    if ((temp < MAX_LOW_I32) || (temp > MAX_HIGH_I32)) {
         exception(EXCEPTION_OVERFLOW, address, delayed, 0);
+        return ;
     }
 
     write_reg(FIELD_RD(word), (uint32_t) temp);
@@ -335,61 +362,61 @@ extern "C" void JALR(uint32_t address, uint32_t word, uint32_t delayed) {
 }
 
 extern "C" void BEQ(uint32_t address, uint32_t word, uint32_t delayed) {
-    if (read_reg(FIELD_RS(word)) != read_reg(FIELD_RT(word))) return ;
-
-    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
-    execute(address + 4, 1);
+    if (read_reg(FIELD_RS(word)) == read_reg(FIELD_RT(word))) {
+        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        execute(address + 4, 1);
+    }
 }
 
 extern "C" void BNE(uint32_t address, uint32_t word, uint32_t delayed) {
-    if (read_reg(FIELD_RS(word)) == read_reg(FIELD_RT(word))) return ;
-
-    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
-    execute(address + 4, 1);
+    if (read_reg(FIELD_RS(word)) != read_reg(FIELD_RT(word))) {
+        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        execute(address + 4, 1);
+    }
 }
 
 extern "C" void BLTZ(uint32_t address, uint32_t word, uint32_t delayed) {
-    if ((int32_t)read_reg(FIELD_RS(word)) >= 0) return ;
-
-    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
-    execute(address + 4, 1);
+    if ((int32_t)read_reg(FIELD_RS(word)) < 0) {
+        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        execute(address + 4, 1);
+    }
 }
 
 extern "C" void BGEZ(uint32_t address, uint32_t word, uint32_t delayed) {
-    if ((int32_t)read_reg(FIELD_RS(word)) > 0) return ;
-
-    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
-    execute(address + 4, 1);
+    if ((int32_t)read_reg(FIELD_RS(word)) >= 0) {
+        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        execute(address + 4, 1);
+    }
 }
 
 extern "C" void BGTZ(uint32_t address, uint32_t word, uint32_t delayed) {
-    if ((int32_t)read_reg(FIELD_RS(word)) <= 0) return ;
-
-    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
-    execute(address + 4, 1);
+    if ((int32_t)read_reg(FIELD_RS(word)) > 0) {
+        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        execute(address + 4, 1);
+    }
 }
 
 extern "C" void BLEZ(uint32_t address, uint32_t word, uint32_t delayed) {
-    if ((int32_t)read_reg(FIELD_RS(word)) > 0) return ;
-
-    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
-    execute(address + 4, 1);
+    if ((int32_t)read_reg(FIELD_RS(word)) <= 0) {
+        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        execute(address + 4, 1);
+    }
 }
 
 extern "C" void BLTZAL(uint32_t address, uint32_t word, uint32_t delayed) {
-    if ((int32_t)read_reg(FIELD_RS(word)) >= 0) return ;
-
-    write_reg(REGS_RA, address + 8);
-    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
-    execute(address + 4, 1);
+    if ((int32_t)read_reg(FIELD_RS(word)) < 0) {
+        write_reg(REGS_RA, address + 8);
+        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        execute(address + 4, 1);
+    }
 }
 
 extern "C" void BGEZAL(uint32_t address, uint32_t word, uint32_t delayed) {
-    if ((int32_t)read_reg(FIELD_RS(word)) < 0) return ;
-
-    write_reg(REGS_RA, address + 8);
-    registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
-    execute(address + 4, 1);
+    if ((int32_t)read_reg(FIELD_RS(word)) >= 0) {
+        write_reg(REGS_RA, address + 8);
+        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        execute(address + 4, 1);
+    }
 }
 
 // ******
