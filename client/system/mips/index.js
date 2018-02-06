@@ -167,9 +167,9 @@ export function block_execute () {
 
 export function step () {
 	try {
-		const last_pc = Registers.pc;
+		Registers.start_pc = Registers.pc;
 		Registers.pc += 4;
-		execute(last_pc, false);
+		execute(Registers.start_pc, false);
 	} catch (e) {
 		if (e instanceof Exception) {
 			wasm_exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
@@ -192,8 +192,8 @@ function execute(pc, delayed) {
 	const data = load(pc, true, pc, delayed);
 	const call = locate(data);
 
-	Registers.clocks--;
 	wasm_exports[call.name](pc, data, delayed);
+	Registers.clocks--;
 }
 
 export function blockSize(address) {

@@ -39,7 +39,7 @@ extern "C" void execute_call(uint32_t start, uint32_t length) {
     while (registers.clocks > 0) {
         uint32_t index = ((registers.start_pc = registers.pc) - start) >> 2;
 
-        if (index >= length) break ;
+        if (index >= length) return ;
 
         ((exec_block)index)();
     }

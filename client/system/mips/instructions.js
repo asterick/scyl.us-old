@@ -91,7 +91,7 @@ export function initialize(ab) {
 
 		if (boilerplate.indexOf(exp.field) < 0) return ;
 
-		// This call is actually useless, simply null it
+		// This call is marked for templating only, clear body
 		func.code = ['end'];
 	});
 
