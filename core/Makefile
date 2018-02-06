@@ -1,6 +1,6 @@
 OBJECTS = core.o cop0.o base.o memory.o hash.o
 
-CFLAGS = -emit-llvm --target=wasm32-O3 -Iinclude -ffreestanding
+CFLAGS = -emit-llvm --target=wasm32 -O3 -Iinclude -ffreestanding -std=c++11
 
 TARGET = "../assets/core.wasm"
 
@@ -20,9 +20,6 @@ $(TARGET): $(OBJECTS)
 	llc -asm-verbose=false -o build/temp.s build/temp.bc
 	s2wasm build/temp.s > build/temp.wast
 	wasm-as build/temp.wast -o $@
-
-%.o: %.c include
-	clang $(CFLAGS) $< -c -o $@
 
 %.o: %.cc include
 	clang $(CFLAGS) $< -c -o $@

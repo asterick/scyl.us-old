@@ -77,7 +77,8 @@ export function initialize(ab) {
 	});
 	_function_base = index;
 
-	const targets = names(instructions).concat("execute_call", "finalize_call", "adjust_clock");
+	const boilerplate = ["execute_call", "finalize_call", "adjust_clock"];
+	const targets = names(instructions).concat(boilerplate);
 
 	_templates = {};
 	defs.export_section.forEach((exp) => {
@@ -87,6 +88,11 @@ export function initialize(ab) {
 		const func = defs.function_section[exp.index - imported_functions];
 
 		_templates[exp.field] = template(func, exp.field);
+
+		if (boilerplate.indexOf(exp.field) < 0) return ;
+
+		// This call is actually useless, simply null it
+		func.code = ['end'];
 	});
 
 	return Export(defs);
@@ -118,13 +124,12 @@ function template(func, name) {
 
 					switch(op) {
 					case 'get_local':
+					case 'i32.load':
+					case 'i32.const':
 						stack++;
 						break ;
 					case 'i32.add':
 						stack--;
-						break ;
-					case 'i32.const':
-						stack++;
 						break ;
 					default:
 						throw new Error(`Cannot unroll stack for op ${op}`);

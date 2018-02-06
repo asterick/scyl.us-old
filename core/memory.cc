@@ -1,8 +1,14 @@
 #include "types.h"
 #include "imports.h"
 
+#include "registers.h"
 #include "memory.h"
 #include "cop0.h"
+
+union Registers registers;
+
+uint32_t ram[RAM_SIZE / sizeof(uint32_t)];
+uint32_t rom[ROM_SIZE / sizeof(uint32_t)];
 
 extern "C" uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t delayed) {
 	uint32_t physical = translate(logical, code, pc, delayed);

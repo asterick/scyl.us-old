@@ -85,9 +85,10 @@ export function initialize() {
 	return fetch("core.wasm")
 		.then((blob) => blob.arrayBuffer())
 		.then((ab) => {
-			initialize_compiler(ab);
+			// Setup and configure the compiler
+			const clean = initialize_compiler(ab);
 
-			return WebAssembly.instantiate(ab, {
+			return WebAssembly.instantiate(clean, {
 				env: _environment
 			});
 		})
@@ -166,11 +167,9 @@ export function block_execute () {
 
 export function step () {
 	try {
-		Registers.start_pc = Registers.pc;
+		const last_pc = Registers.pc;
 		Registers.pc += 4;
-
-		execute(Registers.start_pc, false);
-		Registers.clocks--;	// Could be off by one, don't mind that much
+		execute(last_pc, false);
 	} catch (e) {
 		if (e instanceof Exception) {
 			wasm_exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
@@ -193,6 +192,7 @@ function execute(pc, delayed) {
 	const data = load(pc, true, pc, delayed);
 	const call = locate(data);
 
+	Registers.clocks--;
 	wasm_exports[call.name](pc, data, delayed);
 }
 

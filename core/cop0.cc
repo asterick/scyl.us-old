@@ -21,7 +21,7 @@ static uint32_t epc;
 static uint32_t bad_addr;
 static uint32_t pt_base;
 
-void reset_cop0() {
+void COP0::reset() {
 	status = STATUS_KUc | STATUS_BEV;
 	cause = 0;
 
@@ -40,11 +40,11 @@ int cop_enabled(int cop) {
 	return (((status >> 18) | ((status & STATUS_KUc) ? 1 : 0)) >> cop) & 1;
 }
 
-void interrupt(int i) {
+static void interrupt(int i) {
 	status |= (1 << (i + 8)) & STATUS_IM;
 }
 
-void handle_interrupt() {
+extern "C" void handle_interrupt() {
 	if ((status & STATUS_IEc) && (cause & status & STATUS_IM)) {
 		trap(EXCEPTION_INTERRUPT, registers.pc, 0, 0);
 	}
