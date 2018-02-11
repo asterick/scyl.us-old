@@ -141,15 +141,19 @@ extern "C" void SWL(uint32_t address, uint32_t word, uint32_t delayed) {
 // ** Arithmatic instructions
 // ******
 
-static const int64_t MAX_LOW_I32 = -0x80000000L;
-static const int64_t MAX_HIGH_I32 = 0x7FFFFFFFL;
+// Cannot have significant bits in the uper portion of the 
+static bool overflow(int64_t integer) {
+    uint32_t top = (uint32_t)(integer >> 32);
+
+    return top && ~top;
+}
 
 extern "C" void ADD(uint32_t address, uint32_t word, uint32_t delayed) {
-    uint32_t rs = read_reg(FIELD_RS(word));
-    uint32_t rt = read_reg(FIELD_RT(word));
-    uint32_t temp = rs + rt;
+    int32_t rs = (int32_t)read_reg(FIELD_RS(word));
+    int32_t rt = (int32_t)read_reg(FIELD_RT(word));
+    int64_t temp = rs + rt;
 
-    if ((temp < MAX_LOW_I32) || (temp > MAX_HIGH_I32)) {
+    if (overflow(temp)) {
         exception(EXCEPTION_OVERFLOW, address, delayed, 0);
     }
 
@@ -163,11 +167,11 @@ extern "C" void ADDU(uint32_t address, uint32_t word, uint32_t delayed) {
 }
 
 extern "C" void SUB(uint32_t address, uint32_t word, uint32_t delayed) {
-    int64_t rs = (int64_t)(int32_t)read_reg(FIELD_RS(word));
-    int64_t rt = (int64_t)(int32_t)read_reg(FIELD_RT(word));
+    int32_t rs = (int32_t)read_reg(FIELD_RS(word));
+    int32_t rt = (int32_t)read_reg(FIELD_RT(word));
     int64_t temp = rs - rt;
 
-    if ((temp < MAX_LOW_I32) || (temp > MAX_HIGH_I32)) {
+    if (overflow(temp)) {
         exception(EXCEPTION_OVERFLOW, address, delayed, 0);
         return ;
     }
@@ -180,9 +184,10 @@ extern "C" void SUBU(uint32_t address, uint32_t word, uint32_t delayed) {
 }
 
 extern "C" void ADDI(uint32_t address, uint32_t word, uint32_t delayed) {
-    int64_t temp = (int64_t)(int32_t)read_reg(FIELD_RS(word)) + (int64_t)FIELD_SIMM16(word);
+    int32_t rs = (int32_t)read_reg(FIELD_RS(word));
+    int64_t temp = rs + (int64_t)FIELD_SIMM16(word);
 
-    if ((temp < MAX_LOW_I32) || (temp > MAX_HIGH_I32)) {
+    if (overflow(temp)) {
         exception(EXCEPTION_OVERFLOW, address, delayed, 0);
         return ;
     }
@@ -311,11 +316,11 @@ extern "C" void DIVU(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t rs = read_reg(FIELD_RS(word));
 
     if (rt) {
-        registers.hi = rs;
-        registers.lo = (uint32_t)-1;
-    } else {
         registers.hi = rs % rt;
         registers.lo = rs / rt;
+    } else {
+        registers.hi = rs;
+        registers.lo = (uint32_t)-1;
     }
 }
 

@@ -1,6 +1,6 @@
 OBJECTS = core.o cop0.o base.o memory.o hash.o
 
-CFLAGS = -emit-llvm --target=wasm32 -O3 -Iinclude -ffreestanding -std=c++11
+CFLAGS = -emit-llvm --target=wasm32 -O2 -Iinclude -ffreestanding -std=c++11
 
 TARGET = "../assets/core.wasm"
 
