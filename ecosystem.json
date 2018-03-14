@@ -11,7 +11,7 @@
       "ref": "origin/master",
       "repo": "git@github.com:asterick/scyl.us.git",
       "path": "/home/node/scyl.us",
-      "post-deploy": "source ~/.profile; npm run core; npm run system0; npm prune; npm install && npm run build && pm2 reload ecosystem.json --env production"
+      "post-deploy": "source ~/.profile; npm prune; npm install; npm run core; npm run system0; npm run build && pm2 reload ecosystem.json --env production"
     }
   }
 }
