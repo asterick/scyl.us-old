@@ -5,7 +5,7 @@ import { attach, start, initialize } from "./system";
 
 initialize().then(() => {
 	attach("system");
-	start();
+	//start();
 
 	Inferno.render(<UI />, document.getElementById("container"));
 });

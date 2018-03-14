@@ -264,6 +264,13 @@ function instruction(pc, delayed, tailcall = null) {
 			const template = _templates[op.name];
 			const body = process(template, [pc, op.word, delayed], true);
 
+			// This is the start of a test harness to make sure my templating works (it doesn't)
+			if ([].indexOf(op.name) < 0)
+			{
+				//console.log(op.name)
+				throw null;
+			}
+
 			funct = {
 				type: { type: "func_type", parameters: [], returns: [] },
 				locals: template.locals,

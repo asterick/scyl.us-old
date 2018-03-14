@@ -15,7 +15,6 @@ var wasm_exports;
 
 const _environment = {
 	_start: () => 0,
-	memset: () => 0,
 	setRegisterSpace: (address) => {
 		const memory = wasm_exports.memory.buffer;
 		registers = new Uint32Array(memory, address, 64);
@@ -85,23 +84,18 @@ const _environment = {
 *******/
 export function initialize() {
 	return fetch("core.wasm")
-		.then((blob) => blob.arrayBuffer())
-		.then((ab) => {
-			// Setup and configure the compiler
-			const clean = initialize_compiler(ab);
-
-			return WebAssembly.instantiate(clean, {
-				env: _environment
-			});
-		})
-		.then((module) => {
-			wasm_exports =  module.instance.exports;
+		.then(blob => blob.arrayBuffer())
+		.then(ab =>  WebAssembly.instantiate(initialize_compiler(ab), {
+			env: _environment
+		}))
+		.then(module => {
+			wasm_exports = module.instance.exports;
 			reset();
 
 			return fetch("system0.bin");
 		})
-		.then((blob) => blob.arrayBuffer())
-		.then((ab) => {
+		.then(blob => blob.arrayBuffer())
+		.then(ab => {
 			const data = new Uint32Array(ab);
 
 			for (var i = 0; i < data.length; i++) { regions.boot.buffer[i] = data[i]; }
@@ -194,7 +188,10 @@ function execute(pc, delayed) {
 	const data = load(pc, true, pc, delayed);
 	const call = locate(data);
 
+	console.log((pc>>>0).toString(16))
+
 	wasm_exports[call.name](pc, data, delayed);
+
 	Registers.clocks--;
 }
 
