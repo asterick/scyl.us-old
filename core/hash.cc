@@ -1,4 +1,6 @@
-#include "types.h"
+#include <stdint.h>
+
+#include "compiler.h"
 #include "fields.h"
 #include "consts.h"
 #include "hash.h"

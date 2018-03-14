@@ -57,6 +57,12 @@ export function initialize(ab) {
         			"field": i.field,
         			"type": defs.memory_section[i.index]
         		};
+            case 'global_type':
+				return {
+        			"module": "core",
+        			"field": i.field,
+        			"type": defs.global_section[i.index].type
+        		};
             case 'func_type':
 				return {
         			"module": "core",

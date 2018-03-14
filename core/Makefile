@@ -1,7 +1,5 @@
 OBJECTS = core.o cop0.o base.o memory.o hash.o
-
-CFLAGS = -emit-llvm --target=wasm32 -O2 -Iinclude -ffreestanding -std=c++11
-
+CFLAGS = --target=wasm32-unknown-unknown-wasm --sysroot=$(WASMCEPTION)/sysroot -O2 -Iinclude -nostartfiles
 TARGET = "../assets/core.wasm"
 
 .phony: all clean wast
@@ -15,11 +13,7 @@ wast: $(TARGET)
 	wasm-dis $<
 
 $(TARGET): $(OBJECTS)
-	mkdir -p build
-	llvm-link -o build/temp.bc $(OBJECTS)
-	llc -asm-verbose=false -o build/temp.s build/temp.bc
-	s2wasm build/temp.s > build/temp.wast
-	wasm-as build/temp.wast -o $@
+	$(WASMCEPTION)/dist/bin/wasm-ld --allow-undefined $(OBJECTS) -o $@
 
 %.o: %.cc include
-	clang $(CFLAGS) $< -c -o $@
+	$(WASMCEPTION)/dist/bin/clang++ -std=c++11 $(CFLAGS) $< -c -o $@

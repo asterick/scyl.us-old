@@ -1,4 +1,6 @@
-#include "types.h"
+#include <stdint.h>
+
+#include "compiler.h"
 #include "fields.h"
 #include "consts.h"
 #include "cop0.h"
@@ -44,7 +46,7 @@ static void interrupt(int i) {
 	status |= (1 << (i + 8)) & STATUS_IM;
 }
 
-extern "C" void handle_interrupt() {
+EXPORT void handle_interrupt() {
 	if ((status & STATUS_IEc) && (cause & status & STATUS_IM)) {
 		trap(EXCEPTION_INTERRUPT, registers.pc, 0, 0);
 	}
@@ -83,7 +85,7 @@ static void write_tlb(int index) {
 	tlb_hi[index] = entry_hi;
 }
 
-extern "C" uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed) {
+EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed) {
 	// let cached = true;
 	if (address & 0x8000000 && ~status & STATUS_KUc) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
@@ -120,7 +122,7 @@ extern "C" uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uin
 	}
 }
 
-extern "C" void trap(int exception, int address, int delayed, int coprocessor) {
+EXPORT void trap(int exception, int address, int delayed, int coprocessor) {
 	registers.clocks -= (address - registers.start_pc + 4) >> 2;
 
 	// Preserve return address
@@ -151,7 +153,7 @@ extern "C" void trap(int exception, int address, int delayed, int coprocessor) {
 // ** Co-Processor Move registers
 // ******
 
-extern "C" void MFC0(uint32_t address, uint32_t word, uint32_t delayed) {
+EXPORT void MFC0(uint32_t address, uint32_t word, uint32_t delayed) {
 	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
@@ -202,7 +204,7 @@ extern "C" void MFC0(uint32_t address, uint32_t word, uint32_t delayed) {
 	write_reg(FIELD_RT(word), value);
 }
 
-extern "C" void MTC0(uint32_t address, uint32_t word, uint32_t delayed) {
+EXPORT void MTC0(uint32_t address, uint32_t word, uint32_t delayed) {
 	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
@@ -238,7 +240,7 @@ extern "C" void MTC0(uint32_t address, uint32_t word, uint32_t delayed) {
 // ** Co-Processor instructions
 // ******
 
-extern "C" void RFE(uint32_t address, uint32_t word, uint32_t delayed) {
+EXPORT void RFE(uint32_t address, uint32_t word, uint32_t delayed) {
 	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
@@ -246,7 +248,7 @@ extern "C" void RFE(uint32_t address, uint32_t word, uint32_t delayed) {
 	status = (status & ~0xF) | ((status >> 2) & 0xF);
 }
 
-extern "C" void TLBR(uint32_t address, uint32_t word, uint32_t delayed) {
+EXPORT void TLBR(uint32_t address, uint32_t word, uint32_t delayed) {
 	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
@@ -255,7 +257,7 @@ extern "C" void TLBR(uint32_t address, uint32_t word, uint32_t delayed) {
 	entry_hi = tlb_hi[(index >> 8) & 0x3F];
 }
 
-extern "C" void TLBWI(uint32_t address, uint32_t word, uint32_t delayed) {
+EXPORT void TLBWI(uint32_t address, uint32_t word, uint32_t delayed) {
 	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
@@ -263,7 +265,7 @@ extern "C" void TLBWI(uint32_t address, uint32_t word, uint32_t delayed) {
 	write_tlb((index >> 8) & 0x3F);
 }
 
-extern "C" void TLBWR(uint32_t address, uint32_t word, uint32_t delayed) {
+EXPORT void TLBWR(uint32_t address, uint32_t word, uint32_t delayed) {
 	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
@@ -271,7 +273,7 @@ extern "C" void TLBWR(uint32_t address, uint32_t word, uint32_t delayed) {
 	write_tlb(random());
 }
 
-extern "C" void TLBP(uint32_t address, uint32_t word, uint32_t delayed) {
+EXPORT void TLBP(uint32_t address, uint32_t word, uint32_t delayed) {
 	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
@@ -288,18 +290,18 @@ extern "C" void TLBP(uint32_t address, uint32_t word, uint32_t delayed) {
 // ***********
 // ** Unused move instructions
 // ***********
-extern "C" void CFC0(uint32_t address, uint32_t word, uint32_t delayed) {
+EXPORT void CFC0(uint32_t address, uint32_t word, uint32_t delayed) {
 	exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 }
 
-extern "C" void CTC0(uint32_t address, uint32_t word, uint32_t delayed) {
+EXPORT void CTC0(uint32_t address, uint32_t word, uint32_t delayed) {
 	exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 }
 
-extern "C" void LWC0(uint32_t address, uint32_t word, uint32_t delayed) {
+EXPORT void LWC0(uint32_t address, uint32_t word, uint32_t delayed) {
 	exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 }
 
-extern "C" void SWC0(uint32_t address, uint32_t word, uint32_t delayed) {
+EXPORT void SWC0(uint32_t address, uint32_t word, uint32_t delayed) {
 	exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 }

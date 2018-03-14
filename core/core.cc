@@ -1,6 +1,8 @@
 #define EXTERN
 
-#include "types.h"
+#include <stdint.h>
+
+#include "compiler.h"
 #include "imports.h"
 
 #include "cop0.h"
@@ -20,7 +22,7 @@ typedef void (*exec_block)();
 // ** Insertion point
 // *******
 
-extern "C" void reset() {
+EXPORT void reset() {
     setRegisterSpace(&registers);
     setMemoryRegions(&memory_regions);
 
@@ -35,7 +37,7 @@ extern "C" void reset() {
 // *******
 
 // This is a template function for executing
-extern "C" void execute_call(uint32_t start, uint32_t length) {
+EXPORT void execute_call(uint32_t start, uint32_t length) {
     while (registers.clocks > 0) {
         uint32_t index = ((registers.start_pc = registers.pc) - start) >> 2;
 
@@ -45,11 +47,11 @@ extern "C" void execute_call(uint32_t start, uint32_t length) {
     }
 }
 
-extern "C" void finalize_call(uint32_t end) {
+EXPORT void finalize_call(uint32_t end) {
     registers.pc = end;
     registers.clocks -= (end - registers.start_pc) >> 2;
 }
 
-extern "C" void adjust_clock(uint32_t end) {
+EXPORT void adjust_clock(uint32_t end) {
     registers.clocks -= (end - registers.start_pc) >> 2;
 }

@@ -14,6 +14,8 @@ var cache = [];
 var wasm_exports;
 
 const _environment = {
+	_start: () => 0,
+	memset: () => 0,
 	setRegisterSpace: (address) => {
 		const memory = wasm_exports.memory.buffer;
 		registers = new Uint32Array(memory, address, 64);
