@@ -211,10 +211,9 @@ function process(template, ... values) {
 		case 'tailcall':
 			let tailcall = values[3];
 
-			acc.push(
-				tailcall ? { op: 'call', function_index: tailcall } : "unreachable", 
-				"return"
-			);
+			if (tailcall) acc.push({ op: 'call', function_index: tailcall });
+			acc.push("return");
+
 			return acc;
 
 		case 'delay':
