@@ -195,8 +195,8 @@ function template(func, name) {
 	};
 }
 
-function process(template, values, naked = false) {
-	const body = template.code.reduce((acc, k) => {
+function process(template, ... values) {
+	return template.code.reduce((acc, k) => {
 		if (k.template === undefined) {
 			acc.push(k);
 			return acc;
@@ -212,7 +212,7 @@ function process(template, values, naked = false) {
 			}
 
 			// Template the adjust clock code
-			acc.push.apply(acc, process(_templates.adjust_clock, [(pc + 8) >> 0], true));
+			acc.push.apply(acc, process(_templates.adjust_clock, (pc + 8) >>> 0));
 
 			// call the delayed branch slot
 			acc.push(
@@ -230,27 +230,19 @@ function process(template, values, naked = false) {
 			throw k;
 		}
 	}, []);
-
-	if (naked) return body;
-
-	body.push("end");
-
-	return {
-		type: { type: "func_type", parameters: [], returns: [] },
-		locals: template.locals,
-		code: body
-	};
 }
 
 function fallback(pc, delayed) {
+	const body = delayed ? [] : process(_templates.finalize_call, pc + 4)
+
 	return {
 		type: { type: "func_type", parameters: [], returns: [] },
-		locals: [],
-		code: [
+		locals: _templates.finalize_call.locals,
+		code: body.concat(
 			{ op: 'i32.const', value: pc >> 0 },
 			{ op: 'i32.const', value: delayed ? 1 : 0 },
 	        { op: "call", function_index: _imports.execute },
-		]
+		)
 	};
 }
 
@@ -262,7 +254,7 @@ function instruction(pc, delayed, tailcall = null) {
 		try {
 			const op = locate(load(pc));
 			const template = _templates[op.name];
-			const body = process(template, [pc, op.word, delayed], true);
+			const body = process(template, pc, op.word, delayed);
 
 			// This is the start of a test harness to make sure my templating works (it doesn't)
 			if ([].indexOf(op.name) < 0)
@@ -279,9 +271,11 @@ function instruction(pc, delayed, tailcall = null) {
 		} catch (e) {
 			// fall back to interpreted
 			funct = fallback(pc, delayed);
+			tailcall = null;
 		}
 	} else {
 		funct = fallback(pc, delayed);
+		tailcall = null;
 	}
 
 	if (tailcall !== null) {
@@ -302,8 +296,18 @@ export function compile(start, length) {
 	_block_end = start + length * 4;
 
 	_functions = [
-		process(_templates.execute_call, [start, length]),
-		process(_templates.finalize_call, [_block_end])
+		// Execute body
+		{
+			type: { type: "func_type", parameters: [], returns: [] },
+			locals: _templates.execute_call.locals,
+			code: process(_templates.execute_call, start, length).concat("end")
+		},
+		// Finalize call
+		{
+			type: { type: "func_type", parameters: [], returns: [] },
+			locals: _templates.execute_call.locals,
+			code: process(_templates.finalize_call, _block_end).concat("end")
+		},
 	];
 
 	// Prime function table with the "Tail"

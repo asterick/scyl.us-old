@@ -31,7 +31,7 @@
  */
 
 #include <stdint.h>
-#include <string.h>
+#include <stddef.h>
 
 /*
  * sizeof(word) MUST BE A POWER OF TWO
@@ -49,8 +49,8 @@ typedef int word; /* "word" used for optimal copy speed */
  */
 void* memcpy(void* dst0, const void* src0, size_t length)
 {
-	char* dst = dst0;
-	const char* src = src0;
+	char* dst = (char*)dst0;
+	const char* src = (const char*)src0;
 	size_t t;
 
 	if(length == 0 || dst == src) /* nothing to do */
@@ -122,7 +122,7 @@ done:
 
 void* __attribute__((weak)) memset(void* dest, int c, size_t n)
 {
-	unsigned char* s = dest;
+	unsigned char* s = (unsigned char*)dest;
 	size_t k;
 
 	/* Fill head and tail with minimal branching. Each

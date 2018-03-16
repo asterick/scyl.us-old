@@ -15,6 +15,7 @@ var wasm_exports;
 
 const _environment = {
 	_start: () => 0,
+	debug: (a) => console.log(a),
 	setRegisterSpace: (address) => {
 		const memory = wasm_exports.memory.buffer;
 		registers = new Uint32Array(memory, address, 64);
@@ -31,7 +32,6 @@ const _environment = {
 			let region = new Uint32Array(memory, address, 5);
 			flags = region[4];
 			address += 20;
-
 
 			const decoder = new TextDecoder('utf-8');
 			for (var i = region[0]; bytes[i]; i++) ;
@@ -188,7 +188,7 @@ function execute(pc, delayed) {
 	const data = load(pc, true, pc, delayed);
 	const call = locate(data);
 
-	console.log((pc>>>0).toString(16))
+	//console.log((pc>>>0).toString(16), call.name)
 
 	wasm_exports[call.name](pc, data, delayed);
 
