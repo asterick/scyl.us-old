@@ -17,7 +17,7 @@ ASFLAGS = $(TARGET)
 CFLAGS = $(TARGET) -Wall -O3 -G0 -nostdlib -Wimplicit-function-declaration
 LDFLAGS = -T $(LD_SCRIPT)
 
-all: $(BINARY)
+all: $(CODEROM) $(DATAROM)
 
 clean:
 	rm -Rf  $(OBJECTS) $(CODEROM) $(DATAROM) $(BINARY) $(ELFFILE)
@@ -25,10 +25,11 @@ clean:
 dump: $(ELFFILE)
 	mipsel-unknown-elf-objdump -x -s -d $(ELFFILE)
 
-$(BINARY): $(ELFFILE)
+$(CODEROM): $(ELFFILE)
 	$(OBJCOPY) -I elf32-littlemips -O binary -R ".data" $< $(CODEROM)
+
+$(DATAROM): $(ELFFILE)
 	$(OBJCOPY) -I elf32-littlemips -O binary -j ".data" $< $(DATAROM)
-	cat $(CODEROM) $(DATAROM) >> $@
 
 $(ELFFILE): $(OBJECTS) $(LD_SCRIPT)
 	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)

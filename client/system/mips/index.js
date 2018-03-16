@@ -85,21 +85,13 @@ const _environment = {
 export function initialize() {
 	return fetch("core.wasm")
 		.then(blob => blob.arrayBuffer())
-		.then(ab =>  WebAssembly.instantiate(initialize_compiler(ab), {
-			env: _environment
+		.then(ab => WebAssembly.instantiate(initialize_compiler(ab), {
+				env: _environment
 		}))
 		.then(module => {
 			wasm_exports = module.instance.exports;
 			reset();
-
-			return fetch("system0.bin");
 		})
-		.then(blob => blob.arrayBuffer())
-		.then(ab => {
-			const data = new Uint32Array(ab);
-
-			for (var i = 0; i < data.length; i++) { regions.boot.buffer[i] = data[i]; }
-		});
 }
 
 // Execution core

@@ -36,6 +36,7 @@ export function initialize(ab) {
 		.filter(v => v.kind === 'func_type')
 		.map(v => v.index)
 		;
+
 	const imported_functions =
 		defs.import_section.filter((v) => v.type.type === 'func_type').length;
 
@@ -83,22 +84,13 @@ export function initialize(ab) {
 	});
 	_function_base = index;
 
-	const boilerplate = ["execute_call", "finalize_call", "adjust_clock"];
-	const targets = names(instructions).concat(boilerplate);
-
 	_templates = {};
 	defs.export_section.forEach((exp) => {
 		if (exp.index < imported_functions || exp.kind !== 'func_type') return ;
-		if (targets.indexOf(exp.field) < 0) return ;
 
 		const func = defs.function_section[exp.index - imported_functions];
 
 		_templates[exp.field] = template(func, exp.field);
-
-		if (boilerplate.indexOf(exp.field) < 0) return ;
-
-		// This call is marked for templating only, clear body
-		func.code = ['end'];
 	});
 
 	return Export(defs);
