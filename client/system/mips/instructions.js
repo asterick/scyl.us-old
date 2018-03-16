@@ -118,6 +118,11 @@ function template(func, name) {
 		const op = (typeof term === 'string') ? term : term.op;
 
 		switch (op) {
+		case "return":
+			modified.unshift( { template: 'tailcall' } );
+			i--;
+			continue ;
+
 		case "call":
 			if (term.function_index !== _imports.execute) break ;
 
@@ -203,6 +208,15 @@ function process(template, ... values) {
 		}
 
 		switch (k.template) {
+		case 'tailcall':
+			let tailcall = values[3];
+
+			acc.push(
+				tailcall ? { op: 'call', function_index: tailcall } : "unreachable", 
+				"return"
+			);
+			return acc;
+
 		case 'delay':
 			let pc = values[0];
 			let delayed = values[2];
@@ -242,6 +256,7 @@ function fallback(pc, delayed) {
 			{ op: 'i32.const', value: pc >> 0 },
 			{ op: 'i32.const', value: delayed ? 1 : 0 },
 	        { op: "call", function_index: _imports.execute },
+	        "end"
 		)
 	};
 }
@@ -254,7 +269,7 @@ function instruction(pc, delayed, tailcall = null) {
 		try {
 			const op = locate(load(pc));
 			const template = _templates[op.name];
-			const body = process(template, pc, op.word, delayed);
+			const body = process(template, pc, op.word, delayed, tailcall);
 
 			// This is the start of a test harness to make sure my templating works (it doesn't)
 			if ([].indexOf(op.name) < 0)
@@ -268,25 +283,21 @@ function instruction(pc, delayed, tailcall = null) {
 				locals: template.locals,
 				code: body
 			};
+
+			if (tailcall !== null) {
+				funct.code.push({ op: 'call', function_index: tailcall });
+			}
+			
+			funct.code.push("end");
 		} catch (e) {
 			// fall back to interpreted
 			funct = fallback(pc, delayed);
-			tailcall = null;
 		}
 	} else {
 		funct = fallback(pc, delayed);
-		tailcall = null;
 	}
 
-	if (tailcall !== null) {
-		funct.code.push({ op: 'call', function_index: tailcall });
-	}
-
-	funct.code.push("end");
-
-	_functions.push(funct);
-
-	return _function_base + _functions.length - 1;
+	return _function_base + _functions.push(funct) - 1;
 }
 
 export function compile(start, length) {
