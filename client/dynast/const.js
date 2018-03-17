@@ -1,7 +1,7 @@
-export const MAX_UINT16 = 0x20000000000000;
-export const MAGIC_NUMBER = 0x6d736100;
+const MAX_UINT16 = 0x20000000000000;
+const MAGIC_NUMBER = 0x6d736100;
 
-export const PAYLOAD_TYPES = {
+const PAYLOAD_TYPES = {
 	CUSTOM: 0,
 	TYPE: 1,
 	IMPORT: 2,
@@ -16,7 +16,7 @@ export const PAYLOAD_TYPES = {
 	DATA: 11
 };
 
-export const VALUE_TYPES = {
+const VALUE_TYPES = {
 	"i32": -0x01,
 	"i64": -0x02,
 	"f32": -0x03,
@@ -26,17 +26,17 @@ export const VALUE_TYPES = {
 	"void": -0x40,
 };
 
-export const KIND_TYPES = {
+const KIND_TYPES = {
 	FUNCTION: 0,
 	TABLE: 1,
 	MEMORY: 2,
 	GLOBAL: 3
 };
 
-export const FLAG_RESIZABLE_LIMIT_PRESENT = 1;
-export const FLAG_GLOBAL_MUTABLE = 1;
+const FLAG_RESIZABLE_LIMIT_PRESENT = 1;
+const FLAG_GLOBAL_MUTABLE = 1;
 
-export const ByteCode = {
+const ByteCode = {
 	"unreachable": 0x00,
 	"nop": 0x01,
 	"block": 0x02,
@@ -215,8 +215,20 @@ export const ByteCode = {
 	"f64.reinterpret/i64": 0xbf,
 };
 
-export const ReverseByteCode = {};
+const ReverseByteCode = {};
 
 Object.keys(ByteCode).forEach((k) => {
 	ReverseByteCode[ByteCode[k]] = k;
 });
+
+module.exports = {
+	MAX_UINT16,
+	MAGIC_NUMBER,
+	PAYLOAD_TYPES,
+	VALUE_TYPES,
+	KIND_TYPES,
+	FLAG_RESIZABLE_LIMIT_PRESENT,
+	FLAG_GLOBAL_MUTABLE,
+	ByteCode,
+	ReverseByteCode
+};

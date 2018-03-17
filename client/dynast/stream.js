@@ -1,7 +1,11 @@
+if (!TextDecoder || !TextEncoder) {
+	var { TextDecoder, TextEncoder } = require("text-encoding");
+}
+
 const utf8decode = new TextDecoder('utf-8');
 const utf8encode = new TextEncoder('utf-8');
 
-export class ReadStream {
+class ReadStream {
 	constructor (buffer) {
 		this._dv = new DataView(buffer);
 		this._buffer = buffer;
@@ -89,7 +93,7 @@ export class ReadStream {
 	}
 }
 
-export class WriteStream {
+class WriteStream {
 	constructor() {
 		this._bytes = [];
 
@@ -167,4 +171,9 @@ export class WriteStream {
 			this._bytes.push((byte ^ (neg ? 0x7F : 0)) | (more ? 0x80 : 0));
 		} while (more);
 	}
+}
+
+module.exports = {
+	ReadStream,
+	WriteStream
 }

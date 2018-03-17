@@ -1,10 +1,10 @@
-import { ReadStream } from "./stream";
-import {
+const { ReadStream } = require("./stream");
+const {
 	MAGIC_NUMBER,
 	PAYLOAD_TYPES, VALUE_TYPES, KIND_TYPES,
 	FLAG_RESIZABLE_LIMIT_PRESENT, FLAG_GLOBAL_MUTABLE,
 	ByteCode, ReverseByteCode
-} from "./const";
+} = require ("./const");
 
 /*************
  ** WASM decoder
@@ -389,7 +389,7 @@ const DECODE_TYPES = {
 	[PAYLOAD_TYPES.DATA]: { name: "data_section", decode: decode_data_section }
 };
 
-export default function (array) {
+module.exports = function (array) {
 	const stream = new ReadStream(array);
 	const result = {
 		magicNumber: stream.uint32(),

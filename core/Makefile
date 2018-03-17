@@ -9,13 +9,14 @@ SYSTEM0 =  ../system0/code.bin ../system0/data.bin
 all: $(TARGET)
 
 clean:
-	rm -Rf $(OBJECTS) $(TARGET)
+	rm -Rf $(OBJECTS) $(TARGET) system0.h
 
 wast: $(TARGET)
 	wasm-dis $<
 
 $(TARGET): $(OBJECTS)
 	$(WASMCEPTION)/dist/bin/wasm-ld --allow-undefined $(OBJECTS) -o $@
+	node tools/strip.js $@
 
 %.o: %.c include system0.h
 	$(WASMCEPTION)/dist/bin/clang $(CFLAGS) $< -c -o $@
@@ -24,4 +25,4 @@ $(TARGET): $(OBJECTS)
 	$(WASMCEPTION)/dist/bin/clang++ -std=c++11 $(CFLAGS) $< -c -o $@
 
 system0.h: $(SYSTEM0)
-	python2 generate.py $(SYSTEM0) > $@
+	node tools/generate.js $(SYSTEM0) > $@

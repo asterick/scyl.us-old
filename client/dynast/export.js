@@ -1,10 +1,10 @@
-import { WriteStream } from "./stream";
-import {
+const { WriteStream } = require("./stream");
+const {
 	MAGIC_NUMBER,
 	PAYLOAD_TYPES, VALUE_TYPES, KIND_TYPES,
 	FLAG_RESIZABLE_LIMIT_PRESENT, FLAG_GLOBAL_MUTABLE,
 	ByteCode
-} from "./const";
+} = require("./const");
 
 /************
  ** WASM encoder
@@ -355,7 +355,7 @@ const ENCODE_TYPES = [
 	{ id: PAYLOAD_TYPES.DATA, name: "data_section", encode: encode_data_section }
 ];
 
-export default function (ast) {
+module.exports = function (ast) {
 	const stream = new WriteStream();
 
 	if (ast.magicNumber != MAGIC_NUMBER) {
