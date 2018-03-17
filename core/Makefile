@@ -4,11 +4,12 @@ TARGET = "../assets/core.wasm"
 ROM = "../system0/code.bin"
 SYSTEM0 =  ../system0/code.bin ../system0/data.bin
 
-.phony: all clean wast
+.phony: all clean wast system0.h
 
 all: $(TARGET)
 
 clean:
+	make -C ../system0 clean
 	rm -Rf $(OBJECTS) $(TARGET) system0.h
 
 wast: $(TARGET)
@@ -24,5 +25,6 @@ $(TARGET): $(OBJECTS)
 %.o: %.cc include system0.h
 	$(WASMCEPTION)/dist/bin/clang++ -std=c++11 $(CFLAGS) $< -c -o $@
 
-system0.h: $(SYSTEM0)
+system0.h:
+	make -C ../system0 all
 	node tools/generate.js $(SYSTEM0) > $@
