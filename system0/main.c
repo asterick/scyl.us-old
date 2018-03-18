@@ -1,10 +1,6 @@
 typedef unsigned int size_t;
 typedef unsigned int uint32_t;
 
-extern const uint32_t _DATA_ROM;
-extern const uint32_t _DATA_START;
-extern const uint32_t _DATA_SIZE;
-
 volatile uint32_t DATA[] = {
 	0xDEADFACE,
 	0xCAFEBABE,
