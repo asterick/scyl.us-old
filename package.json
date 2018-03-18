@@ -6,36 +6,28 @@
   "scripts": {
     "start": "node server",
     "core": "make -C system0 clean all; make -C core clean all",
-    "build": "BABEL_ENV=production webpack"
+    "build": "NODE_ENV=production BABEL_ENV=production webpack"
   },
   "keywords": [],
   "author": "Bryon Vandiver",
   "license": "Apache-2.0",
   "devDependencies": {
     "babel-core": "^6.26.0",
-    "babel-loader": "^7.1.2",
-    "babel-minify": "^0.2.0",
-    "babel-plugin-inferno": "^3.3.0",
-    "express": "^4.16.2",
+    "babel-loader": "^7.1.4",
+    "babel-plugin-inferno": "^5.0.0",
+    "express": "^4.16.3",
     "express-ws": "^3.0.0",
-    "inferno": "^3.10.1",
-    "inferno-component": "^3.10.1",
+    "inferno": "^5.0.0",
+    "inferno-component": "^5.0.0",
     "raw-loader": "^0.5.1",
-    "webpack": "^3.10.0",
-    "winston": "^2.4.0",
-    "wrtc": "0.0.63"
+    "webpack": "^4.1.1",
+    "winston": "^2.4.1",
+    "wrtc": "0.0.67"
   },
   "babel": {
     "plugins": [
       "inferno"
-    ],
-    "env": {
-      "production": {
-        "presets": [
-          "minify"
-        ]
-      }
-    }
+    ]
   },
   "bin": {
     "scyl.us": "app.js"
@@ -49,6 +41,7 @@
   },
   "homepage": "https://github.com/asterick/scyl.us#readme",
   "dependencies": {
-    "text-encoding": "^0.6.4"
+    "text-encoding": "^0.6.4",
+    "webpack-cli": "^2.0.12"
   }
 }

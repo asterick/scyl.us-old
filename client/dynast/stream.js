@@ -1,5 +1,8 @@
-if (!TextDecoder || !TextEncoder) {
+try {	
 	var { TextDecoder, TextEncoder } = require("text-encoding");
+} catch (e) {
+	var TextDecoder = window.TextDecoder;
+	var TextEncoder = window.TextEncoder;
 }
 
 const utf8decode = new TextDecoder('utf-8');

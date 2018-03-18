@@ -2,19 +2,22 @@ const path = require("path");
 const webpack = require("webpack");
 
 module.exports = {
+    mode: process.env.NODE_ENV || "development",
     entry: './client/index.jsx',
     output: {
         path: path.join(__dirname, './assets'),
         filename: 'app.js',
     },
     plugins: [
+        new webpack.EnvironmentPlugin(['NODE_ENV']),
+        new webpack.IgnorePlugin(/^text-encoding$/),
         new webpack.IgnorePlugin(/^fs$/)
     ],
     module: {
-        loaders: [
+        rules: [
             {
                 test: /\.jsx?$/,
-                loader: 'babel-loader',
+                use: [ { loader: 'babel-loader' } ],
             }
       ]
     },
