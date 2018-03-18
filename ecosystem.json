@@ -11,7 +11,7 @@
       "ref": "origin/master",
       "repo": "git@github.com:asterick/scyl.us.git",
       "path": "/home/node/scyl.us",
-      "pre-deploy-local": "npm run build; scp assets/core.wasm node@scyl.us:~/scyl.us/current/assets",
+      "pre-deploy-local": "npm run core; scp assets/core.wasm node@scyl.us:~/scyl.us/current/assets",
       "post-deploy": "source ~/.profile; npm prune; npm install; npm run build; pm2 reload ecosystem.json --env production"
     }
   }
