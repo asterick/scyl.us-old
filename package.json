@@ -4,10 +4,8 @@
   "description": "My personal webpage",
   "main": "server/index.js",
   "scripts": {
-    "core": "make -C core",
-    "system0": "make -C system0",
     "start": "node server",
-    "build": "BABEL_ENV=production webpack"
+    "build": "make -C system0 clean all; make -C core clean all; BABEL_ENV=production webpack"
   },
   "keywords": [],
   "author": "Bryon Vandiver",
