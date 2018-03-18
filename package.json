@@ -5,7 +5,8 @@
   "main": "server/index.js",
   "scripts": {
     "start": "node server",
-    "build": "make -C system0 clean all; make -C core clean all; BABEL_ENV=production webpack"
+    "core": "make -C system0 clean all; make -C core clean all",
+    "build": "BABEL_ENV=production webpack"
   },
   "keywords": [],
   "author": "Bryon Vandiver",
