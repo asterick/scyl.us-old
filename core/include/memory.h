@@ -1,13 +1,5 @@
 #pragma once
 
-static const uint32_t ROM_BASE = 0x1FC00000;
-static const uint32_t ROM_SIZE = 512*1024;		// 512kB of rom
-static const uint32_t RAM_BASE = 0;				// 4MB of RAM
-static const uint32_t RAM_SIZE = 4*1024*1024;	// 4MB of RAM
-
-extern uint32_t ram[RAM_SIZE / sizeof(uint32_t)];
-extern uint32_t rom[ROM_SIZE / sizeof(uint32_t)];
-
 enum MemoryRegionFlags {
 	FLAG_R = 1,
 	FLAG_W = 2,

@@ -120,9 +120,9 @@ EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_
 	}
 }
 
-EXPORT void bus_fault(int exception, uint32_t address, uint32_t pc, uint32_t delayed) {
+EXPORT void bus_fault(int ex, uint32_t address, uint32_t pc, uint32_t delayed) {
 	bad_addr = address;
-	trap(exception, pc, delayed, 0);
+	exception(ex, pc, delayed, 0);
 }
 
 EXPORT void trap(int exception, int address, int delayed, int coprocessor) {

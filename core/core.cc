@@ -10,11 +10,6 @@
 
 #include "registers.h"
 
-const MemoryRegion memory_regions[] = {
-    { "boot",  ROM_BASE, ROM_SIZE, rom, FLAG_R },
-    { "m_ram", RAM_BASE, RAM_SIZE, ram, FLAG_R | FLAG_W | FLAG_LAST },
-};
-
 struct SystemConfiguration {
     const MemoryRegion* memory_regions;
     const Registers* registers;

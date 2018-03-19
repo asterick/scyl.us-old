@@ -6,38 +6,97 @@
 #include "registers.h"
 #include "memory.h"
 #include "cop0.h"
+#include "consts.h"
 
 union Registers registers;
 
-uint32_t ram[RAM_SIZE / sizeof(uint32_t)];
-uint32_t rom[ROM_SIZE / sizeof(uint32_t)] = {
+static const uint32_t RAM_BASE = 0x00000000;
+static const uint32_t ROM_BASE = 0x1FC00000;
+
+uint32_t ram[0x400000 / sizeof(uint32_t)];		// 4MB
+uint32_t rom[0x080000 / sizeof(uint32_t)] = {	// 512KB
 	#include "system0.h"
+};
+
+const MemoryRegion memory_regions[] = {
+    { "boot",  ROM_BASE, sizeof(rom), rom, FLAG_R },
+    { "m_ram", RAM_BASE, sizeof(ram), ram, FLAG_R | FLAG_W | FLAG_LAST },
 };
 
 EXPORT uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t delayed) {
 	uint32_t physical = translate(logical, code, pc, delayed);
 
-	if (physical < sizeof(ram)) {
-		return ram[physical >> 2];
-	} else if (physical >= ROM_BASE && physical < (ROM_BASE + ROM_SIZE)) {
-		physical = physical - ROM_BASE;
-
-		if (physical >= sizeof(rom)) return 0;
-
-		return rom[physical >> 2];
-	} else {
-		return read(physical, code, pc, delayed);
+	switch (physical & 0x1FF00000) {
+		case 0x1F000000:
+		case 0x1F100000:
+		case 0x1F200000:
+		case 0x1F300000:
+		case 0x1F400000:
+		case 0x1F500000:
+		case 0x1F600000:
+		case 0x1F700000:
+		case 0x1F800000:
+		case 0x1F900000:
+		case 0x1FA00000:
+		case 0x1FB00000:
+			return read(physical, code, pc, delayed);
+			break ;
+		case 0x1FC00000:
+		case 0x1FD00000:
+		case 0x1FE00000:
+		case 0x1FF00000:
+			if (physical >= ROM_BASE && physical < ROM_BASE + sizeof(ram)) {
+				return rom[(physical - ROM_BASE) >> 2];
+			}
+			break ;
+		default:
+			if (physical < sizeof(ram)) {
+				return ram[physical >> 2];
+			}
+			break ;
 	}
+
+	bus_fault(code ? EXCEPTION_BUSERRORINSTRUCTION : EXCEPTION_BUSERRORDATA, logical, pc, delayed);
+
+	return 0;
 }
 
 EXPORT void store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed) {
 	uint32_t physical = translate(logical, 1, pc, delayed);
 
-	if (physical < sizeof(ram)) {
-		physical >>= 2;
-		invalidate(physical, logical);
-		ram[physical] = (ram[physical] & ~mask) | (value & mask);
-	} else if (physical < ROM_BASE || physical >= (ROM_BASE + ROM_SIZE)) {
-		write(physical, value, mask, pc, delayed);
+	invalidate(physical, logical);
+
+	switch (physical & 0x1FF00000) {
+		case 0x1F000000:
+		case 0x1F100000:
+		case 0x1F200000:
+		case 0x1F300000:
+		case 0x1F400000:
+		case 0x1F500000:
+		case 0x1F600000:
+		case 0x1F700000:
+		case 0x1F800000:
+		case 0x1F900000:
+		case 0x1FA00000:
+		case 0x1FB00000:
+			write(physical, value, mask, pc, delayed);
+			return ;
+		case 0x1FC00000:
+		case 0x1FD00000:
+		case 0x1FE00000:
+		case 0x1FF00000:
+			if (physical >= ROM_BASE && physical < ROM_BASE + sizeof(rom)) {
+				return ;
+			}
+			break ;
+		default:
+			// Out of bounds
+			if (physical < sizeof(ram)) {
+				ram[physical >> 2] = (ram[physical >> 2] & ~mask) | (value & mask);
+				return ;
+			}
+			break ;
 	}
+
+	bus_fault(EXCEPTION_BUSERRORDATA, logical, pc, delayed);
 }
