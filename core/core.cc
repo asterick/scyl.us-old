@@ -16,6 +16,8 @@ struct SystemConfiguration {
 };
 
 static const int32_t MAX_CLOCK_LAG = 60000;
+static uint32_t start_pc;
+
 typedef void (*exec_block)();
 
 // *******
@@ -45,7 +47,7 @@ EXPORT const SystemConfiguration* getConfiguration() {
 // This is a template function for executing
 EXPORT void execute_call(uint32_t start, uint32_t length) {
     while (registers.clocks > 0) {
-        uint32_t index = ((registers.start_pc = registers.pc) - start) >> 2;
+        uint32_t index = ((start_pc = registers.pc) - start) >> 2;
 
         if (index >= length) return ;
 
@@ -57,9 +59,9 @@ EXPORT void execute_call(uint32_t start, uint32_t length) {
 
 EXPORT void finalize_call(uint32_t end) {
     registers.pc = end;
-    registers.clocks -= (end - registers.start_pc) >> 2;
+    registers.clocks -= (end - start_pc) >> 2;
 }
 
 EXPORT void adjust_clock(uint32_t end) {
-    registers.clocks -= (end - registers.start_pc) >> 2;
+    registers.clocks -= (end - start_pc) >> 2;
 }

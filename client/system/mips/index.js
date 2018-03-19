@@ -105,10 +105,11 @@ export function block_execute () {
 	exports.handle_interrupt();
 
 	while (Registers.clocks > 0) {
-		const block_size = blockSize(Registers.pc);
+		const start_pc = Registers.pc
+		const block_size = blockSize(start_pc);
 		const block_mask = -block_size; // equilivant to ~(block_size - 1)
-		const physical = (exports.translate(Registers.pc, false, Registers.pc, false) & block_mask) >>> 0;
-		const logical = (Registers.pc & block_mask) >>> 0;
+		const physical = (exports.translate(start_pc, false, start_pc, false) & block_mask) >>> 0;
+		const logical = (start_pc & block_mask) >>> 0;
 
 		var funct = cache[physical];
 
@@ -138,6 +139,7 @@ export function block_execute () {
 			funct.code();
 		} catch (e) {
 			if (e instanceof Exception) {
+				Registers.clocks -= (e.pc - start_pc) / 4;
 				exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
 			} else {
 				throw e;
@@ -153,11 +155,12 @@ export function block_execute () {
 // this is only here for debugging purposes
 
 export function step_execute () {
-	try {
-		Registers.start_pc = Registers.pc;
-		Registers.pc += 4;
+	exports.handle_interrupt();
 
-		execute(Registers.start_pc, false);
+	try {
+		const start_pc = Registers.pc;
+		Registers.pc += 4;
+		execute(start_pc, false);
 	} catch (e) {
 		if (e instanceof Exception) {
 			exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
@@ -165,8 +168,6 @@ export function step_execute () {
 			throw e;
 		}
 	}
-
-	exports.handle_interrupt();
 }
 
 export function load (word, pc) {
@@ -180,9 +181,8 @@ function execute(pc, delayed) {
 	const data = load(pc, true, pc, delayed);
 	const call = locate(data);
 
-	exports[call.name](pc, data, delayed);
-
 	Registers.clocks--;
+	exports[call.name](pc, data, delayed);
 }
 
 export function blockSize(address) {

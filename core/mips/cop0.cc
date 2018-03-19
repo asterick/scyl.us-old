@@ -126,8 +126,6 @@ EXPORT void bus_fault(int ex, uint32_t address, uint32_t pc, uint32_t delayed) {
 }
 
 EXPORT void trap(int exception, int address, int delayed, int coprocessor) {
-	registers.clocks -= (address - registers.start_pc + 4) >> 2;
-
 	// Preserve return address
 	epc = address;
 
