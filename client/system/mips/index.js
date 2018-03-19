@@ -15,39 +15,6 @@ var wasm_exports;
 
 const _environment = {
 	execute,
-	_start: () => 0,
-	setRegisterSpace: (address) => {
-		const memory = wasm_exports.memory.buffer;
-		registers = new Uint32Array(memory, address, 64);
-	},
-	setMemoryRegions: (address) => {
-		const memory = wasm_exports.memory.buffer;
-		const bytes = new Uint8Array(wasm_exports.memory.buffer);
-
-		let flags;
-
-		regions = {};
-
-		while (true) {
-			let region = new Uint32Array(memory, address, 5);
-			flags = region[4];
-			address += 20;
-
-			const decoder = new TextDecoder('utf-8');
-			for (var i = region[0]; bytes[i]; i++) ;
-			const name = decoder.decode(bytes.subarray(region[0], i));
-
-			regions[name] = {
-				start: region[1],
-				length: region[2],
-				end: region[1]+region[2],
-				flags: region[4],
-				buffer: new Uint32Array(memory, region[3], region[2] / 4)
-			};
-
-			if (flags & 4) break ;
-		}
-	},
 	exception: (code, pc, delayed, cop) => {
 		throw new Exception(code, pc, delayed, cop);
 	},
@@ -78,6 +45,39 @@ const _environment = {
 	}
 };
 
+function configure(cfg) {
+	const memory = wasm_exports.memory.buffer;
+	const bytes = new Uint8Array(wasm_exports.memory.buffer);
+	const dv = new DataView(memory);
+
+	registers = new Uint32Array(memory, dv.getUint32(cfg+4, true), 64);
+	var address = dv.getUint32(cfg+0, true);
+
+	let flags;
+
+	regions = {};
+
+	while (true) {
+		let region = new Uint32Array(memory, address, 5);
+		flags = region[4];
+		address += 20;
+
+		const decoder = new TextDecoder('utf-8');
+		for (var i = region[0]; bytes[i]; i++) ;
+		const name = decoder.decode(bytes.subarray(region[0], i));
+
+		regions[name] = {
+			start: region[1],
+			length: region[2],
+			end: region[1]+region[2],
+			flags: region[4],
+			buffer: new Uint32Array(memory, region[3], region[2] / 4)
+		};
+
+		if (flags & 4) break ;
+	}
+}
+
 /*******
 ** Runtime section
 *******/
@@ -91,7 +91,7 @@ export function initialize() {
 			wasm_exports = module.instance.exports;
 			cache = [];
 
-			// TODO: READ CRAP HERE
+			configure(wasm_exports.getConfiguration())
 		})
 }
 

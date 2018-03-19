@@ -88,7 +88,7 @@ static void write_tlb(int index) {
 EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed) {
 	// let cached = true;
 	if (address & 0x8000000 && ~status & STATUS_KUc) {
-		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
+		exception(EXCEPTION_COPROCESSORUNUSABLE, address, pc, delayed);
 	}
 
 	// Check if line is cached (does nothing)
@@ -104,22 +104,25 @@ EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_
 
 		// TLB line is inactive
 		if (~result & 0x0200) {
-			bad_addr = address;
 			entry_hi = (entry_hi & ~0xFFFFF000) | (address & 0xFFFFF000);
-			exception(write ? EXCEPTION_TLBSTORE : EXCEPTION_TLBLOAD, address, delayed, 0);
+			bus_fault(write ? EXCEPTION_TLBSTORE : EXCEPTION_TLBLOAD, address, pc, delayed);
 		}
 
 		// Writes are not permitted
 		if (write && ~result & 0x0400) {
-			bad_addr = address;
 			entry_hi = (entry_hi & ~0xFFFFF000) | (address & 0xFFFFF000);
-			exception(EXCEPTION_TLBMOD, address, delayed, 0);
+			bus_fault(EXCEPTION_TLBMOD, address, pc, delayed);
 		}
 
 		return (result & 0xFFFFF000) | (address & 0x00000FFF);
 	} else {
 		return address & 0x1FFFFFFC;
 	}
+}
+
+EXPORT void bus_fault(int exception, uint32_t address, uint32_t pc, uint32_t delayed) {
+	bad_addr = address;
+	trap(exception, pc, delayed, 0);
 }
 
 EXPORT void trap(int exception, int address, int delayed, int coprocessor) {

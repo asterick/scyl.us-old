@@ -34,6 +34,7 @@ static const uint32_t ALL_STATUS_BITS =
 static const uint32_t TLB_PAGES = 64;
 
 EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed);
+EXPORT void bus_fault(int exception, uint32_t address, uint32_t pc, uint32_t delayed);
 EXPORT void trap(int exception, int address, int delayed, int coprocessor);
 
 namespace COP0 {

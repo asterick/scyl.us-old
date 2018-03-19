@@ -15,6 +15,11 @@ const MemoryRegion memory_regions[] = {
     { "m_ram", RAM_BASE, RAM_SIZE, ram, FLAG_R | FLAG_W | FLAG_LAST },
 };
 
+struct SystemConfiguration {
+    const MemoryRegion* memory_regions;
+    const Registers* registers;
+};
+
 static const int32_t MAX_CLOCK_LAG = 60000;
 typedef void (*exec_block)();
 
@@ -23,13 +28,19 @@ typedef void (*exec_block)();
 // *******
 
 EXPORT void reset() {
-    setRegisterSpace(&registers);
-    setMemoryRegions(&memory_regions);
-
     registers.pc = 0xBFC00000;
     registers.clocks = 0;
 
     COP0::reset();
+}
+
+EXPORT const SystemConfiguration* getConfiguration() {
+    static const SystemConfiguration cfg = {
+        memory_regions,
+        &registers
+    };
+
+    return &cfg;
 }
 
 // *******
@@ -45,7 +56,7 @@ EXPORT void execute_call(uint32_t start, uint32_t length) {
 
         exec_block target = (exec_block) index;
 
-        //target();
+        target();
     }
 }
 
