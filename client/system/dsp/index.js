@@ -1,5 +1,5 @@
-import Exception from "./exception";
-import { Exceptions } from "./mips/consts";
+import exports from "../mips";
+import { Exceptions } from "../mips/consts";
 
 /**
  ** | opcode | target | source |
@@ -228,11 +228,11 @@ export function read (page, code, logical, pc, delayed) {
 	} else if (address >= 0x80000 && address <= 0x800FF) {
 		return DSP_Program[address];
 	} else {
-		throw new Exception(code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData, pc, delayed, 0);
+		exports.bus_fault(code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData, logical, pc, delayed);
 	}
 }
 
-export function write (address, value, mask) {
+export function write (address, value, mask, pc, delayed) {
 	// TODO: CONTROL REGISTER
 	if (address < DSP_Vectors.length) {
 		DSP_Vectors[address] = (DSP_Vectors[address] & ~mask) | (value & mask);
@@ -240,6 +240,6 @@ export function write (address, value, mask) {
 		run = null;
 		DSP_Program[address] = (DSP_Program[address] & ~mask) | (value & mask);
 	} else {
-		throw new Exception(Exceptions.BusErrorData, pc, delayed, 0);
+		exports.bus_fault(Exceptions.BusErrorData, address, pc, delayed);
 	}
 }

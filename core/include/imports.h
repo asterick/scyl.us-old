@@ -11,10 +11,10 @@ extern "C" {
 	uint32_t gpu_read(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 	uint32_t dsp_read(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 	uint32_t spu_read(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
-	void dma_write(uint32_t, uint32_t, uint32_t);
-	void timer_write(uint32_t, uint32_t, uint32_t);
-	void cedar_write(uint32_t, uint32_t, uint32_t);
-	void gpu_write(uint32_t, uint32_t, uint32_t);
-	void dsp_write(uint32_t, uint32_t, uint32_t);
-	void spu_write(uint32_t, uint32_t, uint32_t);
+	void dma_write(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+	void timer_write(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+	void cedar_write(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+	void gpu_write(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+	void dsp_write(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+	void spu_write(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 }

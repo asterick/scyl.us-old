@@ -1,5 +1,5 @@
-import Exception from "./exception";
-import { Exceptions } from "./mips/consts";
+import exports from "../mips";
+import { Exceptions } from "../mips/consts";
 
 import {
     setBlend, setTexture, setClut, setDraw, setClip,
@@ -20,11 +20,11 @@ setDither(true);
 setBlend(false, 0, 0, 0, 0);
 
 export function read (page, code, logical, pc, delayed) {
-    throw new Exception(code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData, pc, delayed, 0);
+    exports.bus_fault(code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData, logical, pc, delayed);
 }
 
-export function write (address, value, mask = ~0) {
-    throw new Exception(Exceptions.BusErrorData, pc, delayed, 0);
+export function write (address, value, mask, pc, delayed) {
+    exports.bus_fault(Exceptions.BusErrorData, address, pc, delayed);
 }
 
 /* This is a gross test bench to see if the GPU works

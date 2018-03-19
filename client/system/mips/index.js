@@ -1,7 +1,8 @@
 import Exception from "./exception";
-import { locate, compile, initialize as initialize_compiler } from "./instructions";
-import { read, write, tick, accessors } from "..";
 import Registers from "./registers";
+
+import { locate, compile, initialize as initialize_compiler } from "./instructions";
+import { tick } from "..";
 
 import { MAX_COMPILE_SIZE, MIN_COMPILE_SIZE, Exceptions } from "./consts";
 
@@ -16,9 +17,9 @@ const MAX_CLOCK_LAG = 60000;
 
 export var registers;
 export var regions = null;
+export var exports;
 
 var cache = [];
-var wasm_exports;
 
 const _environment = {
 	// Execute bytecode
@@ -46,8 +47,8 @@ const _environment = {
 };
 
 function configure(cfg) {
-	const memory = wasm_exports.memory.buffer;
-	const bytes = new Uint8Array(wasm_exports.memory.buffer);
+	const memory = exports.memory.buffer;
+	const bytes = new Uint8Array(exports.memory.buffer);
 	const dv = new DataView(memory);
 
 	registers = new Uint32Array(memory, dv.getUint32(cfg+4, true), 64);
@@ -88,27 +89,27 @@ export function initialize() {
 				env: _environment
 		}))
 		.then(module => {
-			wasm_exports = module.instance.exports;
+			exports = module.instance.exports;
 			cache = [];
 
-			configure(wasm_exports.getConfiguration())
+			configure(exports.getConfiguration())
 		})
 }
 
 // Execution core
 export function reset() {
 	cache = [];
-	wasm_exports.reset();
+	exports.reset();
 }
 
 // Execute a single frame
 export function block_execute () {
-	wasm_exports.handle_interrupt();
+	exports.handle_interrupt();
 
 	while (Registers.clocks > 0) {
 		const block_size = blockSize(Registers.pc);
 		const block_mask = -block_size; // equilivant to ~(block_size - 1)
-		const physical = (wasm_exports.translate(Registers.pc, false, Registers.pc, false) & block_mask) >>> 0;
+		const physical = (exports.translate(Registers.pc, false, Registers.pc, false) & block_mask) >>> 0;
 		const logical = (Registers.pc & block_mask) >>> 0;
 
 		var funct = cache[physical];
@@ -116,7 +117,7 @@ export function block_execute () {
 		if (funct === undefined || !funct.code || funct.logical !== logical) {
 			WebAssembly.instantiate(compile(logical, block_size / 4), {
 				env: _environment,
-				core: wasm_exports
+				core: exports
 			}).then((result) => {
 				const funct = {
 					code: result.instance.exports.block,
@@ -139,7 +140,7 @@ export function block_execute () {
 			funct.code();
 		} catch (e) {
 			if (e instanceof Exception) {
-				wasm_exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
+				exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
 			} else {
 				throw e;
 			}
@@ -160,17 +161,17 @@ export function step () {
 		execute(Registers.start_pc, false);
 	} catch (e) {
 		if (e instanceof Exception) {
-			wasm_exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
+			exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
 		} else {
 			throw e;
 		}
 	}
 
-	wasm_exports.handle_interrupt();
+	exports.handle_interrupt();
 }
 
 export function load (word, pc) {
-	return wasm_exports.load(word, pc);
+	return exports.load(word, pc);
 }
 
 // This forces delay slots at the end of a page to
@@ -180,7 +181,7 @@ function execute(pc, delayed) {
 	const data = load(pc, true, pc, delayed);
 	const call = locate(data);
 
-	wasm_exports[call.name](pc, data, delayed);
+	exports[call.name](pc, data, delayed);
 
 	Registers.clocks--;
 }
