@@ -25,22 +25,21 @@ const MemoryRegion memory_regions[] = {
 
 EXPORT uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t delayed) {
 	uint32_t physical = translate(logical, code, pc, delayed);
+	uint32_t page = (physical & 0xFFFFF) >> 2;
 
 	switch (physical & 0x1FF00000) {
-		case 0x1F000000:
-		case 0x1F100000:
-		case 0x1F200000:
-		case 0x1F300000:
-		case 0x1F400000:
-		case 0x1F500000:
+		case 0x1F000000: return dma_read(page, code, logical, pc, delayed);
+		case 0x1F100000: return timer_read(page, code, logical, pc, delayed);
+		case 0x1F200000: return cedar_read(page, code, logical, pc, delayed);
+		case 0x1F300000: return gpu_read(page, code, logical, pc, delayed);
+		case 0x1F400000: return dsp_read(page, code, logical, pc, delayed);
+		case 0x1F500000: return spu_read(page, code, logical, pc, delayed);
 		case 0x1F600000:
 		case 0x1F700000:
 		case 0x1F800000:
 		case 0x1F900000:
 		case 0x1FA00000:
-		case 0x1FB00000:
-			return read(physical, code, pc, delayed);
-			break ;
+		case 0x1FB00000: break ;
 		case 0x1FC00000:
 		case 0x1FD00000:
 		case 0x1FE00000:
@@ -63,24 +62,23 @@ EXPORT uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t dela
 
 EXPORT void store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed) {
 	uint32_t physical = translate(logical, 1, pc, delayed);
+	uint32_t page = (physical & 0xFFFFF) >> 2;
 
 	invalidate(physical, logical);
 
 	switch (physical & 0x1FF00000) {
-		case 0x1F000000:
-		case 0x1F100000:
-		case 0x1F200000:
-		case 0x1F300000:
-		case 0x1F400000:
-		case 0x1F500000:
+		case 0x1F000000: dma_write(page, value, mask); return ;
+		case 0x1F100000: timer_write(page, value, mask); return ;
+		case 0x1F200000: cedar_write(page, value, mask); return ;
+		case 0x1F300000: gpu_write(page, value, mask); return ;
+		case 0x1F400000: dsp_write(page, value, mask); return ;
+		case 0x1F500000: spu_write(page, value, mask); return ;
 		case 0x1F600000:
 		case 0x1F700000:
 		case 0x1F800000:
 		case 0x1F900000:
 		case 0x1FA00000:
-		case 0x1FB00000:
-			write(physical, value, mask, pc, delayed);
-			return ;
+		case 0x1FB00000: break ;
 		case 0x1FC00000:
 		case 0x1FD00000:
 		case 0x1FE00000:

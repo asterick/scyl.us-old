@@ -1,9 +1,16 @@
 import Exception from "./exception";
 import { locate, compile, initialize as initialize_compiler } from "./instructions";
-import { read, write, tick } from "..";
+import { read, write, tick, accessors } from "..";
 import Registers from "./registers";
 
 import { MAX_COMPILE_SIZE, MIN_COMPILE_SIZE, Exceptions } from "./consts";
+
+import { read as dma_read, write as dma_write } from "../dma";
+import { read as timer_read, write as timer_write } from "../timer";
+import { read as cedar_read, write as cedar_write } from "../cedar";
+import { read as spu_read, write as spu_write } from "../spu";
+import { read as dsp_read, write as dsp_write } from "../dsp";
+import { read as gpu_read, write as gpu_write } from "../gpu";
 
 const MAX_CLOCK_LAG = 60000;
 
@@ -14,23 +21,16 @@ var cache = [];
 var wasm_exports;
 
 const _environment = {
+	// Execute bytecode
 	execute,
+
+	// Accessors
+	dma_read, timer_read, cedar_read, gpu_read, dsp_read, spu_read, 
+	dma_write, timer_write, cedar_write, gpu_write, dsp_write, spu_write,
+
+	// Glue
 	exception: (code, pc, delayed, cop) => {
 		throw new Exception(code, pc, delayed, cop);
-	},
-	read: (physical, code, pc, delayed) => {
-		try {
-			return read(code, physical >>> 0);
-		} catch (e) {
-			throw new Exception(e, pc, delayed, 0);
-		}
-	},
-	write: (physical, value, mask, pc, delayed) => {
-		try {
-			write(physical, value, mask);
-		} catch (e) {
-			throw new Exception(e, pc, delayed, 0);
-		}
 	},
 	invalidate: (physical, logical) => {
 		// Invalidate cache line

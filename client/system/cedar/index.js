@@ -1,4 +1,4 @@
-export function read (code, address) {
+export function read (page, code, logical, pc, delayed) {
 	throw code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData;
 }
 

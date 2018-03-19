@@ -16,7 +16,7 @@ setMask(true, false);
 setDither(true);
 setBlend(false, 0, 0, 0, 0);
 
-export function read (code, address) {
+export function read (page, code, logical, pc, delayed) {
     throw code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData;
 }
 

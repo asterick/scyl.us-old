@@ -218,7 +218,7 @@ function compile() {
 		});
 }
 
-export function read (code, address) {
+export function read (page, code, logical, pc, delayed) {
 	// TODO: CONTROL REGISTER
 	if (address < DSP_Vectors.length) {
 		return DSP_Vectors[address];
