@@ -1,3 +1,6 @@
+import Exception from "./exception";
+import { Exceptions } from "./mips/consts";
+
 /**
  ** | opcode | target | source |
  ** opcode = 8
@@ -225,7 +228,7 @@ export function read (page, code, logical, pc, delayed) {
 	} else if (address >= 0x80000 && address <= 0x800FF) {
 		return DSP_Program[address];
 	} else {
-		throw code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData;
+		throw new Exception(code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData, pc, delayed, 0);
 	}
 }
 
@@ -237,6 +240,6 @@ export function write (address, value, mask) {
 		run = null;
 		DSP_Program[address] = (DSP_Program[address] & ~mask) | (value & mask);
 	} else {
-		throw Exceptions.BusErrorData;
+		throw new Exception(Exceptions.BusErrorData, pc, delayed, 0);
 	}
 }

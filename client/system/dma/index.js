@@ -1,3 +1,6 @@
+import Exception from "./exception";
+import { Exceptions } from "./mips/consts";
+
 /****
  DMA CHANNEL REGISTER MAP
  ------------------------
@@ -29,9 +32,9 @@ import { regions } from "../mips";
 import { read as system_read, write as system_write } from "..";
 
 export function read (page, code, logical, pc, delayed) {
-	throw code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData;
+	throw new Exception(code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData, pc, delayed, 0);
 }
 
 export function write (address, value, mask = ~0) {
-	throw Exceptions.BusErrorData;
+	throw new Exception(Exceptions.BusErrorData, pc, delayed, 0);
 }
