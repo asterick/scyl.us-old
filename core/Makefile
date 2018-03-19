@@ -19,7 +19,6 @@ wast: $(TARGET)
 $(TARGET): $(OBJECTS)
 	$(WASMCEPTION)/dist/bin/wasm-ld --allow-undefined --check-signatures --entry reset $(OBJECTS) -o $@
 	../tools/strip.js $@
-	../tools/link.js $(OBJECTS) --entry=reset --output=$@
 
 %.o: %.c include system0.h
 	$(WASMCEPTION)/dist/bin/clang $(CFLAGS) $< -c -o $@

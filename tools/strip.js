@@ -22,4 +22,7 @@ defs.data_section = defs.data_section.filter(section => {
 	return true;
 });
 
+const reset = defs.export_section.filter(v => v.kind == 'func_type' && v.field == 'reset').pop();
+if (reset) defs.start_section = reset.index;
+
 fs.writeFileSync(process.argv[2], new Uint8Array(encode(defs)))

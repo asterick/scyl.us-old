@@ -43,7 +43,9 @@ EXPORT void execute_call(uint32_t start, uint32_t length) {
 
         if (index >= length) return ;
 
-        ((exec_block)index)();
+        exec_block target = (exec_block) index;
+
+        //target();
     }
 }
 

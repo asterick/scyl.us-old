@@ -17,6 +17,8 @@ var _templates;
 var _block_start;
 var _block_end;
 
+const terminate = ["execute_call", "adjust_clock", "finalize_call"];
+
 function names(table) {
 	return Object.keys(table).reduce((acc, key) => {
 		const entry = table[key];
@@ -91,6 +93,10 @@ export function initialize(ab) {
 		const func = defs.function_section[exp.index - imported_functions];
 
 		_templates[exp.field] = template(func, exp.field);
+
+		if (terminate.indexOf(exp.field) >= 0) {
+			func.code = ["end"];
+		}
 	});
 
 	return Export(defs);
