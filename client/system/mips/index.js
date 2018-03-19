@@ -14,8 +14,8 @@ var cache = [];
 var wasm_exports;
 
 const _environment = {
+	execute,
 	_start: () => 0,
-	debug: (a) => console.log(a),
 	setRegisterSpace: (address) => {
 		const memory = wasm_exports.memory.buffer;
 		registers = new Uint32Array(memory, address, 64);
@@ -51,7 +51,6 @@ const _environment = {
 	exception: (code, pc, delayed, cop) => {
 		throw new Exception(code, pc, delayed, cop);
 	},
-	execute: execute,
 	read: (physical, code, pc, delayed) => {
 		try {
 			return read(code, physical >>> 0);
@@ -90,14 +89,15 @@ export function initialize() {
 		}))
 		.then(module => {
 			wasm_exports = module.instance.exports;
-			reset();
+			cache = [];
+
+			// TODO: READ CRAP HERE
 		})
 }
 
 // Execution core
 export function reset() {
 	cache = [];
-
 	wasm_exports.reset();
 }
 
@@ -179,8 +179,6 @@ export function load (word, pc) {
 function execute(pc, delayed) {
 	const data = load(pc, true, pc, delayed);
 	const call = locate(data);
-
-	//console.log((pc>>>0).toString(16), call.name)
 
 	wasm_exports[call.name](pc, data, delayed);
 

@@ -1,5 +1,6 @@
-const encode = require("../../client/dynast/export.js");
-const decode = require("../../client/dynast/import.js");
+#!/usr/bin/env node
+const encode = require("../dynast/export.js");
+const decode = require("../dynast/import.js");
 const fs = require("fs");
 
 var buffer = fs.readFileSync(process.argv[2]);
@@ -19,6 +20,6 @@ defs.data_section = defs.data_section.filter(section => {
 	section.data = section.data.slice(0, i + 1);
 
 	return true;
-})
+});
 
 fs.writeFileSync(process.argv[2], new Uint8Array(encode(defs)))

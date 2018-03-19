@@ -2,8 +2,8 @@ import { Fields } from "./fields";
 import { disassembly, instructions } from "./table";
 import { load } from ".";
 
-import Export from "../../dynast/export";
-import Import from "../../dynast/import";
+import Export from "../../../dynast/export";
+import Import from "../../../dynast/import";
 
 // WARNING: This can possibly cause call stack to overflow, depending on how
 // large an instruction chain is, may have to use trampolines later

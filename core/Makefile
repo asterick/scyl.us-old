@@ -3,6 +3,7 @@ CFLAGS = --target=wasm32-unknown-unknown-wasm --sysroot=$(WASMCEPTION)/sysroot -
 TARGET = "../assets/core.wasm"
 ROM = "../system0/code.bin"
 SYSTEM0 =  ../system0/code.bin ../system0/data.bin
+LIBC = $(WASMCEPTION)/sysroot/lib/wasmception.wasm
 
 .phony: all clean wast system0.h
 
@@ -16,8 +17,9 @@ wast: $(TARGET)
 	wasm-dis $<
 
 $(TARGET): $(OBJECTS)
-	$(WASMCEPTION)/dist/bin/wasm-ld --allow-undefined $(OBJECTS) -o $@
-	node tools/strip.js $@
+	$(WASMCEPTION)/dist/bin/wasm-ld --allow-undefined --check-signatures --entry reset $(OBJECTS) -o $@
+	../tools/strip.js $@
+	../tools/link.js $(OBJECTS) --entry=reset --output=$@
 
 %.o: %.c include system0.h
 	$(WASMCEPTION)/dist/bin/clang $(CFLAGS) $< -c -o $@
@@ -27,4 +29,4 @@ $(TARGET): $(OBJECTS)
 
 system0.h:
 	make -C ../system0 all
-	node tools/generate.js $(SYSTEM0) > $@
+	../tools/generate.js $(SYSTEM0) > $@

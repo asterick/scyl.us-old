@@ -6,8 +6,8 @@
  ** right = 8 (vector) + 8 (swizzle)
  **/
 
-import Export from "../../dynast/export";
-import Import from "../../dynast/import";
+import Export from "../../../dynast/export";
+import Import from "../../../dynast/import";
 
 const DSP_Memory = new WebAssembly.Memory({ initial: 1 });
 const DSP_Program = new Uint32Array(1024);
