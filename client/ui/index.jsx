@@ -5,7 +5,7 @@ import Memory from "./memory";
 import Assembly from "./assembly";
 import Registers from "./registers";
 
-import { running, start, stop, step } from "../system";
+import { running, start, stop, step_execute } from "../system";
 
 export default class extends Component {
 	render() {
@@ -22,7 +22,7 @@ export default class extends Component {
 					}}/>
 				}
 				<input type="button" value="step" onClick={() => {
-					step();
+					step_execute();
 					this.forceUpdate();
 				}}/>
 			</div>

@@ -2,7 +2,7 @@ import { block_execute } from "./mips";
 import { Exceptions, SYSTEM_CLOCK, MAX_CLOCK_LATENCY } from "./mips/consts";
 
 export { attach } from "./gpu";
-export { reset as cpu_reset, initialize, registers, load, step } from "./mips";
+export { reset as cpu_reset, initialize, registers, load, step_execute } from "./mips";
 
 import Registers from "./mips/registers";
 

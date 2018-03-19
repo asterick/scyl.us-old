@@ -13,8 +13,6 @@ import { read as spu_read, write as spu_write } from "../spu";
 import { read as dsp_read, write as dsp_write } from "../dsp";
 import { read as gpu_read, write as gpu_write } from "../gpu";
 
-const MAX_CLOCK_LAG = 60000;
-
 export var registers;
 export var regions = null;
 export var exports;
@@ -154,10 +152,11 @@ export function block_execute () {
 // NOTE: This does not advance the system clock
 // this is only here for debugging purposes
 
-export function step () {
+export function step_execute () {
 	try {
 		Registers.start_pc = Registers.pc;
 		Registers.pc += 4;
+
 		execute(Registers.start_pc, false);
 	} catch (e) {
 		if (e instanceof Exception) {
