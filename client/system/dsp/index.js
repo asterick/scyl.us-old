@@ -221,7 +221,9 @@ function compile() {
 		});
 }
 
-export function read (page, code, logical, pc, delayed) {
+export function read (physical, code, logical, pc, delayed) {
+	const page = (physical & 0xFFFFF) >> 2;
+
 	// TODO: CONTROL REGISTER
 	if (page < DSP_Vectors.length) {
 		return DSP_Vectors[page];
@@ -232,7 +234,9 @@ export function read (page, code, logical, pc, delayed) {
 	}
 }
 
-export function write (page, value, mask, logical, pc, delayed) {
+export function write (physical, value, mask, logical, pc, delayed) {
+	const page = (physical & 0xFFFFF) >> 2;
+
 	// TODO: CONTROL REGISTER
 	if (page < DSP_Vectors.length) {
 		DSP_Vectors[page] = (DSP_Vectors[page] & ~mask) | (value & mask);

@@ -7,6 +7,7 @@
 
 #include "cop0.h"
 #include "memory.h"
+#include "dma.h"
 
 #include "registers.h"
 
@@ -51,6 +52,7 @@ EXPORT void execute_call(uint32_t start, uint32_t length) {
 
         exec_block target = (exec_block) index;
 
+        dma_advance();
         target();
     }
 }

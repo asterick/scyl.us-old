@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stddef.h>
 
 #include "compiler.h"
 #include "imports.h"
@@ -13,30 +14,27 @@
 
 union Registers registers;
 
-static const uint32_t RAM_BASE = 0x00000000;
-static const uint32_t ROM_BASE = 0x1FC00000;
-
-uint32_t ram[0x400000 / sizeof(uint32_t)];		// 4MB
-uint32_t rom[0x080000 / sizeof(uint32_t)] = {	// 512KB
+uint32_t system_ram[0x400000 / sizeof(uint32_t)];		// 4MB
+uint32_t system_rom[0x080000 / sizeof(uint32_t)] = {	// 512KB
 	#include "system0.h"
 };
 
 const MemoryRegion memory_regions[] = {
-    { "boot",  ROM_BASE, sizeof(rom), rom, FLAG_R },
-    { "m_ram", RAM_BASE, sizeof(ram), ram, FLAG_R | FLAG_W | FLAG_LAST },
+    { "boot",  ROM_BASE, sizeof(system_rom), system_rom, FLAG_R },
+    { "m_ram", RAM_BASE, sizeof(system_ram), system_ram, FLAG_R | FLAG_W },
+    { NULL }
 };
 
 EXPORT uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t delayed) {
 	uint32_t physical = translate(logical, code, pc, delayed);
-	uint32_t page = (physical & 0xFFFFF) >> 2;
 
 	switch (physical & 0x1FF00000) {
-		case 0x1F000000: return dma_read(page, code, logical, pc, delayed);
-		case 0x1F100000: return timer_read(page, code, logical, pc, delayed);
-		case 0x1F200000: return cedar_read(page, code, logical, pc, delayed);
-		case 0x1F300000: return gpu_read(page, code, logical, pc, delayed);
-		case 0x1F400000: return dsp_read(page, code, logical, pc, delayed);
-		case 0x1F500000: return spu_read(page, code, logical, pc, delayed);
+		case 0x1F000000: return dma_read(physical, code, logical, pc, delayed);
+		case 0x1F100000: return timer_read(physical, code, logical, pc, delayed);
+		case 0x1F200000: return cedar_read(physical, code, logical, pc, delayed);
+		case 0x1F300000: return gpu_read(physical, code, logical, pc, delayed);
+		case 0x1F400000: return dsp_read(physical, code, logical, pc, delayed);
+		case 0x1F500000: return spu_read(physical, code, logical, pc, delayed);
 		case 0x1F600000:
 		case 0x1F700000:
 		case 0x1F800000:
@@ -47,13 +45,13 @@ EXPORT uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t dela
 		case 0x1FD00000:
 		case 0x1FE00000:
 		case 0x1FF00000:
-			if (physical >= ROM_BASE && physical < ROM_BASE + sizeof(ram)) {
-				return rom[(physical - ROM_BASE) >> 2];
+			if (physical >= ROM_BASE && physical < ROM_BASE + sizeof(system_ram)) {
+				return system_rom[(physical - ROM_BASE) >> 2];
 			}
 			break ;
 		default:
-			if (physical < sizeof(ram)) {
-				return ram[physical >> 2];
+			if (physical < sizeof(system_ram)) {
+				return system_ram[physical >> 2];
 			}
 			break ;
 	}
@@ -65,17 +63,16 @@ EXPORT uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t dela
 
 EXPORT void store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed) {
 	uint32_t physical = translate(logical, 1, pc, delayed);
-	uint32_t page = (physical & 0xFFFFF) >> 2;
 
 	invalidate(physical, logical);
 
 	switch (physical & 0x1FF00000) {
-		case 0x1F000000: dma_write(page, value, mask, logical, pc, delayed); return ;
-		case 0x1F100000: timer_write(page, value, mask, logical, pc, delayed); return ;
-		case 0x1F200000: cedar_write(page, value, mask, logical, pc, delayed); return ;
-		case 0x1F300000: gpu_write(page, value, mask, logical, pc, delayed); return ;
-		case 0x1F400000: dsp_write(page, value, mask, logical, pc, delayed); return ;
-		case 0x1F500000: spu_write(page, value, mask, logical, pc, delayed); return ;
+		case 0x1F000000: dma_write(physical, value, mask, logical, pc, delayed); return ;
+		case 0x1F100000: timer_write(physical, value, mask, logical, pc, delayed); return ;
+		case 0x1F200000: cedar_write(physical, value, mask, logical, pc, delayed); return ;
+		case 0x1F300000: gpu_write(physical, value, mask, logical, pc, delayed); return ;
+		case 0x1F400000: dsp_write(physical, value, mask, logical, pc, delayed); return ;
+		case 0x1F500000: spu_write(physical, value, mask, logical, pc, delayed); return ;
 		case 0x1F600000:
 		case 0x1F700000:
 		case 0x1F800000:
@@ -86,14 +83,14 @@ EXPORT void store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, 
 		case 0x1FD00000:
 		case 0x1FE00000:
 		case 0x1FF00000:
-			if (physical >= ROM_BASE && physical < ROM_BASE + sizeof(rom)) {
+			if (physical >= ROM_BASE && physical < ROM_BASE + sizeof(system_rom)) {
 				return ;
 			}
 			break ;
 		default:
 			// Out of bounds
-			if (physical < sizeof(ram)) {
-				ram[physical >> 2] = (ram[physical >> 2] & ~mask) | (value & mask);
+			if (physical < sizeof(system_ram)) {
+				system_ram[physical >> 2] = (system_ram[physical >> 2] & ~mask) | (value & mask);
 				return ;
 			}
 			break ;

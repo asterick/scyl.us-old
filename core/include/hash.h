@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 namespace Hash {
 	void reset();
 	uint32_t find(uint32_t index);

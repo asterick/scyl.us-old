@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 union Registers {
     struct {
 		uint32_t regs[32];

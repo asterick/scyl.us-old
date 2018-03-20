@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdint.h>
+#include "compiler.h"
+
 static const uint32_t PROCESSOR_ID = 0x00000301;
 
 static const uint32_t STATUS_CU3 = 0x80000000;
