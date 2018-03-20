@@ -5,20 +5,38 @@
 #include "consts.h"
 
 #include "dma.h"
-#include "cop0.h"
 #include "memory.h"
 
 static const int MAX_CHANNELS = 8;
 
+enum DMATrigger {
+   TRIGGER_NONE = 0,
+   TRIGGER_DMA0,
+   TRIGGER_DMA1,
+   TRIGGER_DMA2,
+   TRIGGER_DMA3,
+   TRIGGER_DMA4,
+   TRIGGER_DMA5,
+   TRIGGER_DMA6,
+   TRIGGER_DMA7,
+   TRIGGER_GPU_TX_FIFO,
+   TRIGGER_GPU_RX_FIFO,
+   TRIGGER_DSP_IDLE,
+   TRIGGER_DSP_FINISHED
+};
+
+enum DMAWidth {
+   WIDTH_BIT8,
+   WIDTH_BIT16,
+   WIDTH_BIT32
+};
+
 struct DMAChannelFlags {
-   unsigned active:1;
-   unsigned circular:1;
-   unsigned linked:1;
-   signed   source_stride:8;
-   signed   target_stride:8;
-   unsigned source_width:4;
-   unsigned target_width:4;
    unsigned trigger:4;
+   unsigned copy_width:4;
+   signed   source_stride:4;
+   signed   target_stride:4;
+   unsigned repeats:8;
 };
 
 struct DMAChannel {
@@ -28,69 +46,71 @@ struct DMAChannel {
    uint32_t length;
 };
 
-DMAChannel channels[MAX_CHANNELS];
+#define WORD_LENGTH (sizeof(channels) * MAX_CHANNELS / sizeof(uint32_t))
 
-/****
- DMA CHANNEL REGISTER MAP
- ------------------------
- N+0 Flags
- N+1 Source Address
- N+2 Target Address
- N+3 DMA Length
+static union {
+   DMAChannel channels[MAX_CHANNELS];
+   uint32_t raw[WORD_LENGTH];
+};
 
- Flags
- -------------------------
-   31: Running
-   30: Circular mode
-16~23: Write stride (signed)
- 8~15: Read stride (signed)
- 6~ 7: Write width (0 = 8-bit, 1 = 16-bit, 2 = 32-bit, 3 = Illegal)
- 4~ 5: Read width  (0 = 8-bit, 1 = 16-bit, 2 = 32-bit, 3 = Illegal)
- 0~ 3: Trigger channel
+static union {
+   DMAChannel shadow[MAX_CHANNELS];
+   uint32_t raw_shadow[WORD_LENGTH];
+};
 
- Trigger Channels
- -------------------------
-   0: Always running
-   1~8: DMA[n] Stopped
-   9: GPU RX Fifo not-full
-   10: GPU TX Fifo not-empty
-   11: DSP Idle
-   12: DSP Complete
- ****/
+static bool active = false;
 
 EXPORT void dma_advance() {
+   if (!active) return ;
+
+   active = false;
    for (int i = 0; i < MAX_CHANNELS; i++) {
-      if (!channels[i].flags.active) continue ;
+      DMAChannel& channel = channels[i];
+
+      if (channel.flags.repeats > 0) continue ;
+
+      // The system is no longer active
+      if (--channel.length == 0) {
+         // No longer active
+         if (--channel.flags.repeats == 0) {
+            continue ;   
+         }
+
+         // Reset source address
+         channel.source = shadow[i].source;
+         channel.length = shadow[i].length;
+      }
+
+      active = true;
    }
 }
 
-uint32_t dma_read(uint32_t address, uint32_t code, uint32_t logical, uint32_t pc, uint32_t delayed) {
-   const int page = address & 0xFFFFC;
+uint32_t dma_read(uint32_t address) {
+   const int page = (address & 0xFFFFC) >> 2;
 
    // Out of bounds
-   if (page + 3 >= sizeof(channels)) {
-      bus_fault(code ? EXCEPTION_BUSERRORINSTRUCTION : EXCEPTION_BUSERRORDATA, logical, pc, delayed);
+   if (page >= WORD_LENGTH) {
+      return ~0;
    }
 
    uint32_t* const raw = (uint32_t*)&channels;
 
-   return raw[page >> 2];
+   return raw[page];
 }
 
-void dma_write(uint32_t address, uint32_t value, uint32_t mask, uint32_t logical, uint32_t pc, uint32_t delayed) {
-   const int page = address & 0xFFFFC;
+void dma_write(uint32_t address, uint32_t value, uint32_t mask) {
+   const int page = (address & 0xFFFFC) >> 2;
 
    // Out of bounds
-   if (page + 3 >= sizeof(channels)) {
-      bus_fault(EXCEPTION_BUSERRORDATA, logical, pc, delayed);
+   if (page >= WORD_LENGTH) {
+      return ;
    }
 
-   uint32_t* const raw = (uint32_t*)&channels;
-
-   raw[page >> 2] = (raw[page >> 2] & ~mask) | (value & mask);
+   raw_shadow[page] = raw[page] = (raw[page] & ~mask) | (value & mask);
 
    // Not a control register
-   if (page & 0xC0) return ;
+   if (page & 0x3) return ;
 
+   active = true;
    dma_advance();
 }

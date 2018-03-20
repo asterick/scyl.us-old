@@ -164,6 +164,7 @@ export function step_execute () {
 	try {
 		const start_pc = Registers.pc;
 		Registers.pc += 4;
+		exports.dma_advance();
 		execute(start_pc, false);
 	} catch (e) {
 		if (e instanceof Exception) {

@@ -1,6 +1,3 @@
-import exports from "..";
-import { Exceptions } from "../consts";
-
 /**
  ** | opcode | target | source |
  ** opcode = 8
@@ -221,7 +218,7 @@ function compile() {
 		});
 }
 
-export function read (physical, code, logical, pc, delayed) {
+export function read (physical) {
 	const page = (physical & 0xFFFFF) >> 2;
 
 	// TODO: CONTROL REGISTER
@@ -229,12 +226,12 @@ export function read (physical, code, logical, pc, delayed) {
 		return DSP_Vectors[page];
 	} else if (page >= 0x80000 && page <= 0x800FF) {
 		return DSP_Program[page];
-	} else {
-		exports.bus_fault(code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData, logical, pc, delayed);
 	}
+
+	return ~0;
 }
 
-export function write (physical, value, mask, logical, pc, delayed) {
+export function write (physical, value, mask) {
 	const page = (physical & 0xFFFFF) >> 2;
 
 	// TODO: CONTROL REGISTER
@@ -243,7 +240,5 @@ export function write (physical, value, mask, logical, pc, delayed) {
 	} else if (page >= 0x80000 && page <= 0x80000 + DSP_Program.length) {
 		run = null;
 		DSP_Program[page] = (DSP_Program[page] & ~mask) | (value & mask);
-	} else {
-		exports.bus_fault(Exceptions.BusErrorData, logical, pc, delayed);
 	}
 }

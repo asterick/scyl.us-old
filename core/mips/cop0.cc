@@ -85,6 +85,11 @@ static void write_tlb(int index) {
 	tlb_hi[index] = entry_hi;
 }
 
+void bus_fault(int ex, uint32_t address, uint32_t pc, uint32_t delayed) {
+	bad_addr = address;
+	exception(ex, pc, delayed, 0);
+}
+
 EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed) {
 	// let cached = true;
 	if (address & 0x8000000 && ~status & STATUS_KUc) {
@@ -118,11 +123,6 @@ EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_
 	} else {
 		return address & 0x1FFFFFFC;
 	}
-}
-
-EXPORT void bus_fault(int ex, uint32_t address, uint32_t pc, uint32_t delayed) {
-	bad_addr = address;
-	exception(ex, pc, delayed, 0);
 }
 
 EXPORT void trap(int exception, int address, int delayed, int coprocessor) {

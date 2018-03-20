@@ -29,12 +29,12 @@ EXPORT uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t dela
 	uint32_t physical = translate(logical, code, pc, delayed);
 
 	switch (physical & 0x1FF00000) {
-		case 0x1F000000: return dma_read(physical, code, logical, pc, delayed);
-		case 0x1F100000: return timer_read(physical, code, logical, pc, delayed);
-		case 0x1F200000: return cedar_read(physical, code, logical, pc, delayed);
-		case 0x1F300000: return gpu_read(physical, code, logical, pc, delayed);
-		case 0x1F400000: return dsp_read(physical, code, logical, pc, delayed);
-		case 0x1F500000: return spu_read(physical, code, logical, pc, delayed);
+		case 0x1F000000: return dma_read(physical);
+		case 0x1F100000: return timer_read(physical);
+		case 0x1F200000: return cedar_read(physical);
+		case 0x1F300000: return gpu_read(physical);
+		case 0x1F400000: return dsp_read(physical);
+		case 0x1F500000: return spu_read(physical);
 		case 0x1F600000:
 		case 0x1F700000:
 		case 0x1F800000:
@@ -67,12 +67,12 @@ EXPORT void store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, 
 	invalidate(physical, logical);
 
 	switch (physical & 0x1FF00000) {
-		case 0x1F000000: dma_write(physical, value, mask, logical, pc, delayed); return ;
-		case 0x1F100000: timer_write(physical, value, mask, logical, pc, delayed); return ;
-		case 0x1F200000: cedar_write(physical, value, mask, logical, pc, delayed); return ;
-		case 0x1F300000: gpu_write(physical, value, mask, logical, pc, delayed); return ;
-		case 0x1F400000: dsp_write(physical, value, mask, logical, pc, delayed); return ;
-		case 0x1F500000: spu_write(physical, value, mask, logical, pc, delayed); return ;
+		case 0x1F000000: dma_write(physical, value, mask); return ;
+		case 0x1F100000: timer_write(physical, value, mask); return ;
+		case 0x1F200000: cedar_write(physical, value, mask); return ;
+		case 0x1F300000: gpu_write(physical, value, mask); return ;
+		case 0x1F400000: dsp_write(physical, value, mask); return ;
+		case 0x1F500000: spu_write(physical, value, mask); return ;
 		case 0x1F600000:
 		case 0x1F700000:
 		case 0x1F800000:
