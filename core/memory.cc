@@ -26,6 +26,8 @@ const MemoryRegion memory_regions[] = {
 };
 
 uint32_t read(uint32_t physical, bool& exception) {
+	if (exception) return 0;
+
 	switch (physical & 0x1FF00000) {
 		case 0x1F000000: return dma_read(physical);
 		case 0x1F100000: return timer_read(physical);
@@ -60,6 +62,8 @@ uint32_t read(uint32_t physical, bool& exception) {
 }
 
 void write(uint32_t physical, uint32_t value, uint32_t mask, bool& exception) {
+	if (exception) return ;
+
 	invalidate(physical);
 
 	switch (physical & 0x1FF00000) {
@@ -98,7 +102,7 @@ void write(uint32_t physical, uint32_t value, uint32_t mask, bool& exception) {
 EXPORT uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t delayed) {
 	uint32_t physical = translate(logical, code, pc, delayed);
 
-	bool exception;
+	bool exception = false;
 	uint32_t value = read(physical, exception);
 
 	if (exception) bus_fault(code ? EXCEPTION_BUSERRORINSTRUCTION : EXCEPTION_BUSERRORDATA, logical, pc, delayed);
@@ -108,7 +112,7 @@ EXPORT uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t dela
 EXPORT void store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed) {
 	uint32_t physical = translate(logical, 1, pc, delayed);
 
-	bool exception;
+	bool exception = false;
 	write(physical, value, mask, exception);
 
 	if (exception) bus_fault(EXCEPTION_BUSERRORDATA, logical, pc, delayed);

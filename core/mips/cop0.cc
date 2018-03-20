@@ -90,8 +90,9 @@ void bus_fault(int ex, uint32_t address, uint32_t pc, uint32_t delayed) {
 	exception(ex, pc, delayed, 0);
 }
 
-uint32_t lookup(uint32_t address, uint32_t write, bool& failure) {
-	// let cached = true;
+uint32_t lookup(uint32_t address, bool write, bool& failure) {
+	if (failure) return ~0;
+
 	if (address & 0x8000000 && ~status & STATUS_KUc) {
 		failure = true;
 		return ~0;

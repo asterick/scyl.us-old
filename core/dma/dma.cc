@@ -5,6 +5,7 @@
 #include "consts.h"
 
 #include "dma.h"
+#include "cop0.h"
 #include "memory.h"
 
 static const int MAX_CHANNELS = 8;
@@ -32,6 +33,8 @@ enum DMAWidth {
 };
 
 struct DMAChannelFlags {
+   unsigned exception:1;
+   unsigned active:1;
    unsigned trigger:4;
    unsigned copy_width:4;
    signed   source_stride:4;
@@ -67,21 +70,42 @@ EXPORT void dma_advance() {
    for (int i = 0; i < MAX_CHANNELS; i++) {
       DMAChannel& channel = channels[i];
 
-      if (channel.flags.repeats > 0) continue ;
+      if (channel.flags.active == 0) continue ;
+      active = true;
 
-      // The system is no longer active
-      if (--channel.length == 0) {
-         // No longer active
-         if (--channel.flags.repeats == 0) {
-            continue ;   
+      bool exception = false;
+
+      // TODO: FOR NO TRIGGER, RAM/ROM COPIES
+      // THIS SHOULD USE A FAST ENGINE INSTEAD
+
+      for (;;) {
+         uint32_t source = lookup(channel.source, 0, exception);
+         uint32_t value = read(source, exception);
+         uint32_t target = lookup(channel.target, 1, exception);
+         write(target, value, 0xFFFFFFFF, exception);
+
+         if (exception) {
+            channel.flags.exception = 1;
+            channel.flags.active = 0;
+            break ;
          }
 
-         // Reset source address
-         channel.source = shadow[i].source;
-         channel.length = shadow[i].length;
-      }
+         channel.source += channel.flags.source_stride;
+         channel.target += channel.flags.target_stride;
 
-      active = true;
+         // The system is no longer active
+         if (--channel.length == 0) {
+            // No longer active
+            if (--channel.flags.repeats == 0) {
+               channel.flags.active = 0;
+               break ;   
+            }
+
+            // Reset source address
+            channel.source = shadow[i].source;
+            channel.length = shadow[i].length;
+         }
+      }
    }
 }
 
