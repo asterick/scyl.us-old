@@ -11,7 +11,6 @@
 #include "dma.h"
 #include "timer.h"
 
-
 union Registers registers;
 
 static const uint32_t RAM_BASE = 0x00000000;

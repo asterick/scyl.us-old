@@ -21,6 +21,7 @@ body {
 .number {
 	text-align: right;
 	width: 8ch;
+	padding: 2px 4px;
 	background: #EEE;
 }
 

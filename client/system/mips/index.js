@@ -22,8 +22,8 @@ const _environment = {
 	execute,
 
 	// Accessors
-	timer_read, cedar_read, gpu_read, dsp_read, spu_read, 
-	timer_write, cedar_write, gpu_write, dsp_write, spu_write,
+	cedar_read, gpu_read, dsp_read, spu_read, 
+	cedar_write, gpu_write, dsp_write, spu_write,
 
 	// Glue
 	exception: (code, pc, delayed, cop) => {
