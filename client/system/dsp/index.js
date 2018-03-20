@@ -223,23 +223,23 @@ function compile() {
 
 export function read (page, code, logical, pc, delayed) {
 	// TODO: CONTROL REGISTER
-	if (address < DSP_Vectors.length) {
-		return DSP_Vectors[address];
-	} else if (address >= 0x80000 && address <= 0x800FF) {
-		return DSP_Program[address];
+	if (page < DSP_Vectors.length) {
+		return DSP_Vectors[page];
+	} else if (page >= 0x80000 && page <= 0x800FF) {
+		return DSP_Program[page];
 	} else {
 		exports.bus_fault(code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData, logical, pc, delayed);
 	}
 }
 
-export function write (address, value, mask, pc, delayed) {
+export function write (page, value, mask, logical, pc, delayed) {
 	// TODO: CONTROL REGISTER
-	if (address < DSP_Vectors.length) {
-		DSP_Vectors[address] = (DSP_Vectors[address] & ~mask) | (value & mask);
-	} else if (address >= 0x80000 && address <= 0x80000 + DSP_Program.length) {
+	if (page < DSP_Vectors.length) {
+		DSP_Vectors[page] = (DSP_Vectors[page] & ~mask) | (value & mask);
+	} else if (page >= 0x80000 && page <= 0x80000 + DSP_Program.length) {
 		run = null;
-		DSP_Program[address] = (DSP_Program[address] & ~mask) | (value & mask);
+		DSP_Program[page] = (DSP_Program[page] & ~mask) | (value & mask);
 	} else {
-		exports.bus_fault(Exceptions.BusErrorData, address, pc, delayed);
+		exports.bus_fault(Exceptions.BusErrorData, logical, pc, delayed);
 	}
 }

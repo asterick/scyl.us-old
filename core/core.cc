@@ -11,7 +11,6 @@
 #include "registers.h"
 
 struct SystemConfiguration {
-    const MemoryRegion* memory_regions;
     const Registers* registers;
 };
 
@@ -33,7 +32,6 @@ EXPORT void reset() {
 
 EXPORT const SystemConfiguration* getConfiguration() {
     static const SystemConfiguration cfg = {
-        memory_regions,
         &registers
     };
 

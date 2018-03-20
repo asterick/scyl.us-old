@@ -1,5 +1,11 @@
-import exports from "../mips";
-import { Exceptions } from "../mips/consts";
+#include <stdint.h>
+
+#include "compiler.h"
+#include "imports.h"
+#include "consts.h"
+
+#include "dma.h"
+#include "cop0.h"
 
 /****
  DMA CHANNEL REGISTER MAP
@@ -28,13 +34,12 @@ import { Exceptions } from "../mips/consts";
    4: DSP Complete
  ****/
 
-import { regions } from "../mips";
-import { read as system_read, write as system_write } from "..";
+uint32_t dma_read(uint32_t page, uint32_t code, uint32_t logical, uint32_t pc, uint32_t delayed) {
+	bus_fault(code ? EXCEPTION_BUSERRORINSTRUCTION : EXCEPTION_BUSERRORDATA, logical, pc, delayed);
 
-export function read (page, code, logical, pc, delayed) {
-	exports.bus_fault(code ? Exceptions.BusErrorInstruction : Exceptions.BusErrorData, logical, pc, delayed);
+	return 0;
 }
 
-export function write (address, value, mask, pc, delayed) {
-    exports.bus_fault(Exceptions.BusErrorData, address, pc, delayed);
+void dma_write(uint32_t page, uint32_t value, uint32_t mask, uint32_t logical, uint32_t pc, uint32_t delayed) {
+	bus_fault(EXCEPTION_BUSERRORDATA, logical, pc, delayed);
 }

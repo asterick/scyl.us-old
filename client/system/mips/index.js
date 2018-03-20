@@ -6,7 +6,6 @@ import { tick } from "..";
 
 import { MAX_COMPILE_SIZE, MIN_COMPILE_SIZE, Exceptions } from "./consts";
 
-import { read as dma_read, write as dma_write } from "../dma";
 import { read as timer_read, write as timer_write } from "../timer";
 import { read as cedar_read, write as cedar_write } from "../cedar";
 import { read as spu_read, write as spu_write } from "../spu";
@@ -24,8 +23,8 @@ const _environment = {
 	execute,
 
 	// Accessors
-	dma_read, timer_read, cedar_read, gpu_read, dsp_read, spu_read, 
-	dma_write, timer_write, cedar_write, gpu_write, dsp_write, spu_write,
+	timer_read, cedar_read, gpu_read, dsp_read, spu_read, 
+	timer_write, cedar_write, gpu_write, dsp_write, spu_write,
 
 	// Glue
 	exception: (code, pc, delayed, cop) => {
@@ -44,39 +43,6 @@ const _environment = {
 	}
 };
 
-function configure(cfg) {
-	const memory = exports.memory.buffer;
-	const bytes = new Uint8Array(exports.memory.buffer);
-	const dv = new DataView(memory);
-
-	registers = new Uint32Array(memory, dv.getUint32(cfg+4, true), 64);
-	var address = dv.getUint32(cfg+0, true);
-
-	let flags;
-
-	regions = {};
-
-	while (true) {
-		let region = new Uint32Array(memory, address, 5);
-		flags = region[4];
-		address += 20;
-
-		const decoder = new TextDecoder('utf-8');
-		for (var i = region[0]; bytes[i]; i++) ;
-		const name = decoder.decode(bytes.subarray(region[0], i));
-
-		regions[name] = {
-			start: region[1],
-			length: region[2],
-			end: region[1]+region[2],
-			flags: region[4],
-			buffer: new Uint32Array(memory, region[3], region[2] / 4)
-		};
-
-		if (flags & 4) break ;
-	}
-}
-
 /*******
 ** Runtime section
 *******/
@@ -90,7 +56,12 @@ export function initialize() {
 			exports = module.instance.exports;
 			cache = [];
 
-			configure(exports.getConfiguration())
+			const address = exports.getConfiguration();
+			const memory = exports.memory.buffer;
+			const bytes = new Uint8Array(exports.memory.buffer);
+			const dv = new DataView(memory);
+
+			registers = new Uint32Array(memory, dv.getUint32(address, true), 64);
 		})
 }
 
