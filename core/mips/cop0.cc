@@ -90,6 +90,35 @@ void bus_fault(int ex, uint32_t address, uint32_t pc, uint32_t delayed) {
 	exception(ex, pc, delayed, 0);
 }
 
+uint32_t lookup(uint32_t address, uint32_t write, bool& failure) {
+	// let cached = true;
+	if (address & 0x8000000 && ~status & STATUS_KUc) {
+		failure = true;
+		return ~0;
+	}
+
+	if ((address & 0xC0000000) != 0x80000000) {
+		uint32_t page = address & 0xFFFFF000;
+		uint32_t result = read_tlb(page | (entry_hi & 0xFFF));
+
+		// TLB line is inactive
+		if (~result & 0x0200) {
+			failure = true;
+			return ~0;
+		}
+
+		// Writes are not permitted
+		if (write && ~result & 0x0400) {
+			failure = true;
+			return ~0;
+		}
+
+		return (result & 0xFFFFF000) | (address & 0x00000FFF);
+	} else {
+		return address & 0x1FFFFFFC;
+	}
+}
+
 EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed) {
 	// let cached = true;
 	if (address & 0x8000000 && ~status & STATUS_KUc) {

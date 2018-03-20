@@ -22,5 +22,7 @@ static const uint32_t ROM_BASE = 0x1FC00000;
 extern uint32_t system_ram[];
 extern uint32_t system_rom[];
 
+uint32_t read(uint32_t logical, bool& exception);
+void write(uint32_t logical, uint32_t value, uint32_t mask, bool& exception);
 EXPORT uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t delayed);
 EXPORT void store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed);
