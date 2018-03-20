@@ -21,11 +21,15 @@ body {
 .number {
 	text-align: right;
 	width: 8ch;
-	margin: 0 8px;
+}
+
+table {
+	border-collapse: separate;
+  	border-spacing: 5px 2px;
 }
 
 table.disassembler {
-	border: 1px solid;
+  	border: 1px solid;
 	display: inline-block;
 	margin: 0 4px;
 	min-width: 60ex;
@@ -44,5 +48,3 @@ table.registers {
 table.registers td:first-child { text-align: right; }
 
 table { background: white; }
-
-td { padding: 0 2px; }
