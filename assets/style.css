@@ -18,6 +18,12 @@ body {
 	right: 10px;
 }
 
+.number {
+	text-align: right;
+	width: 8ch;
+	margin: 0 8px;
+}
+
 table.disassembler {
 	border: 1px solid;
 	display: inline-block;

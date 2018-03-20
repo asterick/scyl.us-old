@@ -1,8 +1,6 @@
 import Inferno from 'inferno';
 import Component from 'inferno-component';
 
-import { hex } from "../util";
-
 import { load } from "../system";
 import Registers from "../system/mips/registers";
 
@@ -10,9 +8,9 @@ export default class extends Component {
 	disassemble(pc) {
 		try {
 			const word = load(pc) >>> 0;
-			return <tr><td>{hex(pc)}</td> <td>{hex(word)}</td></tr>;
+			return <tr><td className="number">{pc.toString(16)}</td> <td className="number">{word.toString(16)}</td></tr>;
 		} catch(E) {
-			return <tr><td>{hex(pc)}</td> <td colSpan="3">Bus error</td></tr>;
+			return <tr><td className="number">{pc.toString(16)}</td> <td colSpan="3">Bus error</td></tr>;
 		}
 	}
 
