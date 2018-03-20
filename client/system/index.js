@@ -34,8 +34,7 @@ const _environment = {
 	},
 	invalidate: (physical, logical) => {
 		// Invalidate cache line
-		const cache_line = physical & -blockSize(logical);  // equilivant to ~(block_size - 1)
-		const entry = cache[cache_line];
+		const entry = cache[physical];
 
 		// Clear this row out (de-reference the function so we don't leak)
 		if (entry) {
