@@ -21,6 +21,7 @@ body {
 .number {
 	text-align: right;
 	width: 8ch;
+	background: #EEE;
 }
 
 table {

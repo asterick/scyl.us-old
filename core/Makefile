@@ -1,4 +1,4 @@
-OBJECTS = core.o mips/cop0.o mips/base.o dma/dma.o memory.o hash.o standard.o
+OBJECTS = core.o mips/cop0.o mips/base.o dma/dma.o timer/timer.o memory.o hash.o standard.o
 CFLAGS = --target=wasm32-unknown-unknown-wasm --sysroot=$(WASMCEPTION)/sysroot -O2 -Iinclude
 TARGET = "../assets/core.wasm"
 ROM = "../system0/code.bin"

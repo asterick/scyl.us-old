@@ -8,8 +8,7 @@ import Registers from "./mips/registers";
 
 export var running = false;
 
-var _clock;
-var _adjust_clock;
+var adjust_clock;
 
 export function reset () {
 	cpu_reset();
@@ -18,7 +17,7 @@ export function reset () {
 export function start () {
 	if (running) return ;
 
-	_adjust_clock = +new Date();
+	adjust_clock = +new Date();
 	running = true;
 	tick();
 }
@@ -37,12 +36,11 @@ export function tick () {
 
 	// System is caught up, advance our CPU clock since last execution
 	const newClock = Date.now();
-	const cycles = Math.min(MAX_CLOCK_LATENCY, (newClock - _adjust_clock) * (SYSTEM_CLOCK / 1000));
-	_adjust_clock = newClock;
+	const cycles = Math.min(MAX_CLOCK_LATENCY, (newClock - adjust_clock) * (SYSTEM_CLOCK / 1000));
+	adjust_clock = newClock;
 
 	// Allocate some more cycles for the CPU
 	Registers.clocks += cycles;
-	_clock += cycles;
 
 	// Schedule next tick when the CPU is free
 	if (running) setTimeout(tick, 0);

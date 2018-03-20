@@ -6,7 +6,6 @@ import { tick } from "..";
 
 import { MAX_COMPILE_SIZE, MIN_COMPILE_SIZE, Exceptions } from "./consts";
 
-import { read as timer_read, write as timer_write } from "../timer";
 import { read as cedar_read, write as cedar_write } from "../cedar";
 import { read as spu_read, write as spu_write } from "../spu";
 import { read as dsp_read, write as dsp_write } from "../dsp";

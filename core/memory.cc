@@ -6,8 +6,10 @@
 #include "registers.h"
 #include "memory.h"
 #include "cop0.h"
-#include "dma.h"
 #include "consts.h"
+
+#include "dma.h"
+#include "timer.h"
 
 
 union Registers registers;
