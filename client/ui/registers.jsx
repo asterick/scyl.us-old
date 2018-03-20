@@ -1,7 +1,7 @@
 import Inferno from 'inferno';
 import Component from 'inferno-component';
 
-import { Registers as RegisterNames } from "../system/mips/consts";
+import { Registers as RegisterNames } from "../system/consts";
 import { load, registers } from "../system";
 
 export default class extends Component {

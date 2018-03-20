@@ -1,10 +1,10 @@
 import Inferno from 'inferno';
 import Component from 'inferno-component';
 
-import { disassemble } from "../system/mips/instructions";
+import { disassemble } from "../system/instructions";
 
 import { load } from "../system";
-import Registers from "../system/mips/registers";
+import Registers from "../system/registers";
 
 export default class extends Component {
 	disassemble(pc) {

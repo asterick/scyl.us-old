@@ -1,5 +1,5 @@
-import exports from "../mips";
-import { Exceptions } from "../mips/consts";
+import exports from "..";
+import { Exceptions } from "../consts";
 
 /**
  ** | opcode | target | source |
