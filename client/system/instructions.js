@@ -125,9 +125,7 @@ function template(func, name) {
 			continue ;
 
 		case "call":
-			if (term.function_index !== _imports.execute) break ;
-
-			{
+			if (term.function_index === _imports.execute) {
 				let stack = -2;
 
 				while (stack != 0) {
@@ -147,10 +145,15 @@ function template(func, name) {
 						throw new Error(`Cannot unroll stack for op ${op}`);
 					}
 				}
-			}
 
-			modified.unshift( { template: 'delay' } );
-			continue ;
+				modified.unshift( { template: 'delay' } );
+				continue ;
+			} else if (term.function_index === _imports.call_indirect) {
+				modified.unshift( { op: 'call_indirect', type_index: 0, reserved: 0 } );
+				i--;
+				continue ;
+			}
+			break ;
 
 		case "get_local":
 			if (term.index < parameters.length) {

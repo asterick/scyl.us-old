@@ -28,6 +28,9 @@ const _environment = {
 	cedar_read, gpu_read, dsp_read, spu_read, 
 	cedar_write, gpu_write, dsp_write, spu_write,
 
+	// Stub to stop complaining
+	call_indirect: a => null,
+
 	// Glue
 	exception: (code, pc, delayed, cop) => {
 		throw new Exception(code, pc, delayed, cop);

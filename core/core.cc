@@ -18,8 +18,6 @@ struct SystemConfiguration {
 static const int32_t MAX_CLOCK_LAG = 60000;
 static uint32_t start_pc;
 
-typedef void (*exec_block)();
-
 // *******
 // ** Insertion point
 // *******
@@ -44,6 +42,7 @@ EXPORT const SystemConfiguration* getConfiguration() {
 // *******
 
 extern "C" void _start() { }
+extern "C" void call_indirect(int index);
 
 EXPORT void execute_call(uint32_t start, uint32_t length) {
     while (registers.clocks > 0) {
@@ -51,9 +50,7 @@ EXPORT void execute_call(uint32_t start, uint32_t length) {
 
         if (index >= length) return ;
 
-        exec_block target = (exec_block) index;
-
-        target();
+        call_indirect(index);
     }
 }
 
