@@ -7,6 +7,7 @@
 #include "dma.h"
 #include "cop0.h"
 #include "memory.h"
+#include "registers.h"
 
 static const int MAX_CHANNELS = 8;
 
@@ -63,6 +64,18 @@ static union {
 
 static bool active = false;
 
+static inline uint32_t adjust(const int shift, const uint32_t value) {
+   switch (shift) {
+      case -3: return value >> 24;
+      case -2: return value >> 16;
+      case -1: return value >> 8;
+      default: return value;
+      case 1:  return value << 8;
+      case 2:  return value << 16;
+      case 3:  return value << 24;
+   }
+}
+
 EXPORT void dma_advance() {
    if (!active) return ;
 
@@ -79,10 +92,30 @@ EXPORT void dma_advance() {
       // THIS SHOULD USE A FAST ENGINE INSTEAD
 
       for (;;) {
-         const uint32_t source = lookup(channel.source, false, exception);
-         const uint32_t value = read(source, exception);
-         const uint32_t target = lookup(channel.target, true, exception);
-         write(target, value, 0xFFFFFFFF, exception);
+         // TODO: CHECK TRIGGER
+
+         uint32_t source = lookup(channel.source, false, exception);
+         uint32_t value = read(source, exception);
+         uint32_t target = lookup(channel.target, true, exception);
+
+         registers.clocks --; // This always uses the cross bus
+
+         switch (channel.flags.copy_width) {
+            case WIDTH_BIT8:
+               value = adjust((target & 3) - (source & 3), value);
+               write(target, value, 0xFF << ((source & 3) * 8), exception);
+               break ;
+            case WIDTH_BIT16:
+               value = adjust((target & 2) - (source & 2), value);
+               write(target, value, (target & 2) ? 0xFFFF0000 : 0x0000FFFF, exception);
+               break ;
+            case WIDTH_BIT32:
+               write(target, value, 0xFFFFFFFF, exception);
+               break ;
+            default:
+               exception = true;
+               break ;
+         }
 
          if (exception) {
             channel.flags.exception = 1;
