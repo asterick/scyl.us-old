@@ -79,9 +79,9 @@ EXPORT void dma_advance() {
       // THIS SHOULD USE A FAST ENGINE INSTEAD
 
       for (;;) {
-         uint32_t source = lookup(channel.source, 0, exception);
-         uint32_t value = read(source, exception);
-         uint32_t target = lookup(channel.target, 1, exception);
+         const uint32_t source = lookup(channel.source, false, exception);
+         const uint32_t value = read(source, exception);
+         const uint32_t target = lookup(channel.target, true, exception);
          write(target, value, 0xFFFFFFFF, exception);
 
          if (exception) {

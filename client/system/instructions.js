@@ -17,8 +17,6 @@ var _templates;
 var _block_start;
 var _block_end;
 
-const terminate = ["execute_call", "adjust_clock", "finalize_call"];
-
 function names(table) {
 	return Object.keys(table).reduce((acc, key) => {
 		const entry = table[key];
@@ -29,6 +27,9 @@ function names(table) {
 		}
 	}, []);
 }
+
+const terminate = ["execute_call", "adjust_clock", "finalize_call"];
+const boilerplate = terminate.concat(names(instructions));
 
 export function initialize(ab) {
 	const defs = Import(ab);
@@ -88,6 +89,8 @@ export function initialize(ab) {
 
 	_templates = {};
 	defs.export_section.forEach((exp) => {
+		if (boilerplate.indexOf(exp.field) < 0) return ;
+
 		if (exp.index < imported_functions || exp.kind !== 'func_type') return ;
 
 		const func = defs.function_section[exp.index - imported_functions];

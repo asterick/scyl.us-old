@@ -45,7 +45,6 @@ EXPORT const SystemConfiguration* getConfiguration() {
 
 // This is a template function for executing
 EXPORT void execute_call(uint32_t start, uint32_t length) {
-    dma_advance();
     while (registers.clocks > 0) {
         uint32_t index = ((start_pc = registers.pc) - start) >> 2;
 

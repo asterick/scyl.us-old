@@ -139,6 +139,7 @@ export function block_execute () {
 		}
 
 		try {
+			exports.dma_advance();
 			funct.code();
 		} catch (e) {
 			if (e instanceof Exception) {
