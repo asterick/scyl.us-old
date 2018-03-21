@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stddef.h>
 
 #include "compiler.h"
 #include "imports.h"
@@ -8,6 +9,7 @@
 #include "cop0.h"
 #include "memory.h"
 #include "registers.h"
+#include "memory.h"
 
 static const int MAX_CHANNELS = 8;
 
@@ -37,7 +39,7 @@ struct DMAChannelFlags {
    unsigned exception:1;
    unsigned active:1;
    unsigned trigger:4;
-   unsigned copy_width:4;
+   unsigned width:4;
    signed   source_stride:4;
    signed   target_stride:4;
    unsigned repeats:8;
@@ -66,13 +68,10 @@ static bool active = false;
 
 static inline uint32_t adjust(const int shift, const uint32_t value) {
    switch (shift) {
-      case -3: return value >> 24;
-      case -2: return value >> 16;
-      case -1: return value >> 8;
+      case 1:  case -3: return (value >> 24) | (value <<  8);
+      case 2:  case -2: return (value >> 16) | (value << 16);
+      case 3:  case -1: return (value >>  8) | (value << 24);
       default: return value;
-      case 1:  return value << 8;
-      case 2:  return value << 16;
-      case 3:  return value << 24;
    }
 }
 
@@ -88,7 +87,7 @@ static bool check_trigger(int channel) {
    case TRIGGER_DMA6: return channels[6].flags.active == 0;
    case TRIGGER_DMA7: return channels[7].flags.active == 0;
 
-   // Unimplemented
+   // Unimplemented (currently locks the channel)
    case TRIGGER_GPU_TX_FIFO:
    case TRIGGER_GPU_RX_FIFO:
    case TRIGGER_DSP_IDLE:
@@ -117,7 +116,7 @@ EXPORT void dma_advance() {
          value = adjust((target & 3) - (source & 3), value);
          registers.clocks -= 2; // No cross bar
 
-         switch (channel.flags.copy_width) {
+         switch (channel.flags.width) {
             case WIDTH_BIT8:
                write(target, value, 0xFF << ((source & 3) * 8), exception);
                break ;
@@ -170,6 +169,84 @@ uint32_t dma_read(uint32_t address) {
    return raw[page];
 }
 
+static inline void fast_dma(DMAChannel& channel) {
+   int word_width;
+
+   // Verify alignment and stride
+   switch (channel.flags.width) {
+      case WIDTH_BIT8:
+         if (channel.flags.source_stride != 1 || channel.flags.source_stride != 1) return ;
+         word_width = 1;
+         break ;
+      case WIDTH_BIT16:
+         if (channel.flags.source_stride != 2 || channel.flags.source_stride != 2) return ;
+         if ((channel.source | channel.target) & 1) return ;
+         
+         word_width = 2;
+         break ;
+      case WIDTH_BIT32:
+         if (channel.flags.source_stride != 4 || channel.flags.source_stride != 4) return ;
+         if ((channel.source | channel.target) & 3) return ;
+
+         word_width = 4;
+         break ;
+      default:
+         return ;
+   }
+
+   int copy_length = channel.length * word_width;
+   int length = channel.length * channel.flags.repeats * word_width;
+
+   const uint8_t* source;
+   uint8_t* target;
+
+   // Determine if source is in linear memory
+   if (channel.source >= RAM_BASE && channel.source < RAM_BASE + RAM_SIZE) {
+      const int offset = channel.source - RAM_BASE;
+      const int max_length = RAM_SIZE - offset;
+
+      source = (const uint8_t*)system_ram + offset;
+
+      if (length > max_length) length = max_length;
+   } else if (channel.source >= ROM_BASE && channel.source < ROM_BASE + ROM_SIZE) {
+      const int offset = (channel.source - ROM_BASE);
+      const int max_length = ROM_SIZE - offset;
+
+      source = (const uint8_t*)system_rom + offset;
+      if (length > max_length) length = max_length;
+   } else {
+      return ;
+   }
+
+   // Determine if target is in ram
+   if (channel.target >= RAM_BASE && channel.target < RAM_BASE + RAM_SIZE) {
+      const int offset = channel.target - RAM_BASE;
+      const int max_length = RAM_SIZE - offset;
+
+      target = (uint8_t*)system_ram + offset;
+   } else if (channel.target >= ROM_BASE && channel.target < ROM_BASE + ROM_SIZE) {
+      // SPECIAL CASE: JUST KILL CLOCKS AND POSSIBLY SET EXCEPTION
+   } else {
+      return ;
+   }
+
+   while (length >= copy_length && channel.flags.repeats > 0) {
+      // memcpy(target, source, copy_length);
+      target += copy_length;
+      length -= copy_length;
+
+      if (--channel.flags.repeats == 0) {
+         channel.flags.active = 0;
+         return ;
+      }
+   }
+
+   if (length > 0) {
+      // memcpy(target, source, copy_length);
+      channel.length -= length / word_width;
+   }
+}
+
 void dma_write(uint32_t address, uint32_t value, uint32_t mask) {
    const int page = (address & 0xFFFFC) >> 2;
 
@@ -181,13 +258,16 @@ void dma_write(uint32_t address, uint32_t value, uint32_t mask) {
    raw_shadow[page] = raw[page] = (raw[page] & ~mask) | (value & mask);
 
    // Not a control register
-   if (page & 0x3) return ;
+   DMAChannel& channel = channels[(page >> 2) % MAX_CHANNELS];
 
-   const DMAChannel& channel = channels[(page >> 2) % MAX_CHANNELS];
+   if (page & 0x3 || !channel.flags.active) return ;
 
-   // TODO: FOR NO TRIGGER, RAM/ROM COPIES
-   // THIS SHOULD USE A FAST ENGINE INSTEAD
+   if (channel.flags.repeats == 0) {
+      channel.flags.active = false;
+      return ;
+   }
 
    active = true;
+   fast_dma(channel);
    dma_advance();
 }

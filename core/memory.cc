@@ -14,8 +14,8 @@
 
 union Registers registers;
 
-uint32_t system_ram[0x400000 / sizeof(uint32_t)];		// 4MB
-uint32_t system_rom[0x080000 / sizeof(uint32_t)] = {	// 512KB
+uint32_t system_ram[RAM_SIZE / sizeof(uint32_t)];
+uint32_t const system_rom[ROM_SIZE / sizeof(uint32_t)] = {
 	#include "system0.h"
 };
 

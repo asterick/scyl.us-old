@@ -18,9 +18,11 @@ typedef struct {
 
 static const uint32_t RAM_BASE = 0x00000000;
 static const uint32_t ROM_BASE = 0x1FC00000;
+static const int RAM_SIZE = 0x400000; // 4MB
+static const int ROM_SIZE = 0x080000; // 512KB
 
-extern uint32_t system_ram[];
-extern uint32_t system_rom[];
+extern uint32_t system_ram[RAM_SIZE / sizeof(uint32_t)];
+extern uint32_t const system_rom[ROM_SIZE / sizeof(uint32_t)];
 
 uint32_t read(uint32_t logical, bool& exception);
 void write(uint32_t logical, uint32_t value, uint32_t mask, bool& exception);
