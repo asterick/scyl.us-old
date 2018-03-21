@@ -109,10 +109,6 @@ EXPORT void dma_advance() {
       active = true;
 
       bool exception = false;
-
-      // TODO: FOR NO TRIGGER, RAM/ROM COPIES
-      // THIS SHOULD USE A FAST ENGINE INSTEAD
-
       while (check_trigger(channel.flags.trigger)) {
          uint32_t source = lookup(channel.source, false, exception);
          uint32_t value = read(source, exception);
@@ -186,6 +182,11 @@ void dma_write(uint32_t address, uint32_t value, uint32_t mask) {
 
    // Not a control register
    if (page & 0x3) return ;
+
+   const DMAChannel& channel = channels[(page >> 2) % MAX_CHANNELS];
+
+   // TODO: FOR NO TRIGGER, RAM/ROM COPIES
+   // THIS SHOULD USE A FAST ENGINE INSTEAD
 
    active = true;
    dma_advance();
