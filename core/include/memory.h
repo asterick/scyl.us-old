@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include "compiler.h"
 
+#include "system.h"
+
 enum MemoryRegionFlags {
 	FLAG_R = 1,
 	FLAG_W = 2

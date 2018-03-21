@@ -14,7 +14,7 @@ OBJCOPY = mipsel-unknown-elf-objcopy
 
 TARGET = -march=r3000 -EL -mhard-float
 ASFLAGS = $(TARGET)
-CFLAGS = $(TARGET) -Wall -O3 -G0 -nostdlib -Wimplicit-function-declaration
+CFLAGS = $(TARGET) -Wall -O3 -G0 -nostdlib -I../hardware
 LDFLAGS = -T $(LD_SCRIPT)
 
 all: $(CODEROM) $(DATAROM)

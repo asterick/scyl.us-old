@@ -13,4 +13,6 @@
 #define DSP_BASE 	0x1F400000
 #define SPU_BASE 	0x1F500000
 
+#define KERNEL_UNMAPPED 0xA0000000
+
 #include "dma.h"

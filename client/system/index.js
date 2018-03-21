@@ -30,6 +30,9 @@ const _environment = {
 
 	// Stub to stop complaining
 	call_indirect: a => null,
+	debug: (x, l) => {
+		console.log(new Uint32Array(exports.memory.buffer, x, l / 4));
+	},
 
 	// Glue
 	exception: (code, pc, delayed, cop) => {

@@ -99,8 +99,8 @@ EXPORT void dma_advance() {
             break ;
          }
 
-         channel.source += channel.source_stride;
-         channel.target += channel.target_stride;
+         channel.source += (channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS;
+         channel.target += (channel.flags & DMACR_TSTRIDE_MASK) >> DMACR_TSTRIDE_POS;
 
          // The system is no longer active
          if (--channel.length == 0) {
@@ -137,17 +137,17 @@ static inline void fast_dma(DMAChannel& channel) {
    // Verify alignment and stride
    switch (channel.flags & DMACR_WIDTH_MASK) {
       case DMA_WIDTH_BIT8:
-         if (channel.source_stride != 1 || channel.target_stride != 1) return ;
+         if ((channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS != 1 || (channel.flags & DMACR_TSTRIDE_MASK) >> DMACR_TSTRIDE_POS != 1) return ;
          word_width = 1;
          break ;
       case DMA_WIDTH_BIT16:
-         if (channel.source_stride != 2 || channel.target_stride != 2) return ;
+         if ((channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS != 2 || (channel.flags & DMACR_TSTRIDE_MASK) >> DMACR_TSTRIDE_POS != 2) return ;
          if ((channel.source | channel.target) & 1) return ;
          
          word_width = 2;
          break ;
       case DMA_WIDTH_BIT32:
-         if (channel.source_stride != 4 || channel.target_stride != 4) return ;
+         if ((channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS != 4 || (channel.flags & DMACR_TSTRIDE_MASK) >> DMACR_TSTRIDE_POS != 4) return ;
          if ((channel.source | channel.target) & 3) return ;
 
          word_width = 4;
@@ -213,6 +213,8 @@ static inline void fast_dma(DMAChannel& channel) {
       target += copy_length;
       length -= copy_length;
 
+      registers.clocks -= copy_length * 2;
+
       if (--channel.repeats == 0) {
          channel.length = 0;
          channel.flags &= ~DMACR_ACTIVE_MASK;
@@ -221,26 +223,29 @@ static inline void fast_dma(DMAChannel& channel) {
    }
 
    if (length > 0) {
+      registers.clocks -= length * 2;
+
       memcpy(target, source, length);
       channel.length -= length / word_width;
    }
 }
 
 void dma_write(uint32_t address, uint32_t value, uint32_t mask) {
-   const int page = (address - DMA_BASE) >> 2;
+   const uint32_t page = address - DMA_BASE;
+   const uint32_t word_address = page / sizeof(uint32_t);
 
    // Out of bounds
-   if (page >= WORD_LENGTH) {
+   if (page >= sizeof(channels)) {
       return ;
    }
 
-   raw_shadow[page] = raw[page] = value;
+   raw_shadow[word_address] = raw[word_address] = value;
 
    // Test if we are writting to a control register
    DMAChannel& channel = channels[page / sizeof(DMAChannel)];
 
-   const uint32_t* a = &raw[page];
-   const uint32_t* b = (const uint32_t*)&channel.flags;
+   const uint32_t* a = &raw[word_address];
+   const uint32_t* b = &channel.flags;
 
    if (a != b) { return ; }
 

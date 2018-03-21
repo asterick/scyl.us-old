@@ -116,7 +116,7 @@ uint32_t lookup(uint32_t address, bool write, bool& failure) {
 
 		return (result & 0xFFFFF000) | (address & 0x00000FFF);
 	} else {
-		return address & 0x1FFFFFFC;
+		return address & 0x1FFFFFFF;
 	}
 }
 
@@ -151,7 +151,7 @@ EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_
 
 		return (result & 0xFFFFF000) | (address & 0x00000FFF);
 	} else {
-		return address & 0x1FFFFFFC;
+		return address & 0x1FFFFFFF;
 	}
 }
 
