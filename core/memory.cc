@@ -3,6 +3,7 @@
 
 #include "compiler.h"
 #include "imports.h"
+#include "system.h"
 
 #include "registers.h"
 #include "memory.h"
@@ -29,22 +30,16 @@ uint32_t read(uint32_t physical, bool& exception) {
 	if (exception) return 0;
 
 	switch (physical & 0x1FF00000) {
-		case 0x1F000000: return dma_read(physical);
-		case 0x1F100000: return timer_read(physical);
-		case 0x1F200000: return cedar_read(physical);
-		case 0x1F300000: return gpu_read(physical);
-		case 0x1F400000: return dsp_read(physical);
-		case 0x1F500000: return spu_read(physical);
-		case 0x1F600000:
-		case 0x1F700000:
-		case 0x1F800000:
-		case 0x1F900000:
-		case 0x1FA00000:
-		case 0x1FB00000: break ;
-		case 0x1FC00000:
-		case 0x1FD00000:
-		case 0x1FE00000:
-		case 0x1FF00000:
+		case DMA_BASE: return dma_read(physical);
+		case TIMER_BASE: return timer_read(physical);
+		case CEDAR_BASE: return cedar_read(physical);
+		case GPU_BASE: return gpu_read(physical);
+		case DSP_BASE: return dsp_read(physical);
+		case SPU_BASE: return spu_read(physical);
+		case ROM_BASE + 0x000000:
+		case ROM_BASE + 0x100000:
+		case ROM_BASE + 0x200000:
+		case ROM_BASE + 0x300000:
 			if (physical >= ROM_BASE && physical < ROM_BASE + sizeof(system_ram)) {
 				return system_rom[(physical - ROM_BASE) >> 2];
 			}
@@ -67,22 +62,16 @@ void write(uint32_t physical, uint32_t value, uint32_t mask, bool& exception) {
 	invalidate(physical);
 
 	switch (physical & 0x1FF00000) {
-		case 0x1F000000: dma_write(physical, value, mask); return ;
-		case 0x1F100000: timer_write(physical, value, mask); return ;
-		case 0x1F200000: cedar_write(physical, value, mask); return ;
-		case 0x1F300000: gpu_write(physical, value, mask); return ;
-		case 0x1F400000: dsp_write(physical, value, mask); return ;
-		case 0x1F500000: spu_write(physical, value, mask); return ;
-		case 0x1F600000:
-		case 0x1F700000:
-		case 0x1F800000:
-		case 0x1F900000:
-		case 0x1FA00000:
-		case 0x1FB00000: break ;
-		case 0x1FC00000:
-		case 0x1FD00000:
-		case 0x1FE00000:
-		case 0x1FF00000:
+		case DMA_BASE: dma_write(physical, value, mask); return ;
+		case TIMER_BASE: timer_write(physical, value, mask); return ;
+		case CEDAR_BASE: cedar_write(physical, value, mask); return ;
+		case GPU_BASE: gpu_write(physical, value, mask); return ;
+		case DSP_BASE: dsp_write(physical, value, mask); return ;
+		case SPU_BASE: spu_write(physical, value, mask); return ;
+		case ROM_BASE + 0x000000:
+		case ROM_BASE + 0x100000:
+		case ROM_BASE + 0x200000:
+		case ROM_BASE + 0x300000:
 			if (physical >= ROM_BASE && physical < ROM_BASE + sizeof(system_rom)) {
 				return ;
 			}

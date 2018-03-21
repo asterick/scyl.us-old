@@ -3,7 +3,7 @@ TARGET = "../assets/core.wasm"
 ROM = "../system0/code.bin"
 SYSTEM0 =  ../system0/code.bin ../system0/data.bin
 
-CFLAGS = --target=wasm32-unknown-unknown-wasm --sysroot=$(WASMCEPTION)/sysroot -O2 -Iinclude
+CFLAGS = --target=wasm32-unknown-unknown-wasm --sysroot=$(WASMCEPTION)/sysroot -O2 -Iinclude -I../hardware
 LDFLAGS = --allow-undefined -L $(WASMCEPTION)/sysroot/lib -lc
 
 .phony: all clean wast system0.h

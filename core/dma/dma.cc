@@ -2,6 +2,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "system.h"
+
 #include "compiler.h"
 #include "imports.h"
 #include "consts.h"
@@ -12,55 +14,15 @@
 #include "registers.h"
 #include "memory.h"
 
-static const int MAX_CHANNELS = 8;
-
-enum DMATrigger {
-   TRIGGER_NONE         = 0x0,
-   TRIGGER_DMA0         = 0x1,
-   TRIGGER_DMA1         = 0x2,
-   TRIGGER_DMA2         = 0x3,
-   TRIGGER_DMA3         = 0x4,
-   TRIGGER_DMA4         = 0x5,
-   TRIGGER_DMA5         = 0x6,
-   TRIGGER_DMA6         = 0x7,
-   TRIGGER_DMA7         = 0x8,
-   TRIGGER_GPU_TX_FIFO  = 0x9,
-   TRIGGER_GPU_RX_FIFO  = 0xA,
-   TRIGGER_DSP_IDLE     = 0xB,
-   TRIGGER_DSP_FINISHED = 0xC
-};
-
-enum DMAWidth {
-   WIDTH_BIT8  = 0x0010,
-   WIDTH_BIT16 = 0x0020,
-   WIDTH_BIT32 = 0x0000
-};
-
-#define DMACR_ACTIVE_MASK     0x8000
-#define DMACR_EXCEPTION_MASK  0x4000
-#define DMACR_TRIGGER_MASK    0x000F
-#define DMACR_WIDTH_MASK      0x0030
-
-struct DMAChannel {
-   uint32_t source;
-   uint32_t target;
-   uint32_t length;
-   uint32_t repeats;
-   
-   uint16_t flags;
-   int8_t   source_stride;
-   int8_t   target_stride;
-};
-
 #define WORD_LENGTH (sizeof(channels) / sizeof(uint32_t))
 
 static union {
-   DMAChannel channels[MAX_CHANNELS];
+   DMAChannel channels[MAX_DMA_CHANNELS];
    uint32_t raw[WORD_LENGTH];
 };
 
 static union {
-   DMAChannel shadow[MAX_CHANNELS];
+   DMAChannel shadow[MAX_DMA_CHANNELS];
    uint32_t raw_shadow[WORD_LENGTH];
 };
 
@@ -77,21 +39,21 @@ static inline uint32_t adjust(const int shift, const uint32_t value) {
 
 static bool check_trigger(int channel) {
    switch (channel) {
-   case TRIGGER_NONE: return true;
-   case TRIGGER_DMA0: return (channels[0].flags & DMACR_ACTIVE_MASK) == 0;
-   case TRIGGER_DMA1: return (channels[1].flags & DMACR_ACTIVE_MASK) == 0;
-   case TRIGGER_DMA2: return (channels[2].flags & DMACR_ACTIVE_MASK) == 0;
-   case TRIGGER_DMA3: return (channels[3].flags & DMACR_ACTIVE_MASK) == 0;
-   case TRIGGER_DMA4: return (channels[4].flags & DMACR_ACTIVE_MASK) == 0;
-   case TRIGGER_DMA5: return (channels[5].flags & DMACR_ACTIVE_MASK) == 0;
-   case TRIGGER_DMA6: return (channels[6].flags & DMACR_ACTIVE_MASK) == 0;
-   case TRIGGER_DMA7: return (channels[7].flags & DMACR_ACTIVE_MASK) == 0;
+   case DMA_TRIGGER_NONE: return true;
+   case DMA_TRIGGER_DMA0: return (channels[0].flags & DMACR_ACTIVE_MASK) == 0;
+   case DMA_TRIGGER_DMA1: return (channels[1].flags & DMACR_ACTIVE_MASK) == 0;
+   case DMA_TRIGGER_DMA2: return (channels[2].flags & DMACR_ACTIVE_MASK) == 0;
+   case DMA_TRIGGER_DMA3: return (channels[3].flags & DMACR_ACTIVE_MASK) == 0;
+   case DMA_TRIGGER_DMA4: return (channels[4].flags & DMACR_ACTIVE_MASK) == 0;
+   case DMA_TRIGGER_DMA5: return (channels[5].flags & DMACR_ACTIVE_MASK) == 0;
+   case DMA_TRIGGER_DMA6: return (channels[6].flags & DMACR_ACTIVE_MASK) == 0;
+   case DMA_TRIGGER_DMA7: return (channels[7].flags & DMACR_ACTIVE_MASK) == 0;
 
    // Unimplemented (currently locks the channel)
-   case TRIGGER_GPU_TX_FIFO:
-   case TRIGGER_GPU_RX_FIFO:
-   case TRIGGER_DSP_IDLE:
-   case TRIGGER_DSP_FINISHED:
+   case DMA_TRIGGER_GPU_TX_FIFO:
+   case DMA_TRIGGER_GPU_RX_FIFO:
+   case DMA_TRIGGER_DSP_IDLE:
+   case DMA_TRIGGER_DSP_FINISHED:
    default:
       return false;
    }
@@ -101,7 +63,7 @@ EXPORT void dma_advance() {
    if (!active) return ;
 
    active = false;
-   for (int i = 0; i < MAX_CHANNELS; i++) {
+   for (int i = 0; i < MAX_DMA_CHANNELS; i++) {
       DMAChannel& channel = channels[i];
 
       if (~channel.flags & DMACR_ACTIVE_MASK) continue ;
@@ -117,13 +79,13 @@ EXPORT void dma_advance() {
          registers.clocks -= 2; // No cross bar
 
          switch (channel.flags & DMACR_WIDTH_MASK) {
-            case WIDTH_BIT8:
+            case DMA_WIDTH_BIT8:
                write(target, value, 0xFF << ((source & 3) * 8), exception);
                break ;
-            case WIDTH_BIT16:
+            case DMA_WIDTH_BIT16:
                write(target, value, (target & 2) ? 0xFFFF0000 : 0x0000FFFF, exception);
                break ;
-            case WIDTH_BIT32:
+            case DMA_WIDTH_BIT32:
                write(target, value, 0xFFFFFFFF, exception);
                break ;
             default:
@@ -157,7 +119,7 @@ EXPORT void dma_advance() {
 }
 
 uint32_t dma_read(uint32_t address) {
-   const int page = (address & 0xFFFFC) >> 2;
+   const int page = (address - DMA_BASE) >> 2;
 
    // Out of bounds
    if (page >= WORD_LENGTH) {
@@ -174,17 +136,17 @@ static inline void fast_dma(DMAChannel& channel) {
 
    // Verify alignment and stride
    switch (channel.flags & DMACR_WIDTH_MASK) {
-      case WIDTH_BIT8:
+      case DMA_WIDTH_BIT8:
          if (channel.source_stride != 1 || channel.target_stride != 1) return ;
          word_width = 1;
          break ;
-      case WIDTH_BIT16:
+      case DMA_WIDTH_BIT16:
          if (channel.source_stride != 2 || channel.target_stride != 2) return ;
          if ((channel.source | channel.target) & 1) return ;
          
          word_width = 2;
          break ;
-      case WIDTH_BIT32:
+      case DMA_WIDTH_BIT32:
          if (channel.source_stride != 4 || channel.target_stride != 4) return ;
          if ((channel.source | channel.target) & 3) return ;
 
@@ -265,7 +227,7 @@ static inline void fast_dma(DMAChannel& channel) {
 }
 
 void dma_write(uint32_t address, uint32_t value, uint32_t mask) {
-   const int page = (address & 0xFFFFC) >> 2;
+   const int page = (address - DMA_BASE) >> 2;
 
    // Out of bounds
    if (page >= WORD_LENGTH) {
@@ -288,6 +250,6 @@ void dma_write(uint32_t address, uint32_t value, uint32_t mask) {
    }
 
    active = true;
-   fast_dma(channel);
+   //fast_dma(channel);
    dma_advance();
 }

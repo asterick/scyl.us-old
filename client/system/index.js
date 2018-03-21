@@ -159,9 +159,6 @@ export function block_execute () {
 	return false;
 }
 
-// NOTE: This does not advance the system clock
-// this is only here for debugging purposes
-
 export function step_execute () {
 	try {
 		const start_pc = Registers.pc;
