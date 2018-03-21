@@ -81,24 +81,25 @@ export function tick () {
 /*******
 ** Runtime section
 *******/
-export function initialize() {
-	return fetch("core.wasm")
-		.then(blob => blob.arrayBuffer())
-		.then(ab => {
-			initialize_compiler(ab);
-			return WebAssembly.instantiate(ab, { env: _environment });
-		})
-		.then(module => {
-			exports = module.instance.exports;
-			cache = [];
+export async function initialize() {
+	const blob = await fetch("core.wasm");
+	const ab = await blob.arrayBuffer();
 
-			const address = exports.getConfiguration();
-			const memory = exports.memory.buffer;
-			const bytes = new Uint8Array(exports.memory.buffer);
-			const dv = new DataView(memory);
+	initialize_compiler(ab);
+	
+	const module = await WebAssembly.instantiate(ab, { env: _environment });
 
-			registers = new Uint32Array(memory, dv.getUint32(address, true), 64);
-		})
+	exports = module.instance.exports;
+	cache = [];
+
+	const address = exports.getConfiguration();
+	const memory = exports.memory.buffer;
+	const bytes = new Uint8Array(exports.memory.buffer);
+	const dv = new DataView(memory);
+
+	registers = new Uint32Array(memory, dv.getUint32(address, true), 64);
+
+	return module;
 }
 
 // Execution core
@@ -109,8 +110,6 @@ export function reset() {
 
 // Execute a single frame
 export function block_execute () {
-	exports.handle_interrupt();
-
 	while (Registers.clocks > 0) {
 		const start_pc = Registers.pc
 		const block_size = blockSize(start_pc);
@@ -118,8 +117,9 @@ export function block_execute () {
 		const physical = (exports.translate(start_pc, false, start_pc, false) & block_mask) >>> 0;
 		const logical = (start_pc & block_mask) >>> 0;
 
-		var funct = cache[physical];
+		const funct = cache[physical];
 
+		// Execution has paused for compiler
 		if (funct === undefined || !funct.code || funct.logical !== logical) {
 			WebAssembly.instantiate(compile(logical, block_size / 4), {
 				env: _environment,
@@ -138,12 +138,12 @@ export function block_execute () {
 				tick();
 			});
 
-			// Execution has paused, waiting for compiler to finish
 			return true;
 		}
 
 		try {
 			exports.dma_advance();
+			exports.handle_interrupt();
 			funct.code();
 		} catch (e) {
 			if (e instanceof Exception) {
@@ -163,11 +163,10 @@ export function block_execute () {
 // this is only here for debugging purposes
 
 export function step_execute () {
-	exports.handle_interrupt();
-
 	try {
 		const start_pc = Registers.pc;
 		Registers.pc += 4;
+		exports.handle_interrupt();
 		exports.dma_advance();
 		execute(start_pc, false);
 	} catch (e) {
