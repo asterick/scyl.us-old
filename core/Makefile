@@ -1,9 +1,10 @@
 OBJECTS = core.o mips/cop0.o mips/base.o dma/dma.o timer/timer.o memory.o hash.o
-CFLAGS = --target=wasm32-unknown-unknown-wasm --sysroot=$(WASMCEPTION)/sysroot -O2 -Iinclude
 TARGET = "../assets/core.wasm"
 ROM = "../system0/code.bin"
 SYSTEM0 =  ../system0/code.bin ../system0/data.bin
-LIBC = $(WASMCEPTION)/sysroot/lib/wasmception.wasm
+
+CFLAGS = --target=wasm32-unknown-unknown-wasm --sysroot=$(WASMCEPTION)/sysroot -O2 -Iinclude
+LDFLAGS = --allow-undefined -L $(WASMCEPTION)/sysroot/lib -lc
 
 .phony: all clean wast system0.h
 
@@ -17,7 +18,7 @@ wast: $(TARGET)
 	wasm-dis $<
 
 $(TARGET): $(OBJECTS)
-	$(WASMCEPTION)/dist/bin/wasm-ld --allow-undefined --check-signatures --entry reset $(OBJECTS) -o $@
+	$(WASMCEPTION)/dist/bin/wasm-ld $(LDFLAGS) $(OBJECTS) -o $@
 	../tools/strip.js $@
 
 %.o: %.c include system0.h

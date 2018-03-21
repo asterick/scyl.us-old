@@ -43,7 +43,8 @@ EXPORT const SystemConfiguration* getConfiguration() {
 // ** Interface helpers
 // *******
 
-// This is a template function for executing
+extern "C" void _start() { }
+
 EXPORT void execute_call(uint32_t start, uint32_t length) {
     while (registers.clocks > 0) {
         uint32_t index = ((start_pc = registers.pc) - start) >> 2;
