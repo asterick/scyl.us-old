@@ -5,7 +5,6 @@ const Config = require("../config.json");
 
 // === Main ===
 const app = express();
-const expressWs = require('./mesh')(app);
 
 if (Config.environment === 'development') {
     const webpack = require("webpack");

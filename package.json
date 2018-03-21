@@ -35,10 +35,8 @@
     "express-ws": "^3.0.0",
     "inferno": "^5.0.0",
     "inferno-component": "^5.0.0",
-    "raw-loader": "^0.5.1",
     "webpack": "^4.1.1",
     "winston": "^2.4.1",
-    "wrtc": "0.0.67",
     "text-encoding": "^0.6.4",
     "webpack-cli": "^2.0.12"
   }
