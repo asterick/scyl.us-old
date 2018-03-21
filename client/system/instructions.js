@@ -43,15 +43,6 @@ export function initialize(ab) {
 	const imported_functions =
 		defs.import_section.filter((v) => v.type.type === 'func_type').length;
 
-	// Force all calls to be exported (for JIT compatability)
-	for (var i = 0; i < defs.function_section.length; i++) {
-		const index = i + imported_functions;
-		
-		if (exported_functions.indexOf(index) >= 0) continue ;
-
-		defs.export_section.push({ field: `@@export\$${index}`, kind: "func_type", index })
-	}
-
 	_import_section = defs.import_section.concat(
 		defs.export_section.map((i) => {
 			switch (i.kind) {
@@ -96,13 +87,7 @@ export function initialize(ab) {
 		const func = defs.function_section[exp.index - imported_functions];
 
 		_templates[exp.field] = template(func, exp.field);
-
-		if (terminate.indexOf(exp.field) >= 0) {
-			func.code = ["end"];
-		}
 	});
-
-	return Export(defs);
 }
 
 function template(func, name) {

@@ -84,9 +84,10 @@ export function tick () {
 export function initialize() {
 	return fetch("core.wasm")
 		.then(blob => blob.arrayBuffer())
-		.then(ab => WebAssembly.instantiate(initialize_compiler(ab), {
-				env: _environment
-		}))
+		.then(ab => {
+			initialize_compiler(ab);
+			return WebAssembly.instantiate(ab, { env: _environment });
+		})
 		.then(module => {
 			exports = module.instance.exports;
 			cache = [];
