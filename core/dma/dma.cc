@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 
 #include "compiler.h"
 #include "imports.h"
@@ -225,24 +226,32 @@ static inline void fast_dma(DMAChannel& channel) {
 
       target = (uint8_t*)system_ram + offset;
    } else if (channel.target >= ROM_BASE && channel.target < ROM_BASE + ROM_SIZE) {
-      // SPECIAL CASE: JUST KILL CLOCKS AND POSSIBLY SET EXCEPTION
+      channel.length        -= (length % copy_length) / word_width;
+      channel.flags.repeats -= length / copy_length;
+
+      if (channel.flags.repeats == 0) {
+         channel.flags.active = false;
+      }
+
+      return ;
    } else {
       return ;
    }
 
    while (length >= copy_length && channel.flags.repeats > 0) {
-      // memcpy(target, source, copy_length);
+      memcpy(target, source, copy_length);
       target += copy_length;
       length -= copy_length;
 
       if (--channel.flags.repeats == 0) {
+         channel.length = 0;
          channel.flags.active = 0;
          return ;
       }
    }
 
    if (length > 0) {
-      // memcpy(target, source, copy_length);
+      memcpy(target, source, length);
       channel.length -= length / word_width;
    }
 }
