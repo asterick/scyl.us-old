@@ -226,11 +226,20 @@ static inline void fast_dma(DMAChannel& channel) {
 
       target = (uint8_t*)system_ram + offset;
    } else if (channel.target >= ROM_BASE && channel.target < ROM_BASE + ROM_SIZE) {
+      const int offset = channel.target - ROM_BASE;
+      const int max_length = ROM_SIZE - offset;
+
+      if (length > max_length) {
+         channel.flags.active = 0;
+         channel.flags.exception = 1;
+         length = max_length;
+      }
+
       channel.length        -= (length % copy_length) / word_width;
       channel.flags.repeats -= length / copy_length;
 
       if (channel.flags.repeats == 0) {
-         channel.flags.active = false;
+         channel.flags.active = 0;
       }
 
       return ;
