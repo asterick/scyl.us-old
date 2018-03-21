@@ -15,45 +15,44 @@
 static const int MAX_CHANNELS = 8;
 
 enum DMATrigger {
-   TRIGGER_NONE,
-   TRIGGER_DMA0,
-   TRIGGER_DMA1,
-   TRIGGER_DMA2,
-   TRIGGER_DMA3,
-   TRIGGER_DMA4,
-   TRIGGER_DMA5,
-   TRIGGER_DMA6,
-   TRIGGER_DMA7,
-   TRIGGER_GPU_TX_FIFO,
-   TRIGGER_GPU_RX_FIFO,
-   TRIGGER_DSP_IDLE,
-   TRIGGER_DSP_FINISHED
+   TRIGGER_NONE         = 0x0,
+   TRIGGER_DMA0         = 0x1,
+   TRIGGER_DMA1         = 0x2,
+   TRIGGER_DMA2         = 0x3,
+   TRIGGER_DMA3         = 0x4,
+   TRIGGER_DMA4         = 0x5,
+   TRIGGER_DMA5         = 0x6,
+   TRIGGER_DMA6         = 0x7,
+   TRIGGER_DMA7         = 0x8,
+   TRIGGER_GPU_TX_FIFO  = 0x9,
+   TRIGGER_GPU_RX_FIFO  = 0xA,
+   TRIGGER_DSP_IDLE     = 0xB,
+   TRIGGER_DSP_FINISHED = 0xC
 };
 
 enum DMAWidth {
-   WIDTH_BIT8,
-   WIDTH_BIT16,
-   WIDTH_BIT32
+   WIDTH_BIT8  = 0x0010,
+   WIDTH_BIT16 = 0x0020,
+   WIDTH_BIT32 = 0x0000
 };
 
-struct DMAChannelFlags {
-   unsigned exception:1;
-   unsigned active:1;
-   unsigned trigger:4;
-   unsigned width:4;
-   signed   source_stride:4;
-   signed   target_stride:4;
-   unsigned repeats:8;
-};
+#define DMACR_ACTIVE_MASK     0x8000
+#define DMACR_EXCEPTION_MASK  0x4000
+#define DMACR_TRIGGER_MASK    0x000F
+#define DMACR_WIDTH_MASK      0x0030
 
 struct DMAChannel {
-   DMAChannelFlags flags;
    uint32_t source;
    uint32_t target;
    uint32_t length;
+   uint32_t repeats;
+   
+   uint16_t flags;
+   int8_t   source_stride;
+   int8_t   target_stride;
 };
 
-#define WORD_LENGTH (sizeof(channels) * MAX_CHANNELS / sizeof(uint32_t))
+#define WORD_LENGTH (sizeof(channels) / sizeof(uint32_t))
 
 static union {
    DMAChannel channels[MAX_CHANNELS];
@@ -79,14 +78,14 @@ static inline uint32_t adjust(const int shift, const uint32_t value) {
 static bool check_trigger(int channel) {
    switch (channel) {
    case TRIGGER_NONE: return true;
-   case TRIGGER_DMA0: return channels[0].flags.active == 0;
-   case TRIGGER_DMA1: return channels[1].flags.active == 0;
-   case TRIGGER_DMA2: return channels[2].flags.active == 0;
-   case TRIGGER_DMA3: return channels[3].flags.active == 0;
-   case TRIGGER_DMA4: return channels[4].flags.active == 0;
-   case TRIGGER_DMA5: return channels[5].flags.active == 0;
-   case TRIGGER_DMA6: return channels[6].flags.active == 0;
-   case TRIGGER_DMA7: return channels[7].flags.active == 0;
+   case TRIGGER_DMA0: return (channels[0].flags & DMACR_ACTIVE_MASK) == 0;
+   case TRIGGER_DMA1: return (channels[1].flags & DMACR_ACTIVE_MASK) == 0;
+   case TRIGGER_DMA2: return (channels[2].flags & DMACR_ACTIVE_MASK) == 0;
+   case TRIGGER_DMA3: return (channels[3].flags & DMACR_ACTIVE_MASK) == 0;
+   case TRIGGER_DMA4: return (channels[4].flags & DMACR_ACTIVE_MASK) == 0;
+   case TRIGGER_DMA5: return (channels[5].flags & DMACR_ACTIVE_MASK) == 0;
+   case TRIGGER_DMA6: return (channels[6].flags & DMACR_ACTIVE_MASK) == 0;
+   case TRIGGER_DMA7: return (channels[7].flags & DMACR_ACTIVE_MASK) == 0;
 
    // Unimplemented (currently locks the channel)
    case TRIGGER_GPU_TX_FIFO:
@@ -105,11 +104,11 @@ EXPORT void dma_advance() {
    for (int i = 0; i < MAX_CHANNELS; i++) {
       DMAChannel& channel = channels[i];
 
-      if (channel.flags.active == 0) continue ;
+      if (~channel.flags & DMACR_ACTIVE_MASK) continue ;
       active = true;
 
       bool exception = false;
-      while (check_trigger(channel.flags.trigger)) {
+      while (check_trigger(channel.flags & DMACR_TRIGGER_MASK)) {
          uint32_t source = lookup(channel.source, false, exception);
          uint32_t value = read(source, exception);
          uint32_t target = lookup(channel.target, true, exception);
@@ -117,7 +116,7 @@ EXPORT void dma_advance() {
          value = adjust((target & 3) - (source & 3), value);
          registers.clocks -= 2; // No cross bar
 
-         switch (channel.flags.width) {
+         switch (channel.flags & DMACR_WIDTH_MASK) {
             case WIDTH_BIT8:
                write(target, value, 0xFF << ((source & 3) * 8), exception);
                break ;
@@ -133,19 +132,19 @@ EXPORT void dma_advance() {
          }
 
          if (exception) {
-            channel.flags.exception = 1;
-            channel.flags.active = 0;
+            channel.flags |= DMACR_EXCEPTION_MASK;
+            channel.flags &= ~DMACR_ACTIVE_MASK;
             break ;
          }
 
-         channel.source += channel.flags.source_stride;
-         channel.target += channel.flags.target_stride;
+         channel.source += channel.source_stride;
+         channel.target += channel.target_stride;
 
          // The system is no longer active
          if (--channel.length == 0) {
             // No longer active
-            if (--channel.flags.repeats == 0) {
-               channel.flags.active = 0;
+            if (--channel.repeats == 0) {
+               channel.flags &= ~DMACR_ACTIVE_MASK;
                break ;   
             }
 
@@ -174,19 +173,19 @@ static inline void fast_dma(DMAChannel& channel) {
    int word_width;
 
    // Verify alignment and stride
-   switch (channel.flags.width) {
+   switch (channel.flags & DMACR_WIDTH_MASK) {
       case WIDTH_BIT8:
-         if (channel.flags.source_stride != 1 || channel.flags.source_stride != 1) return ;
+         if (channel.source_stride != 1 || channel.target_stride != 1) return ;
          word_width = 1;
          break ;
       case WIDTH_BIT16:
-         if (channel.flags.source_stride != 2 || channel.flags.source_stride != 2) return ;
+         if (channel.source_stride != 2 || channel.target_stride != 2) return ;
          if ((channel.source | channel.target) & 1) return ;
          
          word_width = 2;
          break ;
       case WIDTH_BIT32:
-         if (channel.flags.source_stride != 4 || channel.flags.source_stride != 4) return ;
+         if (channel.source_stride != 4 || channel.target_stride != 4) return ;
          if ((channel.source | channel.target) & 3) return ;
 
          word_width = 4;
@@ -196,7 +195,7 @@ static inline void fast_dma(DMAChannel& channel) {
    }
 
    int copy_length = channel.length * word_width;
-   int length = channel.length * channel.flags.repeats * word_width;
+   int length = channel.length * channel.repeats * word_width;
 
    const uint8_t* source;
    uint8_t* target;
@@ -230,16 +229,16 @@ static inline void fast_dma(DMAChannel& channel) {
       const int max_length = ROM_SIZE - offset;
 
       if (length > max_length) {
-         channel.flags.active = 0;
-         channel.flags.exception = 1;
+         channel.flags &= ~DMACR_ACTIVE_MASK;
+         channel.flags |= DMACR_EXCEPTION_MASK;
          length = max_length;
       }
 
-      channel.length        -= (length % copy_length) / word_width;
-      channel.flags.repeats -= length / copy_length;
+      channel.length  -= (length % copy_length) / word_width;
+      channel.repeats -= length / copy_length;
 
-      if (channel.flags.repeats == 0) {
-         channel.flags.active = 0;
+      if (channel.repeats == 0) {
+         channel.flags &= ~DMACR_ACTIVE_MASK;
       }
 
       return ;
@@ -247,14 +246,14 @@ static inline void fast_dma(DMAChannel& channel) {
       return ;
    }
 
-   while (length >= copy_length && channel.flags.repeats > 0) {
+   while (length >= copy_length && channel.repeats > 0) {
       memcpy(target, source, copy_length);
       target += copy_length;
       length -= copy_length;
 
-      if (--channel.flags.repeats == 0) {
+      if (--channel.repeats == 0) {
          channel.length = 0;
-         channel.flags.active = 0;
+         channel.flags &= ~DMACR_ACTIVE_MASK;
          return ;
       }
    }
@@ -273,15 +272,18 @@ void dma_write(uint32_t address, uint32_t value, uint32_t mask) {
       return ;
    }
 
-   raw_shadow[page] = raw[page] = (raw[page] & ~mask) | (value & mask);
+   raw_shadow[page] = raw[page] = value;
 
-   // Not a control register
-   DMAChannel& channel = channels[(page >> 2) % MAX_CHANNELS];
+   // Test if we are writting to a control register
+   DMAChannel& channel = channels[page / sizeof(DMAChannel)];
 
-   if (page & 0x3 || !channel.flags.active) return ;
+   const uint32_t* a = &raw[page];
+   const uint32_t* b = (const uint32_t*)&channel.flags;
 
-   if (channel.flags.repeats == 0) {
-      channel.flags.active = false;
+   if (a != b) { return ; }
+
+   if (channel.repeats == 0 || channel.length == 0) {
+      channel.flags &= ~DMACR_ACTIVE_MASK;
       return ;
    }
 
