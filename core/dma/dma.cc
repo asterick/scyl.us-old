@@ -80,7 +80,8 @@ EXPORT void dma_advance() {
 
          switch (channel.flags & DMACR_WIDTH_MASK) {
             case DMA_WIDTH_BIT8:
-               write(target, value, 0xFF << ((source & 3) * 8), exception);
+               write(target, value, 0xFF << ((target & 3) * 8), exception);
+
                break ;
             case DMA_WIDTH_BIT16:
                write(target, value, (target & 2) ? 0xFFFF0000 : 0x0000FFFF, exception);
