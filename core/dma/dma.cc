@@ -198,6 +198,7 @@ static inline void fast_dma(DMAChannel& channel) {
 
       channel.length  -= (length % copy_length) / word_width;
       channel.repeats -= length / copy_length;
+      registers.clocks -= length / word_width * 2;
 
       if (channel.repeats == 0) {
          channel.flags &= ~DMACR_ACTIVE_MASK;
@@ -213,7 +214,7 @@ static inline void fast_dma(DMAChannel& channel) {
       target += copy_length;
       length -= copy_length;
 
-      registers.clocks -= copy_length * 2;
+      registers.clocks -= copy_length / word_width * 2;
 
       if (--channel.repeats == 0) {
          channel.length = 0;
@@ -255,6 +256,6 @@ void dma_write(uint32_t address, uint32_t value, uint32_t mask) {
    }
 
    active = true;
-   //fast_dma(channel);
+   fast_dma(channel);
    dma_advance();
 }
