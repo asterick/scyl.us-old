@@ -50,10 +50,10 @@ void* memcpy(void* dst, const void* src, size_t n) {
 		DMA_Channels[0].source = (uint32_t) source;
 		DMA_Channels[0].target = (uint32_t) target;
 		DMA_Channels[0].repeats = 1;
-		DMA_Channels[0].length = n;
+		DMA_Channels[0].length = n / 2;
 		DMA_Channels[0].flags = 0
 			| DMA_TRIGGER_NONE 
-			| DMA_WIDTH_BIT8
+			| DMA_WIDTH_BIT16
 			| DMACR_ACTIVE_MASK 
 			| (4 << DMACR_SSTRIDE_POS)
 			| (4 << DMACR_TSTRIDE_POS)
