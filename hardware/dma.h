@@ -32,6 +32,7 @@ enum {
 
 #define DMACR_ACTIVE_MASK     0x80000000
 #define DMACR_EXCEPTION_MASK  0x40000000
+#define DMACR_CHAIN_MASK      0x20000000
 #define DMACR_TRIGGER_MASK    0x000F0000
 #define DMACR_WIDTH_MASK      0x00300000
 
@@ -39,8 +40,6 @@ typedef struct {
    uint32_t source;
    uint32_t target;
    uint32_t length;
-   uint32_t repeats;
-   
    uint32_t flags;
 } DMAChannel;
 

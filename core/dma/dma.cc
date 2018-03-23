@@ -21,11 +21,6 @@ static union {
    uint32_t raw[WORD_LENGTH];
 };
 
-static union {
-   DMAChannel shadow[MAX_DMA_CHANNELS];
-   uint32_t raw_shadow[WORD_LENGTH];
-};
-
 static bool active = false;
 
 static inline uint32_t adjust(const int shift, const uint32_t value) {
@@ -59,6 +54,112 @@ static bool check_trigger(int channel) {
    }
 }
 
+static inline void chain(DMAChannel& channel) {
+   if (~channel.flags & DMACR_CHAIN_MASK) {
+      channel.flags &= ~DMACR_ACTIVE_MASK;
+      return ;
+   }
+
+   registers.clocks -= 2;
+
+   uint32_t address;
+   bool exception = false;
+
+   uint32_t source_addr = lookup(channel.source, false, exception);
+   uint32_t length_addr = lookup(channel.length + 4, false, exception);
+   channel.source = Memory::read(source_addr, exception);
+   channel.length = Memory::read(length_addr, exception);
+
+   if (channel.length == 0 || exception) {
+      channel.flags &= ~DMACR_ACTIVE_MASK;
+      return ;
+   }
+}
+
+static inline bool fast_dma(DMAChannel& channel) {
+   int word_width;
+
+   // Verify alignment and stride
+   switch (channel.flags & DMACR_WIDTH_MASK) {
+      case DMA_WIDTH_BIT8:
+         if ((channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS != 1 || (channel.flags & DMACR_TSTRIDE_MASK) >> DMACR_TSTRIDE_POS != 1) return false;
+         word_width = 1;
+         break ;
+      case DMA_WIDTH_BIT16:
+         if ((channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS != 2 || (channel.flags & DMACR_TSTRIDE_MASK) >> DMACR_TSTRIDE_POS != 2) return false;
+         if ((channel.source | channel.target) & 1) return false;
+         
+         word_width = 2;
+         break ;
+      case DMA_WIDTH_BIT32:
+         if ((channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS != 4 || (channel.flags & DMACR_TSTRIDE_MASK) >> DMACR_TSTRIDE_POS != 4) return false;
+         if ((channel.source | channel.target) & 3) return false;
+
+         word_width = 4;
+         break ;
+      default:
+         return false;
+   }
+
+   int length = channel.length * word_width;
+
+   const uint8_t* source;
+   uint8_t* target;
+
+   // Determine if source is in linear memory
+   if (channel.source >= RAM_BASE && channel.source < RAM_BASE + RAM_SIZE) {
+      const int offset = channel.source - RAM_BASE;
+      const int max_length = RAM_SIZE - offset;
+
+      source = (const uint8_t*)system_ram + offset;
+
+      if (length > max_length) length = max_length;
+   } else if (channel.source >= ROM_BASE && channel.source < ROM_BASE + ROM_SIZE) {
+      const int offset = (channel.source - ROM_BASE);
+      const int max_length = ROM_SIZE - offset;
+
+      source = (const uint8_t*)system_rom + offset;
+
+      if (length > max_length) length = max_length;
+   } else {
+      return false;
+   }
+
+   // Determine if target is in ram
+   if (channel.target >= RAM_BASE && channel.target < RAM_BASE + RAM_SIZE) {
+      const int offset = channel.target - RAM_BASE;
+      const int max_length = RAM_SIZE - offset;
+
+      target = (uint8_t*)system_ram + offset;
+
+      if (length > max_length) length = max_length;
+   } else if (channel.target >= ROM_BASE && channel.target < ROM_BASE + ROM_SIZE) {
+      const int offset = channel.target - ROM_BASE;
+      const int max_length = ROM_SIZE - offset;
+      if (length > max_length) length = max_length;
+
+      channel.length  -= length;
+      registers.clocks -= (length / word_width) * 2;
+
+      return false;
+   } else {
+      return false;
+   }
+
+   while (length > 0) {
+      registers.clocks -= length * 2;
+      memcpy(target, source, length);
+   }
+
+   channel.length -= length / word_width;
+   if (channel.length == 0) {
+      // Reset source address
+      chain(channel);
+   }
+
+   return false;
+}
+
 void DMA::advance() {
    if (!active) return ;
 
@@ -67,7 +168,9 @@ void DMA::advance() {
       DMAChannel& channel = channels[i];
 
       if (~channel.flags & DMACR_ACTIVE_MASK) continue ;
+
       active = true;
+      if (!fast_dma(channel)) continue ;
 
       bool exception = false;
       while (check_trigger(channel.flags & DMACR_TRIGGER_MASK)) {
@@ -105,15 +208,8 @@ void DMA::advance() {
 
          // The system is no longer active
          if (--channel.length == 0) {
-            // No longer active
-            if (--channel.repeats == 0) {
-               channel.flags &= ~DMACR_ACTIVE_MASK;
-               break ;   
-            }
-
             // Reset source address
-            channel.source = shadow[i].source;
-            channel.length = shadow[i].length;
+            chain(channel);
          }
       }
    }
@@ -132,106 +228,6 @@ uint32_t DMA::read(uint32_t address) {
    return raw[page];
 }
 
-static inline void fast_dma(DMAChannel& channel) {
-   int word_width;
-
-   // Verify alignment and stride
-   switch (channel.flags & DMACR_WIDTH_MASK) {
-      case DMA_WIDTH_BIT8:
-         if ((channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS != 1 || (channel.flags & DMACR_TSTRIDE_MASK) >> DMACR_TSTRIDE_POS != 1) return ;
-         word_width = 1;
-         break ;
-      case DMA_WIDTH_BIT16:
-         if ((channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS != 2 || (channel.flags & DMACR_TSTRIDE_MASK) >> DMACR_TSTRIDE_POS != 2) return ;
-         if ((channel.source | channel.target) & 1) return ;
-         
-         word_width = 2;
-         break ;
-      case DMA_WIDTH_BIT32:
-         if ((channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS != 4 || (channel.flags & DMACR_TSTRIDE_MASK) >> DMACR_TSTRIDE_POS != 4) return ;
-         if ((channel.source | channel.target) & 3) return ;
-
-         word_width = 4;
-         break ;
-      default:
-         return ;
-   }
-
-   int copy_length = channel.length * word_width;
-   int length = channel.length * channel.repeats * word_width;
-
-   const uint8_t* source;
-   uint8_t* target;
-
-   // Determine if source is in linear memory
-   if (channel.source >= RAM_BASE && channel.source < RAM_BASE + RAM_SIZE) {
-      const int offset = channel.source - RAM_BASE;
-      const int max_length = RAM_SIZE - offset;
-
-      source = (const uint8_t*)system_ram + offset;
-
-      if (length > max_length) length = max_length;
-   } else if (channel.source >= ROM_BASE && channel.source < ROM_BASE + ROM_SIZE) {
-      const int offset = (channel.source - ROM_BASE);
-      const int max_length = ROM_SIZE - offset;
-
-      source = (const uint8_t*)system_rom + offset;
-      if (length > max_length) length = max_length;
-   } else {
-      return ;
-   }
-
-   // Determine if target is in ram
-   if (channel.target >= RAM_BASE && channel.target < RAM_BASE + RAM_SIZE) {
-      const int offset = channel.target - RAM_BASE;
-      const int max_length = RAM_SIZE - offset;
-
-      target = (uint8_t*)system_ram + offset;
-   } else if (channel.target >= ROM_BASE && channel.target < ROM_BASE + ROM_SIZE) {
-      const int offset = channel.target - ROM_BASE;
-      const int max_length = ROM_SIZE - offset;
-
-      if (length > max_length) {
-         channel.flags &= ~DMACR_ACTIVE_MASK;
-         channel.flags |= DMACR_EXCEPTION_MASK;
-         length = max_length;
-      }
-
-      channel.length  -= (length % copy_length) / word_width;
-      channel.repeats -= length / copy_length;
-      registers.clocks -= length / word_width * 2;
-
-      if (channel.repeats == 0) {
-         channel.flags &= ~DMACR_ACTIVE_MASK;
-      }
-
-      return ;
-   } else {
-      return ;
-   }
-
-   while (length >= copy_length && channel.repeats > 0) {
-      memcpy(target, source, copy_length);
-      target += copy_length;
-      length -= copy_length;
-
-      registers.clocks -= copy_length / word_width * 2;
-
-      if (--channel.repeats == 0) {
-         channel.length = 0;
-         channel.flags &= ~DMACR_ACTIVE_MASK;
-         return ;
-      }
-   }
-
-   if (length > 0) {
-      registers.clocks -= length * 2;
-
-      memcpy(target, source, length);
-      channel.length -= length / word_width;
-   }
-}
-
 void DMA::write(uint32_t address, uint32_t value, uint32_t mask) {
    const uint32_t page = address - DMA_BASE;
    const uint32_t word_address = page / sizeof(uint32_t);
@@ -241,7 +237,7 @@ void DMA::write(uint32_t address, uint32_t value, uint32_t mask) {
       return ;
    }
 
-   raw_shadow[word_address] = raw[word_address] = value;
+   raw[word_address] = value;
 
    // Test if we are writting to a control register
    DMAChannel& channel = channels[page / sizeof(DMAChannel)];
@@ -251,12 +247,11 @@ void DMA::write(uint32_t address, uint32_t value, uint32_t mask) {
 
    if (a != b) { return ; }
 
-   if (channel.repeats == 0 || channel.length == 0) {
-      channel.flags &= ~DMACR_ACTIVE_MASK;
+   if (channel.length == 0) {
+      chain(channel);
       return ;
    }
 
    active = true;
-   fast_dma(channel);
    advance();
 }
