@@ -60,15 +60,11 @@ static inline void chain(DMAChannel& channel) {
       return ;
    }
 
-   registers.clocks -= 2;
-
-   uint32_t address;
    bool exception = false;
 
-   uint32_t source_addr = lookup(channel.source, false, exception);
-   uint32_t length_addr = lookup(channel.length + 4, false, exception);
-   channel.source = Memory::read(source_addr, exception);
-   channel.length = Memory::read(length_addr, exception);
+   channel.source = Memory::read(lookup(channel.source + 4, false, exception), exception);
+   channel.length = Memory::read(lookup(channel.source + 4, false, exception), exception);
+   registers.clocks -= 2;
 
    if (channel.length == 0 || exception) {
       channel.flags &= ~DMACR_ACTIVE_MASK;
