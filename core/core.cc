@@ -7,6 +7,7 @@
 
 #include "cop0.h"
 #include "memory.h"
+#include "gpu.h"
 #include "dma.h"
 
 #include "registers.h"
@@ -27,6 +28,7 @@ EXPORT void reset() {
     registers.clocks = 0;
 
     COP0::reset();
+    GPU::reset();
 }
 
 EXPORT const SystemConfiguration* getConfiguration() {

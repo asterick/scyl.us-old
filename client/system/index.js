@@ -7,7 +7,12 @@ import { Exceptions, SYSTEM_CLOCK, MAX_CLOCK_LATENCY, MAX_COMPILE_SIZE, MIN_COMP
 import { read as cedar_read, write as cedar_write } from "./cedar";
 import { read as spu_read, write as spu_write } from "./spu";
 import { read as dsp_read, write as dsp_write } from "./dsp";
-import { read as gpu_read, write as gpu_write } from "./gpu";
+
+import { 
+	registerMemory,
+	setBlend, setTexture, setClut, setDraw, setClip, setViewport, setDither, setMask, 
+	getData, setData, render 
+} from "./gpu";
 
 export { attach } from "./gpu";
 
@@ -24,6 +29,9 @@ const _environment = {
 	// Execute bytecode
 	execute,
 
+	// GPU Rendering calls
+	setBlend, setTexture, setClut, setDraw, setClip, setViewport, setDither, setMask, getData, setData, render,
+
 	// Accessors
 	cedar_read, dsp_read, spu_read, 
 	cedar_write, dsp_write, spu_write,
@@ -31,7 +39,10 @@ const _environment = {
 	// Stub to stop complaining
 	call_indirect: a => null,
 	debug: (x, l) => {
-		console.log(new Uint32Array(exports.memory.buffer, x, l / 4));
+		const array = new Uint32Array(exports.memory.buffer, x, l / 4);
+		const out = new Array(array.length);
+		for (var i = 0; i < array.length; i++) out[i] = array[i];
+		console.log(out.map(v => v.toString(16)).join(" "));
 	},
 
 	// Glue
@@ -101,6 +112,9 @@ export async function initialize() {
 	const dv = new DataView(memory);
 
 	registers = new Uint32Array(memory, dv.getUint32(address, true), 64);
+
+	registerMemory(memory);
+	exports.test_gpu();
 
 	return module;
 }

@@ -6,14 +6,11 @@ import DrawVertexShader from "raw-loader!./shaders/draw.vertex.glsl";
 const VRAM_WIDTH = 1024;
 const VRAM_HEIGHT = 512;
 
-const PALETTE = new Uint32Array(0x10000);
-const VRAM_WORDS = new Uint32Array(VRAM_WIDTH * VRAM_HEIGHT);
-const VRAM_BYTES = new Uint8Array(VRAM_WORDS.buffer);
-
 var gl = null;
 
 var _dirty = false;
 
+var _memory, _memory16;
 var _drawX, _drawY;
 var _viewX, _viewY, _viewWidth, _viewHeight;
 var _blend, _setSrcCoff, _setDstCoff, _resetSrcCoff, _resetDstCoff;
@@ -31,38 +28,6 @@ var _animationFrame;
 var _displayShader, _drawShader;
 var _copyBuffer, _drawBuffer;
 var _vram, _shadow, _framebuffer;
-
-function pack(i) {
-	var r = (i  >>  3) & 0x001F;
-	var g = (i  >>  6) & 0x03E0;
-	var b = (i  >>  9) & 0x7C00;
-	var a = (i >>> 16) & 0x8000;
-
-	return r | g | b | a;
-}
-
-function unpack(i) {
-	var r = (i << 3) & 0xF8,
-		g = (i << 6) & 0xF800,
-		b = (i << 9) & 0xF80000,
-		a = (i & 0x8000) ? 0xFF000000 : 0;
-
-	return (a | b | g | r) >>> 0;
-}
-
-for (var i = 0; i < 0x10000; i++) {
-	PALETTE[i] = unpack(i);
-}
-
-// Initialization state
-setViewport(0, 0, 256, 240);
-setClip(0, 0, 256, 240);
-setDraw(0, 0);
-setTexture(0, 0);
-setClut(false, 0, 0, 0);
-setMask(true, false);
-setDither(true);
-setBlend(false, 0, 0, 0, 0);
 
 // Bind our function
 export function setBlend(blend, setSrcCoff, setDstCoff, resetSrcCoff, resetDstCoff) {
@@ -162,6 +127,8 @@ export function attach (container) {
 	_drawBuffer = gl.createBuffer();
 
 	// Video memory
+	const VRAM_BYTES = new Uint8Array(VRAM_WIDTH * VRAM_HEIGHT * 4);
+
 	_vram = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, _vram);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
@@ -184,32 +151,29 @@ export function attach (container) {
 	_requestRepaint();
 }
 
+export function registerMemory(source) {
+	_memory = new Uint8Array(source);
+	_memory16 = new Uint16Array(source);
+}
+
 export function getData (x, y, width, height, target) {
 	gl.bindFramebuffer(gl.FRAMEBUFFER, _framebuffer);
-	gl.readPixels(x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+	gl.readPixels(x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _memory, target);
 
 	if (!_isRendering) {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	}
-
-	for (var i = 0; i < VRAM_WORDS.length; i++) {
-		target[i] = pack(VRAM_WORDS[i]);
-	}
 }
 
 export function setData (x, y, width, height, target) {
-	for (var i = 0; i < VRAM_WORDS.length; i++) {
-		VRAM_WORDS[i] = PALETTE[target[i]];
-	}
-
 	gl.bindTexture(gl.TEXTURE_2D, _shadow);
-	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _memory, target);
 
 	gl.bindTexture(gl.TEXTURE_2D, _vram);
-	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _memory, target);
 }
 
-export function render (type, offset, count, textured, color, vertexes) {
+export function render (type, offset, count, textured, color, vertex_ptr) {
 	const flat = color >= 0;
 	const size = 4 + (textured ? 4 : 0) + (flat ? 0 : 2);
 
@@ -252,7 +216,7 @@ export function render (type, offset, count, textured, color, vertexes) {
 
 	// Buffer draw parameters
 	gl.bindBuffer(gl.ARRAY_BUFFER, _drawBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.DYNAMIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, _memory16, gl.DYNAMIC_DRAW, vertex_ptr / 2, count * size);
 
 	// Setup our vertex pointers
 	gl.vertexAttribIPointer(_drawShader.attributes.aVertex, 2, gl.SHORT, size, offset);
