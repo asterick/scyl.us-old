@@ -12,17 +12,16 @@
 #include "gpu.h"
 
 extern "C" {
-	void setBlend(bool blend, float setSrcCoff, float setDstCoff, float resetSrcCoff, float resetDstCoff);
-	void setTexture(uint16_t x, uint16_t y);
-	void setClut(bool enable, int mode, uint16_t x, uint16_t y);
-	void setDraw(uint16_t x, uint16_t y);
-	void setClip(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
-	void setViewport (uint16_t x, uint16_t y, uint16_t width, uint16_t height);
-	void setDither (bool dither);
-	void setMask (bool masked, bool setMask);
-	void getData (uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t* target);
-	void setData (uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint32_t* target);
-	
+	void set_blend(bool blend, float setSrcCoff, float setDstCoff, float resetSrcCoff, float resetDstCoff);
+	void set_texture(uint16_t x, uint16_t y);
+	void set_clut(bool enable, int mode, uint16_t x, uint16_t y);
+	void set_draw(uint16_t x, uint16_t y);
+	void set_clip(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
+	void set_viewport (uint16_t x, uint16_t y, uint16_t width, uint16_t height);
+	void set_dither (bool dither);
+	void set_mask (bool masked, bool setMask);
+	void get_vram_data (uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t* target);
+	void set_vram_data (uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint32_t* target);
 	void render (GLenum type, int offset, int count, bool textured, int color, const uint16_t* vertexes);
 }
 
@@ -32,7 +31,7 @@ const int VRAM_HEIGHT = 512;
 uint32_t VRAM_WORDS[VRAM_WIDTH * VRAM_HEIGHT];
 
 static void read_data(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t* target) {
-	getData(x, y, width, height, VRAM_WORDS);
+	get_vram_data(x, y, width, height, VRAM_WORDS);
 
 	int words = width * height;
 	const uint32_t* source = VRAM_WORDS;
@@ -62,19 +61,19 @@ static void write_data(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 		*(target++) = r | g | b | a;;
 	}
 
-	setData(x, y, width, height, VRAM_WORDS);
+	set_vram_data(x, y, width, height, VRAM_WORDS);
 }
 
 void GPU::reset() {
 	// Initialization state
-	setViewport(0, 0, 256, 240);
-	setClip(0, 0, 256, 240);
-	setDraw(0, 0);
-	setTexture(0, 0);
-	setClut(false, 0, 0, 0);
-	setMask(true, false);
-	setDither(true);
-	setBlend(false, 0, 0, 0, 0);
+	set_viewport(0, 0, 256, 240);
+	set_clip(0, 0, 256, 240);
+	set_draw(0, 0);
+	set_texture(0, 0);
+	set_clut(false, 0, 0, 0);
+	set_mask(true, false);
+	set_dither(true);
+	set_blend(false, 0, 0, 0, 0);
 }
 
 uint32_t GPU::read(uint32_t) {
@@ -88,7 +87,7 @@ void GPU::write(uint32_t, uint32_t, uint32_t) {
 // This prevents the compiler from being extremely stupid with some array init
 __attribute__ ((optnone))
 EXPORT void test_gpu() {
-    setClut(true, 2, 0, 220);
+    set_clut(true, 2, 0, 220);
     
     {
     	static const uint16_t temp[] = {
@@ -129,8 +128,8 @@ EXPORT void test_gpu() {
 	    }
     }
     
-    setMask(false, true);
-    setBlend(false, 1.0, 0.25, 0.25, 0.75);
+    set_mask(false, true);
+    set_blend(false, 1.0, 0.25, 0.25, 0.75);
 
     {
 	    static const uint16_t temp[] = {

@@ -30,7 +30,7 @@ var _copyBuffer, _drawBuffer;
 var _vram, _shadow, _framebuffer;
 
 // Bind our function
-export function setBlend(blend, setSrcCoff, setDstCoff, resetSrcCoff, resetDstCoff) {
+export function set_blend(blend, setSrcCoff, setDstCoff, resetSrcCoff, resetDstCoff) {
 	_blend = blend;
 	_setSrcCoff = setSrcCoff;
 	_setDstCoff = setDstCoff;
@@ -38,12 +38,12 @@ export function setBlend(blend, setSrcCoff, setDstCoff, resetSrcCoff, resetDstCo
 	_resetDstCoff = resetDstCoff;
 }
 
-export function setTexture(x, y) {
+export function set_texture(x, y) {
 	_textureX = x;
 	_textureY = y;
 }
 
-export function setClut(enable, mode, x, y) {
+export function set_clut(enable, mode, x, y) {
 	_clutEnable = enable;
 	_clutMode = mode;
 	_clutX = x;
@@ -55,12 +55,12 @@ export function setClut(enable, mode, x, y) {
 	_clutColorMask = (1 << (1 << _clutMode)) - 1;
 }
 
-export function setDraw(x, y) {
+export function set_draw(x, y) {
 	_drawX = x;
 	_drawY = x;
 }
 
-export function setClip(x, y, width, height) {
+export function set_clip(x, y, width, height) {
 	// This forces a copy back, and reconfigure the shader
 	_leaveRender();
 
@@ -70,18 +70,18 @@ export function setClip(x, y, width, height) {
 	_clipHeight = height;
 }
 
-export function setViewport (x, y, width, height) {
+export function set_viewport (x, y, width, height) {
 	_viewX = x;
 	_viewY = y;
 	_viewWidth = width;
 	_viewHeight = height;
 }
 
-export function setDither (dither) {
+export function set_dither (dither) {
 	_dither = dither;
 }
 
-export function setMask (masked, setMask) {
+export function set_mask (masked, setMask) {
 	_masked = masked;
 	_setMask = setMask;
 }
@@ -151,12 +151,12 @@ export function attach (container) {
 	_requestRepaint();
 }
 
-export function registerMemory(source) {
+export function register_memory(source) {
 	_memory = new Uint8Array(source);
 	_memory16 = new Uint16Array(source);
 }
 
-export function getData (x, y, width, height, target) {
+export function get_vram_data (x, y, width, height, target) {
 	gl.bindFramebuffer(gl.FRAMEBUFFER, _framebuffer);
 	gl.readPixels(x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _memory, target);
 
@@ -165,7 +165,7 @@ export function getData (x, y, width, height, target) {
 	}
 }
 
-export function setData (x, y, width, height, target) {
+export function set_vram_data (x, y, width, height, target) {
 	gl.bindTexture(gl.TEXTURE_2D, _shadow);
 	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _memory, target);
 

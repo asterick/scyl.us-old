@@ -9,9 +9,9 @@ import { read as spu_read, write as spu_write } from "./spu";
 import { read as dsp_read, write as dsp_write } from "./dsp";
 
 import { 
-	registerMemory,
-	setBlend, setTexture, setClut, setDraw, setClip, setViewport, setDither, setMask, 
-	getData, setData, render 
+	register_memory,
+	set_blend, set_texture, set_clut, set_draw, set_clip, set_viewport, set_dither, set_mask, 
+	get_vram_data, set_vram_data, render 
 } from "./gpu";
 
 export { attach } from "./gpu";
@@ -30,7 +30,8 @@ const _environment = {
 	execute,
 
 	// GPU Rendering calls
-	setBlend, setTexture, setClut, setDraw, setClip, setViewport, setDither, setMask, getData, setData, render,
+	set_blend, set_texture, set_clut, set_draw, set_clip, set_viewport, set_dither, set_mask,
+	get_vram_data, set_vram_data, render,
 
 	// Accessors
 	cedar_read, dsp_read, spu_read, 
@@ -113,7 +114,7 @@ export async function initialize() {
 
 	registers = new Uint32Array(memory, dv.getUint32(address, true), 64);
 
-	registerMemory(memory);
+	register_memory(memory);
 	exports.test_gpu();
 
 	return module;
