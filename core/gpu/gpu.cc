@@ -58,7 +58,7 @@ static void write_data(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 		uint32_t b = (i <<  9) & 0x00F80000;
 		uint32_t a = (i << 16) & 0x80000000;
 
-		*(target++) = r | g | b | a;;
+		*(target++) = r | g | b | a;
 	}
 
 	set_vram_data(x, y, width, height, VRAM_WORDS);
@@ -91,10 +91,10 @@ EXPORT void test_gpu() {
     
     {
     	static const uint16_t temp[] = {
-	        0,   0, 0b0000000000000001,
-	        0, 240, 0b0000000000111111,
-	      256, 240, 0b1111111111000001,
-	      256,   0, 0b1111100000000001,
+	        0,   0, 0b1000000000000000,
+	        0, 240, 0b1000000000011111,
+	      256, 240, 0b1111111111100000,
+	      256,   0, 0b1111110000000000,
 	  	};
 	    render(GL_TRIANGLE_FAN, 0, 4, false, -1, temp);
     }
@@ -103,7 +103,7 @@ EXPORT void test_gpu() {
 	    uint16_t palette[16];
 	    
 	    for (int i = 0; i < 16; i++) {
-	    	palette[i] = i * 0x42;
+	    	palette[i] = (i * 0x42) | (((i % 5) == 0) ? 0x8000 : 0);
 	    }
 
 	    write_data(0, 220, 16, 1, palette);
@@ -128,8 +128,8 @@ EXPORT void test_gpu() {
 	    }
     }
     
-    set_mask(false, true);
-    set_blend(false, 1.0, 0.25, 0.25, 0.75);
+    set_mask(false, false);
+    set_blend(true, 1.0, 0.00, 0.50, 0.50);
 
     {
 	    static const uint16_t temp[] = {
