@@ -8,13 +8,15 @@ import { read as cedar_read, write as cedar_write } from "./cedar";
 import { read as spu_read, write as spu_write } from "./spu";
 import { read as dsp_read, write as dsp_write } from "./dsp";
 
+import * as renderer from "./renderer";
+
 import { 
 	register_memory,
 	set_blend, set_texture, set_clut, set_draw, set_clip, set_viewport, set_dither, set_mask, 
 	get_vram_data, set_vram_data, render 
-} from "./gpu";
+} from "./renderer";
 
-export { attach } from "./gpu";
+export { attach } from "./renderer";
 
 export var registers;
 export var regions = null;
@@ -115,7 +117,6 @@ export async function initialize() {
 	registers = new Uint32Array(memory, dv.getUint32(address, true), 64);
 
 	register_memory(memory);
-	exports.test_gpu();
 
 	return module;
 }
