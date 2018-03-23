@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
-uint32_t timer_read(uint32_t);
-void timer_write(uint32_t, uint32_t, uint32_t);
-
+namespace Timer {
+	uint32_t read(uint32_t);
+	void write(uint32_t, uint32_t, uint32_t);
+}

@@ -16,14 +16,14 @@
 
 EXPORT void LB(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
-    uint32_t data = load(target, 0, address, delayed);
+    uint32_t data = Memory::load(target, 0, address, delayed);
 
     write_reg(FIELD_RT(word), (int32_t)(data << (24 - (target & 3) * 8)) >> 24);
 }
 
 EXPORT void LBU(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
-    uint32_t data = load(target, 0, address, delayed);
+    uint32_t data = Memory::load(target, 0, address, delayed);
 
     write_reg(FIELD_RT(word), (data >> (target & 3) * 8) & 0xFF);
 }
@@ -36,7 +36,7 @@ EXPORT void LH(uint32_t address, uint32_t word, uint32_t delayed) {
         return ;
     }
 
-    uint32_t data = load(target, 0, address, delayed);
+    uint32_t data = Memory::load(target, 0, address, delayed);
 
     write_reg(FIELD_RT(word), (int32_t)(data << (16 - (target & 2) * 8)) >> 16);
 }
@@ -49,7 +49,7 @@ EXPORT void LHU(uint32_t address, uint32_t word, uint32_t delayed) {
         return ;
     }
 
-    uint32_t data = load(target, 0, address, delayed);
+    uint32_t data = Memory::load(target, 0, address, delayed);
 
     write_reg(FIELD_RT(word), (data >> (target & 2) * 8) & 0xFFFF);
 }
@@ -62,14 +62,14 @@ EXPORT void LW(uint32_t address, uint32_t word, uint32_t delayed) {
         return ;
     }
 
-    write_reg(FIELD_RT(word), load(target, 0, address, delayed));
+    write_reg(FIELD_RT(word), Memory::load(target, 0, address, delayed));
 }
 
 EXPORT void SB(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
     int shift = (target & 3) * 8;
 
-    store(target, read_reg(FIELD_RT(word)) << shift, 0xFF << shift, address, delayed);
+    Memory::store(target, read_reg(FIELD_RT(word)) << shift, 0xFF << shift, address, delayed);
 }
 
 EXPORT void SH(uint32_t address, uint32_t word, uint32_t delayed) {
@@ -82,7 +82,7 @@ EXPORT void SH(uint32_t address, uint32_t word, uint32_t delayed) {
 
     int shift = (target & 3) * 8;
 
-    store(target, read_reg(FIELD_RT(word)) << shift, 0xFFFF << shift, address, delayed);
+    Memory::store(target, read_reg(FIELD_RT(word)) << shift, 0xFFFF << shift, address, delayed);
 }
 
 EXPORT void SW(uint32_t address, uint32_t word, uint32_t delayed) {
@@ -93,12 +93,12 @@ EXPORT void SW(uint32_t address, uint32_t word, uint32_t delayed) {
         return ;
     }
 
-    store(target, read_reg(FIELD_RT(word)), ~0, address, delayed);
+    Memory::store(target, read_reg(FIELD_RT(word)), ~0, address, delayed);
 }
 
 EXPORT void LWR(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
-    uint32_t data = load(target, 0, address, delayed);
+    uint32_t data = Memory::load(target, 0, address, delayed);
     uint32_t rt = read_reg(FIELD_RT(word));
 
     int shift = (target & 3) * 8;
@@ -111,7 +111,7 @@ EXPORT void LWL(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
 
     if ((target & 3) != 3) {
-        uint32_t data = load(target, 0, address, delayed);
+        uint32_t data = Memory::load(target, 0, address, delayed);
         uint32_t rt = read_reg(FIELD_RT(word));
 
         int shift = 24 - (target & 3) * 8;
@@ -125,7 +125,7 @@ EXPORT void SWR(uint32_t address, uint32_t word, uint32_t delayed) {
     uint32_t target = read_reg(FIELD_RS(word)) + FIELD_IMM16(word);
     int shift = (target & 3) * 8;
 
-    store(target, read_reg(FIELD_RT(word)) << shift, ~0 << shift, address, delayed);
+    Memory::store(target, read_reg(FIELD_RT(word)) << shift, ~0 << shift, address, delayed);
 }
 
 EXPORT void SWL(uint32_t address, uint32_t word, uint32_t delayed) {
@@ -134,7 +134,7 @@ EXPORT void SWL(uint32_t address, uint32_t word, uint32_t delayed) {
     if ((target & 3) != 3) {
         int shift = 24 - (target & 3) * 8;
 
-        store(target, read_reg(FIELD_RT(word)) >> shift, ~0 >> shift, address, delayed);
+        Memory::store(target, read_reg(FIELD_RT(word)) >> shift, ~0 >> shift, address, delayed);
     }
 }
 

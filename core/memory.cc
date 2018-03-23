@@ -12,6 +12,7 @@
 
 #include "dma.h"
 #include "timer.h"
+#include "gpu.h"
 
 union Registers registers;
 
@@ -26,14 +27,14 @@ const MemoryRegion memory_regions[] = {
     { NULL }
 };
 
-uint32_t read(uint32_t physical, bool& exception) {
+uint32_t Memory::read(uint32_t physical, bool& exception) {
 	if (exception) return 0;
 
 	switch (physical & 0x1FF00000) {
-		case DMA_BASE: return dma_read(physical);
-		case TIMER_BASE: return timer_read(physical);
+		case DMA_BASE: return DMA::read(physical);
+		case TIMER_BASE: return Timer::read(physical);
 		case CEDAR_BASE: return cedar_read(physical);
-		case GPU_BASE: return gpu_read(physical);
+		case GPU_BASE: return GPU::read(physical);
 		case DSP_BASE: return dsp_read(physical);
 		case SPU_BASE: return spu_read(physical);
 		case ROM_BASE + 0x000000:
@@ -56,16 +57,16 @@ uint32_t read(uint32_t physical, bool& exception) {
 	return ~0;
 }
 
-void write(uint32_t physical, uint32_t value, uint32_t mask, bool& exception) {
+void Memory::write(uint32_t physical, uint32_t value, uint32_t mask, bool& exception) {
 	if (exception) return ;
 
 	invalidate(physical);
 
 	switch (physical & 0x1FF00000) {
-		case DMA_BASE: dma_write(physical, value, mask); return ;
-		case TIMER_BASE: timer_write(physical, value, mask); return ;
+		case DMA_BASE: DMA::write(physical, value, mask); return ;
+		case TIMER_BASE: Timer::write(physical, value, mask); return ;
 		case CEDAR_BASE: cedar_write(physical, value, mask); return ;
-		case GPU_BASE: gpu_write(physical, value, mask); return ;
+		case GPU_BASE: GPU::write(physical, value, mask); return ;
 		case DSP_BASE: dsp_write(physical, value, mask); return ;
 		case SPU_BASE: spu_write(physical, value, mask); return ;
 		case ROM_BASE + 0x000000:
@@ -88,7 +89,7 @@ void write(uint32_t physical, uint32_t value, uint32_t mask, bool& exception) {
 	exception = true;
 }
 
-EXPORT uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t delayed) {
+EXPORT uint32_t Memory::load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t delayed) {
 	uint32_t physical = translate(logical, code, pc, delayed);
 
 	bool exception = false;
@@ -98,7 +99,7 @@ EXPORT uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t dela
 	return value;
 }
 
-EXPORT void store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed) {
+EXPORT void Memory::store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed) {
 	uint32_t physical = translate(logical, 1, pc, delayed);
 
 	bool exception = false;

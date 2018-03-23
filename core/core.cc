@@ -37,6 +37,11 @@ EXPORT const SystemConfiguration* getConfiguration() {
     return &cfg;
 }
 
+EXPORT void sync_state() {
+    handle_interrupt();
+    DMA::advance();
+}
+
 // *******
 // ** Interface helpers
 // *******

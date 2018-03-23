@@ -25,8 +25,8 @@ const _environment = {
 	execute,
 
 	// Accessors
-	cedar_read, gpu_read, dsp_read, spu_read, 
-	cedar_write, gpu_write, dsp_write, spu_write,
+	cedar_read, dsp_read, spu_read, 
+	cedar_write, dsp_write, spu_write,
 
 	// Stub to stop complaining
 	call_indirect: a => null,
@@ -145,8 +145,7 @@ export function block_execute () {
 		}
 
 		try {
-			exports.dma_advance();
-			exports.handle_interrupt();
+			exports.sync_state();
 			funct.code();
 		} catch (e) {
 			if (e instanceof Exception) {
@@ -166,8 +165,7 @@ export function step_execute () {
 	try {
 		const start_pc = Registers.pc;
 		Registers.pc += 4;
-		exports.handle_interrupt();
-		exports.dma_advance();
+		exports.sync_state();
 		execute(start_pc, false);
 	} catch (e) {
 		if (e instanceof Exception) {

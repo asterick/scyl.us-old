@@ -1,10 +1,58 @@
-import {
-    setBlend, setTexture, setClut, setDraw, setClip,
-    setViewport, setDither, setMask, attach, render,
-    getData, setData
-} from "./renderer";
+import DisplayFragmentShader from "raw-loader!./shaders/display.fragment.glsl";
+import DisplayVertexShader from "raw-loader!./shaders/display.vertex.glsl";
+import DrawFragmentShader from "raw-loader!./shaders/draw.fragment.glsl";
+import DrawVertexShader from "raw-loader!./shaders/draw.vertex.glsl";
 
-export { attach as attach };
+const VRAM_WIDTH = 1024;
+const VRAM_HEIGHT = 512;
+
+const PALETTE = new Uint32Array(0x10000);
+const VRAM_WORDS = new Uint32Array(VRAM_WIDTH * VRAM_HEIGHT);
+const VRAM_BYTES = new Uint8Array(VRAM_WORDS.buffer);
+
+var gl = null;
+
+var _dirty = false;
+
+var _drawX, _drawY;
+var _viewX, _viewY, _viewWidth, _viewHeight;
+var _blend, _setSrcCoff, _setDstCoff, _resetSrcCoff, _resetDstCoff;
+var _clutEnable, _clutMode, _clutX, _clutY, _clutIndexMask, _clutIndexShift, _clutColorMask;
+var _clipX, _clipY, _clipWidth, _clipHeight;
+var _viewX, _viewY, _viewWidth, _viewHeight;
+var _dither;
+var _masked, _setMask;
+var _textureX, _textureY;
+
+var _canvas, _viewportWidth, _viewportHeight, _aspectRatio;
+var _isRendering;
+var _animationFrame;
+
+var _displayShader, _drawShader;
+var _copyBuffer, _drawBuffer;
+var _vram, _shadow, _framebuffer;
+
+function pack(i) {
+	var r = (i  >>  3) & 0x001F;
+	var g = (i  >>  6) & 0x03E0;
+	var b = (i  >>  9) & 0x7C00;
+	var a = (i >>> 16) & 0x8000;
+
+	return r | g | b | a;
+}
+
+function unpack(i) {
+	var r = (i << 3) & 0xF8,
+		g = (i << 6) & 0xF800,
+		b = (i << 9) & 0xF80000,
+		a = (i & 0x8000) ? 0xFF000000 : 0;
+
+	return (a | b | g | r) >>> 0;
+}
+
+for (var i = 0; i < 0x10000; i++) {
+	PALETTE[i] = unpack(i);
+}
 
 // Initialization state
 setViewport(0, 0, 256, 240);
@@ -16,53 +64,375 @@ setMask(true, false);
 setDither(true);
 setBlend(false, 0, 0, 0, 0);
 
-export function read (physical) {
-    return ~0;
+// Bind our function
+export function setBlend(blend, setSrcCoff, setDstCoff, resetSrcCoff, resetDstCoff) {
+	_blend = blend;
+	_setSrcCoff = setSrcCoff;
+	_setDstCoff = setDstCoff;
+	_resetSrcCoff = resetSrcCoff;
+	_resetDstCoff = resetDstCoff;
 }
 
-export function write (physical, value, mask) {
+export function setTexture(x, y) {
+	_textureX = x;
+	_textureY = y;
 }
 
-/* This is a gross test bench to see if the GPU works
-export function test () {
-    setClut(true, 2, 0, 220);
-    render(WebGL2RenderingContext.TRIANGLE_FAN, 0, 4, false, -1, new Int16Array([
-        0,   0, 0b0000000000000001,
-        0, 240, 0b0000000000111111,
-      256, 240, 0b1111111111000001,
-      256,   0, 0b1111100000000001,
-    ]));
+export function setClut(enable, mode, x, y) {
+	_clutEnable = enable;
+	_clutMode = mode;
+	_clutX = x;
+	_clutY = y;
 
-    const palette = new Uint16Array(16);
-    for (var i = 0; i < palette.length; i++) palette[i] = ((i * 2) * 0x21) | (((i >> 2) ^ i) & 1 ? 0x8000 : 0);
-    setData(0, 220, 16, 1, palette);
-
-    const px = new Uint16Array([
-        0x3210,
-        0x7654,
-        0xBA98,
-        0xFEDC,
-    ]);
-    const px2 = new Uint16Array(4);
-    setData(0, 0, 1, 4, px);
-    getData(0, 0, 1, 4, px2);
-    for (var i = 0; i < px.length; i++) if (px[i] != px2[i]) throw "getData / setData mismatch";
-
-    setMask(false, true);
-    setBlend(false, 1.0, 0.25, 0.25, 0.75);
-
-    render(WebGL2RenderingContext.TRIANGLE_STRIP, 0, 4, true, 0b1111111111111111, new Int16Array([
-        64,  64, 0, 0,
-        64, 192, 0, 4,
-       192,  64, 4, 0,
-       192, 192, 4, 4,
-    ]));
-
-    render(WebGL2RenderingContext.POINTS, 0, 4, false, 0b1111111111111111, new Int16Array([
-        96,  96,
-        96, 160,
-       160,  96,
-       160, 160,
-    ]));
+	// Precompute some constants
+	_clutIndexMask = (1 << _clutMode) - 1;
+	_clutIndexShift = 4 - _clutMode;
+	_clutColorMask = (1 << (1 << _clutMode)) - 1;
 }
-//*/
+
+export function setDraw(x, y) {
+	_drawX = x;
+	_drawY = x;
+}
+
+export function setClip(x, y, width, height) {
+	// This forces a copy back, and reconfigure the shader
+	_leaveRender();
+
+	_clipX = x;
+	_clipY = y;
+	_clipWidth = width;
+	_clipHeight = height;
+}
+
+export function setViewport (x, y, width, height) {
+	_viewX = x;
+	_viewY = y;
+	_viewWidth = width;
+	_viewHeight = height;
+}
+
+export function setDither (dither) {
+	_dither = dither;
+}
+
+export function setMask (masked, setMask) {
+	_masked = masked;
+	_setMask = setMask;
+}
+
+export function attach (container) {
+	if (!container) {
+		window.removeEventListener("resize", _onresize);
+		window.cancelAnimationFrame(_animationFrame);
+		return ;
+	}
+
+	const canvas = document.getElementById(container);
+	_canvas = canvas;
+
+	// Create our context
+	gl = canvas.getContext("webgl2", {
+		alpha: false,
+		antialias: true,
+		depth: false,
+		stencil: false
+	});
+
+	window.addEventListener("resize", _onresize);
+
+	_onresize();
+
+	// Global enable / disables
+	gl.disable(gl.STENCIL_TEST);
+	gl.disable(gl.DEPTH_TEST);
+	gl.disable(gl.DITHER);
+	gl.colorMask(true, true, true, true);
+	gl.clearColor(0, 0, 0, 1);
+
+	// Setup or rendering programs
+	_displayShader = _createShader (DisplayVertexShader, DisplayFragmentShader);
+	_drawShader = _createShader (DrawVertexShader, DrawFragmentShader);
+
+	// Setup our vertex buffers
+	_copyBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, _copyBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([ 1, 1, 1,-1,-1, 1,-1,-1]), gl.STATIC_DRAW);
+
+	_drawBuffer = gl.createBuffer();
+
+	// Video memory
+	_vram = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, _vram);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+	_shadow = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, _shadow);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, VRAM_WIDTH, VRAM_HEIGHT, 0, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+	// Setup the draw targets
+	_framebuffer = gl.createFramebuffer();
+	gl.bindFramebuffer(gl.FRAMEBUFFER, _framebuffer);
+	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, _shadow, 0);
+
+	// Set context to render by default
+	_enterRender();
+	_requestRepaint();
+}
+
+export function getData (x, y, width, height, target) {
+	gl.bindFramebuffer(gl.FRAMEBUFFER, _framebuffer);
+	gl.readPixels(x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+
+	if (!_isRendering) {
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	}
+
+	for (var i = 0; i < VRAM_WORDS.length; i++) {
+		target[i] = pack(VRAM_WORDS[i]);
+	}
+}
+
+export function setData (x, y, width, height, target) {
+	for (var i = 0; i < VRAM_WORDS.length; i++) {
+		VRAM_WORDS[i] = PALETTE[target[i]];
+	}
+
+	gl.bindTexture(gl.TEXTURE_2D, _shadow);
+	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+
+	gl.bindTexture(gl.TEXTURE_2D, _vram);
+	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, VRAM_BYTES);
+}
+
+export function render (type, offset, count, textured, color, vertexes) {
+	const flat = color >= 0;
+	const size = 4 + (textured ? 4 : 0) + (flat ? 0 : 2);
+
+	_enterRender();
+	_requestRepaint();
+
+	if (_blend) {
+		_parityCopy();
+	}
+
+	// Drawing region
+   	gl.uniform2f(_drawShader.uniforms.uDrawPos, _drawX, _drawY);
+
+   	// Texture settings
+   	gl.uniform1i(_drawShader.uniforms.uTextured, textured);
+   	if (textured) {
+	   	gl.uniform2i(_drawShader.uniforms.uTextureOffset, _textureX, _textureY);
+	   	gl.uniform1i(_drawShader.uniforms.uClutEnable, _clutEnable);
+
+	   	if (_clutEnable) {
+		   	gl.uniform1i(_drawShader.uniforms.uClutMode, _clutMode);
+	   		gl.uniform2i(_drawShader.uniforms.uClutOffset, _clutX, _clutY);
+	   		gl.uniform1i(_drawShader.uniforms.uClutIndexMask, _clutIndexMask);
+	   		gl.uniform1i(_drawShader.uniforms.uClutIndexShift, _clutIndexShift);
+	   		gl.uniform1ui(_drawShader.uniforms.uClutColorMask, _clutColorMask);
+	   	}
+   	}
+
+   	// Blending flags
+	gl.uniform1i(_drawShader.uniforms.uSemiTransparent, _blend);
+	if (_blend) {
+		gl.uniform2f(_drawShader.uniforms.uSetCoff, _setSrcCoff, _setDstCoff);
+		gl.uniform2f(_drawShader.uniforms.uResetCoff, _resetSrcCoff, _resetDstCoff);
+	}
+
+   	// Render flags
+   	gl.uniform1i(_drawShader.uniforms.uMasked, _masked);
+   	gl.uniform1i(_drawShader.uniforms.uSetMask, _setMask);
+   	gl.uniform1i(_drawShader.uniforms.uDither, _dither);
+
+	// Buffer draw parameters
+	gl.bindBuffer(gl.ARRAY_BUFFER, _drawBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.DYNAMIC_DRAW);
+
+	// Setup our vertex pointers
+	gl.vertexAttribIPointer(_drawShader.attributes.aVertex, 2, gl.SHORT, size, offset);
+
+	if (textured) {
+		gl.vertexAttribIPointer(_drawShader.attributes.aTexture, 2, gl.SHORT, size, offset+4);
+		gl.enableVertexAttribArray(_drawShader.attributes.aTexture);
+	} else {
+		gl.vertexAttribI4i(_drawShader.attributes.aTexture, 0, 0, 0, 0);
+		gl.disableVertexAttribArray(_drawShader.attributes.aTexture);
+	}
+
+	if (flat) {
+		gl.vertexAttribI4i(_drawShader.attributes.aColor, color, color, color, color);
+		gl.disableVertexAttribArray(_drawShader.attributes.aColor);
+	} else {
+		gl.vertexAttribIPointer(_drawShader.attributes.aColor, 1, gl.SHORT, size, offset + (textured ? 8 : 4));
+		gl.enableVertexAttribArray(_drawShader.attributes.aColor);
+	}
+
+	// Draw array
+	gl.drawArrays(type, 0, count);
+
+	// Set our dirty flag so we know to copy the shadow frame over
+	_dirty = true;
+}
+
+function _parityCopy() {
+	if (!_dirty) return ;
+
+	gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, _clipX, _clipY, _clipX, _clipY, _clipWidth, _clipHeight);
+
+	_dirty = false;
+}
+
+function _onresize () {
+	// Lookup the size the browser is displaying the canvas.
+	_viewportWidth = _canvas.clientWidth;
+	_viewportHeight = _canvas.clientHeight;
+
+	// Make the canvas the same size
+	_canvas.width  = _viewportWidth;
+	_canvas.height = _viewportHeight;
+
+	_aspectRatio = (_viewportHeight / _viewportWidth) * (4 / 3);
+
+	_requestRepaint();
+}
+
+function _requestRepaint() {
+	if (_animationFrame) {
+		return ;
+	}
+
+	_animationFrame = window.requestAnimationFrame(_repaint);
+}
+
+function _repaint () {
+	_leaveRender();
+
+	// Copy our viewport to the screen
+	gl.viewport(0, 0, _viewportWidth, _viewportHeight);
+	gl.clear(gl.COLOR_BUFFER_BIT);
+
+   	gl.uniform1f(_displayShader.uniforms.uAspectRatio, _aspectRatio);
+   	gl.uniform2f(_displayShader.uniforms.uViewportSize, _viewWidth, _viewHeight);
+   	gl.uniform2f(_displayShader.uniforms.uViewportPosition, _viewX, _viewY);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, _copyBuffer);
+	gl.vertexAttribPointer(_displayShader.attributes.aVertex, 2, gl.FLOAT, false, 0, 0);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+	_animationFrame = 0;
+}
+
+function _enterRender () {
+	if (_isRendering) return ;
+	_isRendering = true;
+
+	gl.disableVertexAttribArray(_displayShader.attributes.aVertex);
+	gl.enableVertexAttribArray(_drawShader.attributes.aVertex);
+
+	// Setup our shadow frame
+	gl.bindFramebuffer(gl.FRAMEBUFFER, _framebuffer);
+
+	// Setup our program
+	gl.useProgram(_drawShader.program);
+
+	// Select vram as TEXTURE0
+	gl.uniform1i(_drawShader.uniforms.sVram, 0);
+
+	// Setup clipping rectangle
+	gl.viewport(_clipX, _clipY, _clipWidth, _clipHeight);
+   	gl.uniform2f(_drawShader.uniforms.uClipPos, _clipX, _clipY);
+   	gl.uniform2f(_drawShader.uniforms.uClipSize, _clipWidth, _clipHeight);
+
+	// Select the new frame buffer / vram
+	gl.bindFramebuffer(gl.FRAMEBUFFER, _framebuffer);
+
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, _vram);
+	gl.uniform1i(_drawShader.uniforms.sVram, 0);
+}
+
+function _leaveRender () {
+	if (!_isRendering) return ;
+	_isRendering = false;
+
+	// Copy render buffer to target
+	_parityCopy();
+
+	// Change our attributes
+	gl.disableVertexAttribArray(_drawShader.attributes.aVertex);
+	gl.disableVertexAttribArray(_drawShader.attributes.aTexture);
+	gl.disableVertexAttribArray(_drawShader.attributes.aColor);
+	gl.enableVertexAttribArray(_displayShader.attributes.aVertex);
+
+	// ==== Setup program
+	gl.useProgram(_displayShader.program);
+
+	// Select vram as our source texture
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, _vram);
+	gl.uniform1i(_displayShader.uniforms.sVram, 0);
+
+	// Set to render to display
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+}
+
+function _createShader (vertex, fragment) {
+	var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+	var vertexShader =  gl.createShader(gl.VERTEX_SHADER);
+
+	gl.shaderSource(vertexShader, vertex);
+	gl.compileShader(vertexShader);
+
+	if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+		console.error(gl.getShaderInfoLog(vertexShader));
+		return null;
+	}
+
+	gl.shaderSource(fragmentShader, fragment);
+	gl.compileShader(fragmentShader);
+
+	if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+		console.error(gl.getShaderInfoLog(fragmentShader));
+		return null;
+	}
+
+	let shaderProgram = gl.createProgram();
+	gl.attachShader(shaderProgram, vertexShader);
+	gl.attachShader(shaderProgram, fragmentShader);
+	gl.linkProgram(shaderProgram);
+
+	if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+		console.error(gl.getError());
+		return null;
+	}
+
+	const attrCount = gl.getProgramParameter(shaderProgram, gl.ACTIVE_ATTRIBUTES);
+	const attributes = {};
+
+	for (var i = 0; i < attrCount; i++) {
+		const attr = gl.getActiveAttrib(shaderProgram, i);
+		attributes[attr.name] = i;
+	}
+
+	const uniCount= gl.getProgramParameter(shaderProgram, gl.ACTIVE_UNIFORMS);
+	const uniforms = {};
+
+	for (var i = 0; i < uniCount; i++) {
+		const uni = gl.getActiveUniform(shaderProgram, i);
+		uniforms[uni.name] = gl.getUniformLocation(shaderProgram, uni.name);
+	}
+
+	return {
+		attributes: attributes,
+		uniforms: uniforms,
+		program: shaderProgram
+	};
+}
+

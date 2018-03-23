@@ -46,7 +46,7 @@ static void interrupt(int i) {
 	status |= (1 << (i + 8)) & STATUS_IM;
 }
 
-EXPORT void handle_interrupt() {
+void handle_interrupt() {
 	if ((status & STATUS_IEc) && (cause & status & STATUS_IM)) {
 		trap(EXCEPTION_INTERRUPT, registers.pc, 0, 0);
 	}

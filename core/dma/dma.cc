@@ -59,7 +59,7 @@ static bool check_trigger(int channel) {
    }
 }
 
-EXPORT void dma_advance() {
+void DMA::advance() {
    if (!active) return ;
 
    active = false;
@@ -72,7 +72,7 @@ EXPORT void dma_advance() {
       bool exception = false;
       while (check_trigger(channel.flags & DMACR_TRIGGER_MASK)) {
          uint32_t source = lookup(channel.source, false, exception);
-         uint32_t value = read(source, exception);
+         uint32_t value = Memory::read(source, exception);
          uint32_t target = lookup(channel.target, true, exception);
 
          value = adjust((target & 3) - (source & 3), value);
@@ -80,14 +80,14 @@ EXPORT void dma_advance() {
 
          switch (channel.flags & DMACR_WIDTH_MASK) {
             case DMA_WIDTH_BIT8:
-               write(target, value, 0xFF << ((target & 3) * 8), exception);
+               Memory::write(target, value, 0xFF << ((target & 3) * 8), exception);
 
                break ;
             case DMA_WIDTH_BIT16:
-               write(target, value, (target & 2) ? 0xFFFF0000 : 0x0000FFFF, exception);
+               Memory::write(target, value, (target & 2) ? 0xFFFF0000 : 0x0000FFFF, exception);
                break ;
             case DMA_WIDTH_BIT32:
-               write(target, value, 0xFFFFFFFF, exception);
+               Memory::write(target, value, 0xFFFFFFFF, exception);
                break ;
             default:
                exception = true;
@@ -119,7 +119,7 @@ EXPORT void dma_advance() {
    }
 }
 
-uint32_t dma_read(uint32_t address) {
+uint32_t DMA::read(uint32_t address) {
    const int page = (address - DMA_BASE) >> 2;
 
    // Out of bounds
@@ -232,7 +232,7 @@ static inline void fast_dma(DMAChannel& channel) {
    }
 }
 
-void dma_write(uint32_t address, uint32_t value, uint32_t mask) {
+void DMA::write(uint32_t address, uint32_t value, uint32_t mask) {
    const uint32_t page = address - DMA_BASE;
    const uint32_t word_address = page / sizeof(uint32_t);
 
@@ -258,5 +258,5 @@ void dma_write(uint32_t address, uint32_t value, uint32_t mask) {
 
    active = true;
    fast_dma(channel);
-   dma_advance();
+   advance();
 }
