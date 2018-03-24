@@ -28,7 +28,6 @@ void* memcpy(void* dst, const void* src, size_t n) {
 
 		DMA_Channels[0].source = (uint32_t) source;
 		DMA_Channels[0].target = (uint32_t) target;
-		DMA_Channels[0].repeats = 1;
 		DMA_Channels[0].length = n / 4;
 		DMA_Channels[0].flags = 0
 			| DMA_TRIGGER_NONE 
@@ -49,7 +48,6 @@ void* memcpy(void* dst, const void* src, size_t n) {
 
 		DMA_Channels[0].source = (uint32_t) source;
 		DMA_Channels[0].target = (uint32_t) target;
-		DMA_Channels[0].repeats = 1;
 		DMA_Channels[0].length = n / 2;
 		DMA_Channels[0].flags = 0
 			| DMA_TRIGGER_NONE 
@@ -64,7 +62,6 @@ void* memcpy(void* dst, const void* src, size_t n) {
 	} else {
 		DMA_Channels[0].source = (uint32_t) source;
 		DMA_Channels[0].target = (uint32_t) target;
-		DMA_Channels[0].repeats = 1;
 		DMA_Channels[0].length = n;
 		DMA_Channels[0].flags = 0
 			| DMA_TRIGGER_NONE 

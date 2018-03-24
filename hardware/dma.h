@@ -37,9 +37,9 @@ enum {
 #define DMACR_WIDTH_MASK      0x00300000
 
 typedef struct {
+   uint32_t length;
    uint32_t source;
    uint32_t target;
-   uint32_t length;
    uint32_t flags;
 } DMAChannel;
 

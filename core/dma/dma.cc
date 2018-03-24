@@ -54,22 +54,24 @@ static bool check_trigger(int channel) {
    }
 }
 
-static inline void chain(DMAChannel& channel) {
+static inline bool chain(DMAChannel& channel) {
    if (~channel.flags & DMACR_CHAIN_MASK) {
       channel.flags &= ~DMACR_ACTIVE_MASK;
-      return ;
+      return true;
    }
 
    bool exception = false;
 
+   channel.length = Memory::read(lookup(channel.source, false, exception), exception);
    channel.source = Memory::read(lookup(channel.source + 4, false, exception), exception);
-   channel.length = Memory::read(lookup(channel.source + 4, false, exception), exception);
    registers.clocks -= 2;
 
    if (channel.length == 0 || exception) {
       channel.flags &= ~DMACR_ACTIVE_MASK;
-      return ;
+      return true;
    }
+
+   return false;
 }
 
 static inline bool fast_dma(DMAChannel& channel) {
@@ -121,6 +123,8 @@ static inline bool fast_dma(DMAChannel& channel) {
       return false;
    }
 
+   bool active = true;
+
    // Determine if target is in ram
    if (channel.target >= RAM_BASE && channel.target < RAM_BASE + RAM_SIZE) {
       const int offset = channel.target - RAM_BASE;
@@ -132,25 +136,26 @@ static inline bool fast_dma(DMAChannel& channel) {
    } else if (channel.target >= ROM_BASE && channel.target < ROM_BASE + ROM_SIZE) {
       const int offset = channel.target - ROM_BASE;
       const int max_length = ROM_SIZE - offset;
+
+      active = false;
+
       if (length > max_length) length = max_length;
-
-      channel.length  -= length;
-      registers.clocks -= (length / word_width) * 2;
-
-      return false;
    } else {
       return false;
    }
 
-   while (length > 0) {
-      registers.clocks -= length * 2;
+   if (length > 0 && active) {
       memcpy(target, source, length);
    }
 
+   registers.clocks -= (length / word_width) * 2;
+   channel.source += length;
+   channel.target += length;
    channel.length -= length / word_width;
+
    if (channel.length == 0) {
       // Reset source address
-      chain(channel);
+      return chain(channel);
    }
 
    return false;
@@ -160,15 +165,18 @@ void DMA::advance() {
    if (!active) return ;
 
    active = false;
+
    for (int i = 0; i < MAX_DMA_CHANNELS; i++) {
       DMAChannel& channel = channels[i];
 
       if (~channel.flags & DMACR_ACTIVE_MASK) continue ;
 
+      while (fast_dma(channel)) continue ;
+
       active = true;
-      if (!fast_dma(channel)) continue ;
 
       bool exception = false;
+
       while (check_trigger(channel.flags & DMACR_TRIGGER_MASK)) {
          uint32_t source = lookup(channel.source, false, exception);
          uint32_t value = Memory::read(source, exception);
@@ -203,9 +211,8 @@ void DMA::advance() {
          channel.target += (channel.flags & DMACR_TSTRIDE_MASK) >> DMACR_TSTRIDE_POS;
 
          // The system is no longer active
-         if (--channel.length == 0) {
-            // Reset source address
-            chain(channel);
+         if (--channel.length == 0 && chain(channel)) {
+            break ;
          }
       }
    }
@@ -244,7 +251,7 @@ void DMA::write(uint32_t address, uint32_t value, uint32_t mask) {
    if (a != b) { return ; }
 
    if (channel.length == 0) {
-      chain(channel);
+      channel.flags &= ~DMACR_ACTIVE_MASK;
       return ;
    }
 
