@@ -55,7 +55,7 @@ static bool check_trigger(int channel) {
 }
 
 static inline bool chain(DMAChannel& channel) {
-   if (~channel.flags & DMACR_CHAIN_MASK) {
+   if (~channel.flags & (DMACR_CHAIN_S_MASK | DMACR_CHAIN_T_MASK)) {
       channel.flags &= ~DMACR_ACTIVE_MASK;
       return true;
    }
@@ -63,8 +63,19 @@ static inline bool chain(DMAChannel& channel) {
    bool exception = false;
 
    channel.length = Memory::read(lookup(channel.source, false, exception), exception);
-   channel.source = Memory::read(lookup(channel.source + 4, false, exception), exception);
-   registers.clocks -= 2;
+   channel.source += 4;
+   registers.clocks --;
+
+   if (channel.flags & DMACR_CHAIN_S_MASK) {
+      channel.source = Memory::read(lookup(channel.source, false, exception), exception);
+      channel.source += 4;
+      registers.clocks --;
+   }
+
+   if (channel.flags & DMACR_CHAIN_T_MASK) {
+      channel.target = Memory::read(lookup(channel.source, false, exception), exception);
+      registers.clocks --;
+   }
 
    if (channel.length == 0 || exception) {
       channel.flags &= ~DMACR_ACTIVE_MASK;
