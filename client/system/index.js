@@ -20,8 +20,6 @@ export { attach } from "./renderer";
 
 export var registers;
 export var regions = null;
-export var exports;
-
 export var running = false;
 
 var adjust_clock;
