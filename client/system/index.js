@@ -2,7 +2,7 @@ import Exception from "./exception";
 import Registers from "./registers";
 
 import { locate, compile, initialize as initialize_compiler } from "./instructions";
-import { Exceptions, SYSTEM_CLOCK, MAX_CLOCK_LATENCY, MAX_COMPILE_SIZE, MIN_COMPILE_SIZE } from "./consts";
+import { Exceptions, SYSTEM_CLOCK, MAX_COMPILE_SIZE, MIN_COMPILE_SIZE } from "./consts";
 
 import { read as cedar_read, write as cedar_write } from "./cedar";
 import { read as spu_read, write as spu_write } from "./spu";
@@ -85,11 +85,8 @@ export function tick () {
 
 	// System is caught up, advance our CPU clock since last execution
 	const new_clock = Date.now();
-	const cycles = Math.min(MAX_CLOCK_LATENCY, (new_clock - adjust_clock) * (SYSTEM_CLOCK / 1000));
-	adjust_clock = newClock;
-
-	// Allocate some more cycles for the CPU
-	Registers.clocks += cycles;
+	Registers.clocks += (new_clock - adjust_clock) * (SYSTEM_CLOCK / 1000);
+	adjust_clock = new_clock;
 
 	// Schedule next tick when the CPU is free
 	if (running) setTimeout(tick, 0);

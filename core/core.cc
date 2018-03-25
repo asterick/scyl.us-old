@@ -52,6 +52,8 @@ extern "C" void _start() { }
 extern "C" void call_indirect(int index);
 
 EXPORT void execute_call(uint32_t start, uint32_t length) {
+    if (registers.clocks > MAX_CLOCK_LAG) registers.clocks = MAX_CLOCK_LAG;
+
     start_pc = start;
     while (registers.clocks > 0) {
         uint32_t index = ((start_pc = registers.pc) - start) >> 2;
