@@ -28,7 +28,7 @@ function names(table) {
 	}, []);
 }
 
-const terminate = ["execute_call", "adjust_clock", "finalize_call"];
+const terminate = ["execute_call", "calculate_clock", "finalize_call"];
 const boilerplate = terminate.concat(names(instructions));
 
 export function initialize(ab) {
@@ -214,7 +214,7 @@ function process(template, ... values) {
 			}
 
 			// Template the adjust clock code
-			acc.push.apply(acc, process(_templates.adjust_clock, (pc + 8) >>> 0));
+			acc.push.apply(acc, process(_templates.calculate_clock, (pc + 8) >>> 0));
 
 			// call the delayed branch slot
 			acc.push(

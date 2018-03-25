@@ -52,6 +52,7 @@ extern "C" void _start() { }
 extern "C" void call_indirect(int index);
 
 EXPORT void execute_call(uint32_t start, uint32_t length) {
+    start_pc = start;
     while (registers.clocks > 0) {
         uint32_t index = ((start_pc = registers.pc) - start) >> 2;
 
@@ -61,11 +62,15 @@ EXPORT void execute_call(uint32_t start, uint32_t length) {
     }
 }
 
-EXPORT void finalize_call(uint32_t end) {
-    registers.pc = end;
-    registers.clocks -= (end - start_pc) >> 2;
+EXPORT void adjust_clock(uint32_t cycles) {
+    registers.clocks -= cycles;
 }
 
-EXPORT void adjust_clock(uint32_t end) {
-    registers.clocks -= (end - start_pc) >> 2;
+EXPORT void calculate_clock(uint32_t end) {
+    adjust_clock((end - start_pc) >> 2);    
+}
+
+EXPORT void finalize_call(uint32_t end) {
+    registers.pc = end;
+    adjust_clock((end - start_pc) >> 2);
 }

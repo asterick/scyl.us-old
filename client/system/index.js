@@ -84,8 +84,8 @@ export function tick () {
 	}
 
 	// System is caught up, advance our CPU clock since last execution
-	const newClock = Date.now();
-	const cycles = Math.min(MAX_CLOCK_LATENCY, (newClock - adjust_clock) * (SYSTEM_CLOCK / 1000));
+	const new_clock = Date.now();
+	const cycles = Math.min(MAX_CLOCK_LATENCY, (new_clock - adjust_clock) * (SYSTEM_CLOCK / 1000));
 	adjust_clock = newClock;
 
 	// Allocate some more cycles for the CPU
@@ -165,7 +165,7 @@ export function block_execute () {
 			funct.code();
 		} catch (e) {
 			if (e instanceof Exception) {
-				Registers.clocks -= (e.pc - start_pc) / 4;
+				exports.calculate_clock(e.pc);
 				exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
 			} else {
 				throw e;
@@ -203,7 +203,7 @@ function execute(pc, delayed) {
 	const data = load(pc, true, pc, delayed);
 	const call = locate(data);
 
-	Registers.clocks--;
+	exports.adjust_clock(1);
 	exports[call.name](pc, data, delayed);
 }
 
