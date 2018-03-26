@@ -56,24 +56,24 @@ static bool check_trigger(int channel) {
 
 static inline bool chain(DMAChannel& channel) {
    if (channel.flags & (DMACR_CHAIN_S_MASK | DMACR_CHAIN_T_MASK)) {
-      bool exception = false;
+      SystemException problem = EXCEPTION_NONE;
 
-      channel.length = Memory::read(channel.source, exception);
+      channel.length = Memory::read(channel.source, false, problem);
       channel.source += (channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS;
       registers.clocks --;
 
       if (channel.flags & DMACR_CHAIN_T_MASK) {
-         channel.target = Memory::read(channel.source, exception);
+         channel.target = Memory::read(channel.source, false, problem);
          channel.source += (channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS;
          registers.clocks --;
       }
 
       if (channel.flags & DMACR_CHAIN_S_MASK) {
-         channel.source = Memory::read(channel.source, exception);
+         channel.source = Memory::read(channel.source, false, problem);
          registers.clocks --;
       }
 
-      if (exception) {
+      if (problem != EXCEPTION_NONE) {
          if (channel.flags & DMACR_INTERRUPT_MASK) COP0::interrupt(DMA_IRQn);
 
          channel.flags &= ~DMACR_ACTIVE_MASK;
@@ -96,8 +96,8 @@ static inline bool chain(DMAChannel& channel) {
 static inline bool fast_dma(DMAChannel& channel) {
    int word_width;
 
-   // Must be active and cannot use triggers during a fast dma copy
-   if (channel.flags & DMACR_TRIGGER_MASK || ~channel.flags & DMACR_ACTIVE_MASK) return false;
+   // Cannot use triggers during a fast dma copy
+   if (channel.flags & DMACR_TRIGGER_MASK) return false;
 
    // Verify alignment and stride
    switch (channel.flags & DMACR_WIDTH_MASK) {
@@ -108,7 +108,7 @@ static inline bool fast_dma(DMAChannel& channel) {
       case DMA_WIDTH_BIT16:
          if ((channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS != 2 || (channel.flags & DMACR_TSTRIDE_MASK) >> DMACR_TSTRIDE_POS != 2) return false;
          if ((channel.source | channel.target) & 1) return false;
-         
+
          word_width = 2;
          break ;
       case DMA_WIDTH_BIT32:
@@ -123,22 +123,44 @@ static inline bool fast_dma(DMAChannel& channel) {
 
    int length = channel.length * word_width;
 
-   const uint8_t* source;
-   uint8_t* target;
+   const uint8_t* src;
+   uint8_t* trg;
+
+   SystemException problem = EXCEPTION_NONE;
+   uint32_t source = COP0::translate(channel.source, false, problem);
+   uint32_t target = COP0::translate(channel.target,  true, problem);
+
+   if (channel.source < 0xC0000000) {
+      int max_length = 0x1000 - (channel.source & 0xFFF);
+      if (length > max_length) length = max_length;
+   }
+
+   if (channel.target < 0xC0000000) {
+      int max_length = 0x1000 - (channel.source & 0xFFF);
+      if (length > max_length) length = max_length;
+   }
+
+   // Cannot translate through page table
+   if (problem != EXCEPTION_NONE) {
+      channel.flags |= DMACR_EXCEPTION_MASK;
+      channel.flags &= ~DMACR_ACTIVE_MASK;
+      if (channel.flags & DMACR_INTERRUPT_MASK) COP0::interrupt(DMA_IRQn);
+      return true;
+   }
 
    // Determine if source is in linear memory
-   if (channel.source >= RAM_BASE && channel.source < RAM_BASE + RAM_SIZE) {
-      const int offset = channel.source - RAM_BASE;
+   if (source >= RAM_BASE && source < RAM_BASE + RAM_SIZE) {
+      const int offset = source - RAM_BASE;
       const int max_length = RAM_SIZE - offset;
 
-      source = (const uint8_t*)system_ram + offset;
+      src = (const uint8_t*)system_ram + offset;
 
       if (length > max_length) length = max_length;
-   } else if (channel.source >= ROM_BASE && channel.source < ROM_BASE + ROM_SIZE) {
-      const int offset = (channel.source - ROM_BASE);
+   } else if (source >= ROM_BASE && source < ROM_BASE + ROM_SIZE) {
+      const int offset = (source - ROM_BASE);
       const int max_length = ROM_SIZE - offset;
 
-      source = (const uint8_t*)system_rom + offset;
+      src = (const uint8_t*)system_rom + offset;
 
       if (length > max_length) length = max_length;
    } else {
@@ -148,15 +170,15 @@ static inline bool fast_dma(DMAChannel& channel) {
    bool active = true;
 
    // Determine if target is in ram
-   if (channel.target >= RAM_BASE && channel.target < RAM_BASE + RAM_SIZE) {
-      const int offset = channel.target - RAM_BASE;
+   if (target >= RAM_BASE && target < RAM_BASE + RAM_SIZE) {
+      const int offset = target - RAM_BASE;
       const int max_length = RAM_SIZE - offset;
 
-      target = (uint8_t*)system_ram + offset;
+      trg = (uint8_t*)system_ram + offset;
 
       if (length > max_length) length = max_length;
-   } else if (channel.target >= ROM_BASE && channel.target < ROM_BASE + ROM_SIZE) {
-      const int offset = channel.target - ROM_BASE;
+   } else if (target >= ROM_BASE && target < ROM_BASE + ROM_SIZE) {
+      const int offset = target - ROM_BASE;
       const int max_length = ROM_SIZE - offset;
 
       active = false;
@@ -167,7 +189,7 @@ static inline bool fast_dma(DMAChannel& channel) {
    }
 
    if (length > 0 && active) {
-      memcpy(target, source, length);
+      memcpy(trg, src, length);
    }
 
    registers.clocks -= (length / word_width) * 2;
@@ -191,40 +213,42 @@ void DMA::advance() {
    for (int i = 0; i < MAX_DMA_CHANNELS; i++) {
       DMAChannel& channel = channels[i];
 
-      // Empty transmission, simply skip
-      while (channel.length == 0 && (channel.flags & DMACR_ACTIVE_MASK)) chain(channel);
-
-      while (fast_dma(channel)) ;
-
-      if (~channel.flags & DMACR_ACTIVE_MASK) continue ;
-
-      active = true;
-
-      bool exception = false;
+      SystemException problem = EXCEPTION_NONE;
 
       while (check_trigger(channel.flags & DMACR_TRIGGER_MASK)) {
-         uint32_t value = Memory::read(channel.source, exception);
+         if (~channel.flags & DMACR_ACTIVE_MASK) break ;
+
+         if (channel.length == 0) {
+            chain(channel);
+            continue ;
+         }
+
+         if (fast_dma(channel)) continue ;
+
+         active = true;
+
+         uint32_t value = Memory::read(channel.source, false, problem);
 
          value = adjust((channel.target & 3) - (channel.source & 3), value);
          registers.clocks -= 2; // No cross bar
 
          switch (channel.flags & DMACR_WIDTH_MASK) {
             case DMA_WIDTH_BIT8:
-               Memory::write(channel.target, value, 0xFF << ((channel.target & 3) * 8), exception);
+               Memory::write(channel.target, value, 0xFF << ((channel.target & 3) * 8), problem);
 
                break ;
             case DMA_WIDTH_BIT16:
-               Memory::write(channel.target, value, (channel.target & 2) ? 0xFFFF0000 : 0x0000FFFF, exception);
+               Memory::write(channel.target, value, (channel.target & 2) ? 0xFFFF0000 : 0x0000FFFF, problem);
                break ;
             case DMA_WIDTH_BIT32:
-               Memory::write(channel.target, value, 0xFFFFFFFF, exception);
+               Memory::write(channel.target, value, 0xFFFFFFFF, problem);
                break ;
             default:
-               exception = true;
+               problem = EXCEPTION_GENERAL;
                break ;
          }
 
-         if (exception) {
+         if (problem != EXCEPTION_NONE) {
             channel.flags |= DMACR_EXCEPTION_MASK;
             channel.flags &= ~DMACR_ACTIVE_MASK;
             if (channel.flags & DMACR_INTERRUPT_MASK) COP0::interrupt(DMA_IRQn);
@@ -233,11 +257,7 @@ void DMA::advance() {
 
          channel.source += (channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS;
          channel.target += (channel.flags & DMACR_TSTRIDE_MASK) >> DMACR_TSTRIDE_POS;
-
-         // The system is no longer active
-         if (--channel.length == 0 && chain(channel)) {
-            break ;
-         }
+         channel.length--;
       }
    }
 }

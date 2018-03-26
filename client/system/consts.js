@@ -37,8 +37,7 @@ export const Exceptions = {
 	Breakpoint: 0x09,
 	ReservedInstruction: 0x0A,
 	CoprocessorUnusable: 0x0B,
-	Overflow: 0x0C,
-	DoubleFault: 0x0D
+	Overflow: 0x0C
 };
 
 export const ExceptionNames = {

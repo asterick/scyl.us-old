@@ -4,6 +4,7 @@
 #include "compiler.h"
 
 #include "system.h"
+#include "consts.h"
 
 enum MemoryRegionFlags {
 	FLAG_R = 1,
@@ -22,8 +23,8 @@ extern uint32_t system_ram[RAM_SIZE / sizeof(uint32_t)];
 extern uint32_t const system_rom[ROM_SIZE / sizeof(uint32_t)];
 
 namespace Memory {
-	uint32_t read(uint32_t logical, bool& exception);
-	void write(uint32_t logical, uint32_t value, uint32_t mask, bool& exception);
+	uint32_t read(uint32_t logical, uint32_t code, SystemException& exception);
+	void write(uint32_t logical, uint32_t value, uint32_t mask, SystemException& exception);
 	EXPORT uint32_t load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t delayed);
 	EXPORT void store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed);
 }

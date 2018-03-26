@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "compiler.h"
 #include "system.h"
+#include "consts.h"
 
 static const uint32_t PROCESSOR_ID = 0x00000301;
 
@@ -39,8 +40,16 @@ EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_
 EXPORT void trap(int exception, int address, int delayed, int coprocessor);
 
 namespace COP0 {
+	extern uint32_t status;
+	extern uint32_t cause;
+	extern uint32_t epc;
+	extern uint32_t bad_addr;
+	extern uint32_t index;
+	extern uint32_t page_table_addr;
+	extern uint32_t process_state;
+
 	void reset();
 	void handle_interrupt();
-	void bus_fault(int ex, uint32_t address, uint32_t pc, uint32_t delayed);
+	uint32_t translate(uint32_t address, uint32_t write, SystemException& exception);
 	void interrupt(SystemIRQ i);
 }

@@ -27,8 +27,10 @@ const MemoryRegion memory_regions[] = {
     { NULL }
 };
 
-uint32_t Memory::read(uint32_t physical, bool& exception) {
-	if (exception) return 0;
+uint32_t Memory::read(uint32_t logical, uint32_t code, SystemException& problem) {
+	uint32_t physical = COP0::translate(logical, false, problem);
+
+	if (problem != EXCEPTION_NONE) return -1;
 
 	switch (physical & 0x1FF00000) {
 		case DMA_BASE: return DMA::read(physical);
@@ -52,13 +54,15 @@ uint32_t Memory::read(uint32_t physical, bool& exception) {
 			break ;
 	}
 
-	exception = true;
+	problem = code ? EXCEPTION_BUSERRORINSTRUCTION : EXCEPTION_BUSERRORDATA;
 
 	return ~0;
 }
 
-void Memory::write(uint32_t physical, uint32_t value, uint32_t mask, bool& exception) {
-	if (exception) return ;
+void Memory::write(uint32_t logical, uint32_t value, uint32_t mask, SystemException& problem) {
+	uint32_t physical = COP0::translate(logical, true, problem);
+
+	if (problem != EXCEPTION_NONE) return ;
 
 	invalidate(physical);
 
@@ -86,24 +90,29 @@ void Memory::write(uint32_t physical, uint32_t value, uint32_t mask, bool& excep
 			break ;
 	}
 
-	exception = true;
+	problem = EXCEPTION_BUSERRORDATA;
 }
 
 EXPORT uint32_t Memory::load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t delayed) {
-	uint32_t physical = translate(logical, code, pc, delayed);
+	SystemException problem = EXCEPTION_NONE;
 
-	bool exception = false;
-	uint32_t value = read(physical, exception);
+	uint32_t value = read(logical, code, problem);
 
-	if (exception) COP0::bus_fault(code ? EXCEPTION_BUSERRORINSTRUCTION : EXCEPTION_BUSERRORDATA, logical, pc, delayed);
+	if (problem != EXCEPTION_NONE) {
+		COP0::bad_addr = logical;
+		exception(problem, pc, delayed, 0);
+	}
+
 	return value;
 }
 
 EXPORT void Memory::store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed) {
-	uint32_t physical = translate(logical, 1, pc, delayed);
+	SystemException problem = EXCEPTION_NONE;
 
-	bool exception = false;
-	write(physical, value, mask, exception);
+	write(logical, value, mask, problem);
 
-	if (exception) COP0::bus_fault(EXCEPTION_BUSERRORDATA, logical, pc, delayed);
+	if (problem != EXCEPTION_NONE) {
+		COP0::bad_addr = logical;
+		exception(problem, pc, delayed, 0);
+	}
 }

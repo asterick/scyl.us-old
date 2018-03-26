@@ -11,15 +11,17 @@
 #include "registers.h"
 #include "system.h"
 
-static uint32_t status;
+uint32_t COP0::status;
 
-static uint32_t cause;
-static uint32_t epc;
-static uint32_t bad_addr;
+uint32_t COP0::cause;
+uint32_t COP0::epc;
+uint32_t COP0::bad_addr;
 
-static uint32_t index;
-static uint32_t page_table_addr;
-static uint32_t process_state;
+uint32_t COP0::index;
+uint32_t COP0::page_table_addr;
+uint32_t COP0::process_state;
+
+using namespace COP0;
 
 void COP0::reset() {
 	status = STATUS_KUc | STATUS_BEV;
@@ -48,24 +50,23 @@ void COP0::handle_interrupt() {
 	}
 }
 
-void COP0::bus_fault(int ex, uint32_t address, uint32_t pc, uint32_t delayed) {
-	bad_addr = address;
-	exception(ex, pc, delayed, 0);
-}
-
-EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed) {
+uint32_t COP0::translate(uint32_t address, uint32_t write, SystemException& problem) {
 	bool translated = (address & 0xC0000000) != 0xC0000000;
 	bool is_kernel = status & STATUS_KUc;
 
+	if (problem != EXCEPTION_NONE) return ~0;
+
 	// Early supervisor test
 	if ((address & 0x80000000) && !is_kernel) {
-		exception(EXCEPTION_COPROCESSORUNUSABLE, address, pc, delayed);
+		problem = EXCEPTION_COPROCESSORUNUSABLE;
+		return ~0;
 	}
 
 	// Is address translated
 	if (translated) {
 		if (!cop_enabled(0)) {
-			exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
+			problem = EXCEPTION_COPROCESSORUNUSABLE;
+			return ~0;
 		}
 
 		uint32_t page_ptr = page_table_addr;
@@ -74,18 +75,20 @@ EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_
 		for (;;) {
 			// Current page is supervisor only
 			if ((page_ptr & PAGETABLE_KERNAL_MASK) && !is_kernel) {
-				exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);			
+				problem = EXCEPTION_COPROCESSORUNUSABLE;
+				return ~0;
 			}
 
 			// Write only page
 			if ((page_ptr & PAGETABLE_RO_MASK) && write) {
-				COP0::bus_fault(EXCEPTION_TLBMOD, address, pc, delayed);
+				problem = EXCEPTION_TLBMOD;
+				return ~0;
 			}
 
 			// Not a global page (or TBL global disabled)
 			if (PAGETABLE_GLOBAL_MASK & ~(page_ptr | process_state)) {
 				if ((PAGETABLE_PID_MASK & process_state) != (PAGETABLE_PID_MASK & page_ptr)) {
-					COP0::bus_fault(write ? EXCEPTION_TLBSTORE : EXCEPTION_TLBLOAD, address, pc, delayed);	
+					problem = write ? EXCEPTION_TLBSTORE : EXCEPTION_TLBLOAD;
 				}
 			}
 
@@ -93,6 +96,7 @@ EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_
 
 			if (length == 0) {
 				uint32_t mask = ~0 >> bits;
+
 				return (address & mask & 0xFFFFFFFC) | (page_ptr & ~mask);
 			}
 
@@ -100,23 +104,38 @@ EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_
 
 			// Page table grainularity fault
 			if (bits < 12) {
-				COP0::bus_fault(write ? EXCEPTION_TLBSTORE : EXCEPTION_TLBLOAD, address, pc, delayed);
+				problem = write ? EXCEPTION_TLBSTORE : EXCEPTION_TLBLOAD;
 			}
 
 			int index = (address >> bits) & ((1 << length) - 1);
 
 			// Chain page table lookups (with a double fault check)
-			bool exception = false;
-			page_ptr = Memory::read((page_ptr & PAGETABLE_ADDR_MASK) + (index * 4), exception);
+			page_ptr = Memory::read((page_ptr & PAGETABLE_ADDR_MASK) + (index * 4), false, problem);
 
-			if (exception) {
-				COP0::bus_fault(EXCEPTION_DOUBLEFAULT, address, pc, delayed);
+			if (problem != EXCEPTION_NONE) {
+				return ~0;
 			}
-		} 
+		}
 	}
 	
 	// Unmapped through TLB
 	return address & 0x1FFFFFFC;
+}
+
+EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed) {
+	SystemException problem = EXCEPTION_NONE;
+	uint32_t target = COP0::translate(address, write, problem);
+
+	switch(problem) {
+		case EXCEPTION_TLBSTORE:
+		case EXCEPTION_TLBLOAD:
+		case EXCEPTION_TLBMOD:
+			bad_addr = address;
+		default:
+			exception(problem, pc, delayed, 0);
+		case EXCEPTION_NONE:
+			return target;
+	}
 }
 
 EXPORT void trap(int exception, int address, int delayed, int coprocessor) {
