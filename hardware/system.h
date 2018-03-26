@@ -15,4 +15,10 @@
 
 #define KERNEL_UNMAPPED 0xA0000000
 
+enum SystemIRQ {
+	DMA_IRQn,
+	GPU_IRQn
+};
+
 #include "dma.h"
+#include "gpu.h"

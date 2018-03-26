@@ -10,7 +10,7 @@ var gl = null;
 
 var _dirty = false;
 
-var _memory, _memory16;
+var _memory8, _memory16;
 var _drawX, _drawY;
 var _viewX, _viewY, _viewWidth, _viewHeight;
 var _blend, _setSrcCoff, _setDstCoff, _resetSrcCoff, _resetDstCoff;
@@ -152,13 +152,13 @@ export function attach (container) {
 }
 
 export function register_memory(source) {
-	_memory = new Uint8Array(source);
+	_memory8 = new Uint8Array(source);
 	_memory16 = new Uint16Array(source);
 }
 
 export function get_vram_data (x, y, width, height, target) {
 	gl.bindFramebuffer(gl.FRAMEBUFFER, _framebuffer);
-	gl.readPixels(x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _memory, target);
+	gl.readPixels(x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _memory8, target);
 
 	if (!_isRendering) {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -167,10 +167,10 @@ export function get_vram_data (x, y, width, height, target) {
 
 export function set_vram_data (x, y, width, height, target) {
 	gl.bindTexture(gl.TEXTURE_2D, _shadow);
-	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _memory, target);
+	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _memory8, target);
 
 	gl.bindTexture(gl.TEXTURE_2D, _vram);
-	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _memory, target);
+	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _memory8, target);
 }
 
 export function render (type, offset, count, textured, color, vertex_ptr) {

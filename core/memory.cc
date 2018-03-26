@@ -95,7 +95,7 @@ EXPORT uint32_t Memory::load(uint32_t logical, uint32_t code, uint32_t pc, uint3
 	bool exception = false;
 	uint32_t value = read(physical, exception);
 
-	if (exception) bus_fault(code ? EXCEPTION_BUSERRORINSTRUCTION : EXCEPTION_BUSERRORDATA, logical, pc, delayed);
+	if (exception) COP0::bus_fault(code ? EXCEPTION_BUSERRORINSTRUCTION : EXCEPTION_BUSERRORDATA, logical, pc, delayed);
 	return value;
 }
 
@@ -105,5 +105,5 @@ EXPORT void Memory::store(uint32_t logical, uint32_t value, uint32_t mask, uint3
 	bool exception = false;
 	write(physical, value, mask, exception);
 
-	if (exception) bus_fault(EXCEPTION_BUSERRORDATA, logical, pc, delayed);
+	if (exception) COP0::bus_fault(EXCEPTION_BUSERRORDATA, logical, pc, delayed);
 }

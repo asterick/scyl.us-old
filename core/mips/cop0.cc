@@ -9,6 +9,7 @@
 
 #include "registers.h"
 #include "hash.h"
+#include "system.h"
 
 uint32_t tlb_lo[TLB_PAGES];
 uint32_t tlb_hi[TLB_PAGES];
@@ -30,7 +31,7 @@ void COP0::reset() {
 	Hash::reset();
 }
 
-uint32_t random() {
+static inline uint32_t random() {
 	static uint32_t inc = 0x8;
 
 	if (++inc >= 0x40) inc = 0x8;
@@ -42,17 +43,18 @@ int cop_enabled(int cop) {
 	return (((status >> 18) | ((status & STATUS_KUc) ? 1 : 0)) >> cop) & 1;
 }
 
-static void interrupt(int i) {
+void COP0::interrupt(SystemIRQ i) {
 	status |= (1 << (i + 8)) & STATUS_IM;
+	status &= ~STATUS_IEc;
 }
 
-void handle_interrupt() {
+void COP0::handle_interrupt() {
 	if ((status & STATUS_IEc) && (cause & status & STATUS_IM)) {
 		trap(EXCEPTION_INTERRUPT, registers.pc, 0, 0);
 	}
 }
 
-uint32_t read_tlb(uint32_t hash) {
+static uint32_t read_tlb(uint32_t hash) {
 	uint32_t regular = Hash::find(hash & ~0x03F);
 
 	if (regular & 0x200) {
@@ -85,12 +87,12 @@ static void write_tlb(int index) {
 	tlb_hi[index] = entry_hi;
 }
 
-void bus_fault(int ex, uint32_t address, uint32_t pc, uint32_t delayed) {
+void COP0::bus_fault(int ex, uint32_t address, uint32_t pc, uint32_t delayed) {
 	bad_addr = address;
 	exception(ex, pc, delayed, 0);
 }
 
-uint32_t lookup(uint32_t address, bool write, bool& failure) {
+uint32_t COP0::lookup(uint32_t address, bool write, bool& failure) {
 	if (failure) return ~0;
 
 	if (address & 0x8000000 && ~status & STATUS_KUc) {
@@ -140,13 +142,13 @@ EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_
 		// TLB line is inactive
 		if (~result & 0x0200) {
 			entry_hi = (entry_hi & ~0xFFFFF000) | (address & 0xFFFFF000);
-			bus_fault(write ? EXCEPTION_TLBSTORE : EXCEPTION_TLBLOAD, address, pc, delayed);
+			COP0::bus_fault(write ? EXCEPTION_TLBSTORE : EXCEPTION_TLBLOAD, address, pc, delayed);
 		}
 
 		// Writes are not permitted
 		if (write && ~result & 0x0400) {
 			entry_hi = (entry_hi & ~0xFFFFF000) | (address & 0xFFFFF000);
-			bus_fault(EXCEPTION_TLBMOD, address, pc, delayed);
+			COP0::bus_fault(EXCEPTION_TLBMOD, address, pc, delayed);
 		}
 
 		return (result & 0xFFFFF000) | (address & 0x00000FFF);

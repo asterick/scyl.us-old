@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include "compiler.h"
+#include "system.h"
 
 static const uint32_t PROCESSOR_ID = 0x00000301;
 
@@ -38,10 +39,11 @@ static const uint32_t TLB_PAGES = 64;
 
 EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed);
 EXPORT void trap(int exception, int address, int delayed, int coprocessor);
-void handle_interrupt();
-void bus_fault(int ex, uint32_t address, uint32_t pc, uint32_t delayed);
-uint32_t lookup(uint32_t address, bool write, bool& exception);
 
 namespace COP0 {
 	void reset();
+	void handle_interrupt();
+	void bus_fault(int ex, uint32_t address, uint32_t pc, uint32_t delayed);
+	uint32_t lookup(uint32_t address, bool write, bool& exception);
+	void interrupt(SystemIRQ i);
 }

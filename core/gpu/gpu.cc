@@ -84,6 +84,7 @@ void GPU::write(uint32_t, uint32_t, uint32_t) {
 
 }
 
+/*
 // This prevents the compiler from being extremely stupid with some array init
 __attribute__ ((optnone))
 EXPORT void test_gpu() {
@@ -151,3 +152,4 @@ EXPORT void test_gpu() {
 	    render(GL_POINTS, 0, 4, false, 0b1111111111111111, temp);
     }
 }
+//*/

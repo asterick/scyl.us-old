@@ -40,7 +40,7 @@ EXPORT const SystemConfiguration* getConfiguration() {
 }
 
 EXPORT void sync_state() {
-    handle_interrupt();
+    COP0::handle_interrupt();
     DMA::advance();
 }
 

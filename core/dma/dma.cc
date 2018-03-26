@@ -57,28 +57,30 @@ static bool check_trigger(int channel) {
 static inline bool chain(DMAChannel& channel) {
    if (~channel.flags & (DMACR_CHAIN_S_MASK | DMACR_CHAIN_T_MASK)) {
       channel.flags &= ~DMACR_ACTIVE_MASK;
+      if (channel.flags & DMACR_INTERRUPT_MASK) COP0::interrupt(DMA_IRQn);
       return true;
    }
 
    bool exception = false;
 
-   channel.length = Memory::read(lookup(channel.source, false, exception), exception);
+   channel.length = Memory::read(COP0::lookup(channel.source, false, exception), exception);
    channel.source += 4;
    registers.clocks --;
 
    if (channel.flags & DMACR_CHAIN_S_MASK) {
-      channel.source = Memory::read(lookup(channel.source, false, exception), exception);
+      channel.source = Memory::read(COP0::lookup(channel.source, false, exception), exception);
       channel.source += 4;
       registers.clocks --;
    }
 
    if (channel.flags & DMACR_CHAIN_T_MASK) {
-      channel.target = Memory::read(lookup(channel.source, false, exception), exception);
+      channel.target = Memory::read(COP0::lookup(channel.source, false, exception), exception);
       registers.clocks --;
    }
 
    if (channel.length == 0 || exception) {
       channel.flags &= ~DMACR_ACTIVE_MASK;
+      if (channel.flags & DMACR_INTERRUPT_MASK) COP0::interrupt(DMA_IRQn);
       return true;
    }
 
@@ -87,6 +89,9 @@ static inline bool chain(DMAChannel& channel) {
 
 static inline bool fast_dma(DMAChannel& channel) {
    int word_width;
+
+   // Cannot use triggers during a fast dma copy
+   if (channel.flags & DMACR_TRIGGER_MASK) return false;
 
    // Verify alignment and stride
    switch (channel.flags & DMACR_WIDTH_MASK) {
@@ -180,6 +185,9 @@ void DMA::advance() {
    for (int i = 0; i < MAX_DMA_CHANNELS; i++) {
       DMAChannel& channel = channels[i];
 
+      // Empty transmission, simply skip
+      while (channel.length == 0 && (channel.flags & DMACR_ACTIVE_MASK)) chain(channel);
+
       if (~channel.flags & DMACR_ACTIVE_MASK) continue ;
 
       while (fast_dma(channel)) continue ;
@@ -189,9 +197,9 @@ void DMA::advance() {
       bool exception = false;
 
       while (check_trigger(channel.flags & DMACR_TRIGGER_MASK)) {
-         uint32_t source = lookup(channel.source, false, exception);
+         uint32_t source = COP0::lookup(channel.source, false, exception);
          uint32_t value = Memory::read(source, exception);
-         uint32_t target = lookup(channel.target, true, exception);
+         uint32_t target = COP0::lookup(channel.target, true, exception);
 
          value = adjust((target & 3) - (source & 3), value);
          registers.clocks -= 2; // No cross bar
@@ -215,6 +223,7 @@ void DMA::advance() {
          if (exception) {
             channel.flags |= DMACR_EXCEPTION_MASK;
             channel.flags &= ~DMACR_ACTIVE_MASK;
+            if (channel.flags & DMACR_INTERRUPT_MASK) COP0::interrupt(DMA_IRQn);
             break ;
          }
 
@@ -260,11 +269,6 @@ void DMA::write(uint32_t address, uint32_t value, uint32_t mask) {
    const uint32_t* b = &channel.flags;
 
    if (a != b) { return ; }
-
-   if (channel.length == 0) {
-      channel.flags &= ~DMACR_ACTIVE_MASK;
-      return ;
-   }
 
    active = true;
    advance();

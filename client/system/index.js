@@ -22,6 +22,7 @@ export var registers;
 export var regions = null;
 export var running = false;
 
+var exports;
 var adjust_clock;
 var cache = [];
 
