@@ -92,7 +92,7 @@ uint32_t COP0::translate(uint32_t address, uint32_t write, SystemException& prob
 				}
 			}
 
-			int length = (page_ptr & PAGETABLE_LEN_MASK) * 8;
+			int length = 5 * (page_ptr & PAGETABLE_LEN_MASK);
 
 			if (length == 0) {
 				uint32_t mask = ~0 >> bits;
@@ -102,8 +102,8 @@ uint32_t COP0::translate(uint32_t address, uint32_t write, SystemException& prob
 
 			bits -= length;
 
-			// Page table grainularity fault
-			if (bits < 12) {
+			// Page table grainularity fault (Cannot over index)
+			if (bits <= 12) {
 				problem = EXCEPTION_TLBFAILURE;
 			}
 
