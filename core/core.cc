@@ -11,6 +11,7 @@
 #include "dma.h"
 
 #include "registers.h"
+#include "system.h"
 
 struct SystemConfiguration {
     const Registers* registers;
@@ -24,7 +25,7 @@ static uint32_t start_pc;
 // *******
 
 EXPORT void reset() {
-    registers.pc = 0xBFC00000;
+    registers.pc = RESET_VECTOR;
     registers.clocks = 0;
 
     COP0::reset();

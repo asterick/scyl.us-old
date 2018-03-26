@@ -6,29 +6,23 @@
 #include "cop0.h"
 
 #include "imports.h"
+#include "memory.h"
 
 #include "registers.h"
-#include "hash.h"
 #include "system.h"
 
-uint32_t tlb_lo[TLB_PAGES];
-uint32_t tlb_hi[TLB_PAGES];
-
 static uint32_t status;
-static uint32_t index;
-static uint32_t entry_hi;
-static uint32_t entry_lo;
 
 static uint32_t cause;
 static uint32_t epc;
 static uint32_t bad_addr;
-static uint32_t pt_base;
+
+static uint32_t page_table_addr;
+static uint32_t process_state;
 
 void COP0::reset() {
 	status = STATUS_KUc | STATUS_BEV;
 	cause = 0;
-
-	Hash::reset();
 }
 
 static inline uint32_t random() {
@@ -45,7 +39,6 @@ int cop_enabled(int cop) {
 
 void COP0::interrupt(SystemIRQ i) {
 	status |= (1 << (i + 8)) & STATUS_IM;
-	status &= ~STATUS_IEc;
 }
 
 void COP0::handle_interrupt() {
@@ -54,107 +47,144 @@ void COP0::handle_interrupt() {
 	}
 }
 
-static uint32_t read_tlb(uint32_t hash) {
-	uint32_t regular = Hash::find(hash & ~0x03F);
-
-	if (regular & 0x200) {
-		return regular;
-	}
-
-	return Hash::find(hash | 0xFFF);
-}
-
-static void write_tlb(int index) {
-	// Ignore TLB entries that can cause a collision (normally would cause a system reset)
-	if (read_tlb(entry_hi) & 0x200) {
-		return ;
-	}
-
-	// Clear out previous TLB element (if it was valid)
-	if (tlb_lo[index] & 0x200) {
-		uint32_t indexWas = tlb_hi[index] | ((tlb_lo[index] & 0x100) ? 0xFFF : 0);
-		Hash::clear(indexWas);
-	}
-
-	// Setup our fast lookup
-	if (entry_lo & 0x200) {
-		uint32_t indexIs = entry_hi | ((entry_lo & 0x100) ? 0xFFF : 0);
-		Hash::write(indexIs, entry_lo | index);
-	}
-
-	// Store our TLB (does not handle global)
-	tlb_lo[index] = entry_lo;
-	tlb_hi[index] = entry_hi;
-}
-
 void COP0::bus_fault(int ex, uint32_t address, uint32_t pc, uint32_t delayed) {
 	bad_addr = address;
 	exception(ex, pc, delayed, 0);
 }
 
 uint32_t COP0::lookup(uint32_t address, bool write, bool& failure) {
-	if (failure) return ~0;
+	bool translated = (address & 0xC0000000) != 0xC0000000;
+	bool is_kernel = status & STATUS_KUc;
 
-	if (address & 0x8000000 && ~status & STATUS_KUc) {
+	// Early supervisor test
+	if ((address & 0x80000000) && !is_kernel) {
 		failure = true;
 		return ~0;
 	}
 
-	if ((address & 0xC0000000) != 0x80000000) {
-		uint32_t page = address & 0xFFFFF000;
-		uint32_t result = read_tlb(page | (entry_hi & 0xFFF));
-
-		// TLB line is inactive
-		if (~result & 0x0200) {
+	// Is address translated
+	if (translated) {
+		if (!cop_enabled(0)) {
 			failure = true;
 			return ~0;
 		}
 
-		// Writes are not permitted
-		if (write && ~result & 0x0400) {
-			failure = true;
-			return ~0;
-		}
+		uint32_t page_ptr = page_table_addr;
+		int bits = 32;
 
-		return (result & 0xFFFFF000) | (address & 0x00000FFF);
-	} else {
-		return address & 0x1FFFFFFF;
+		for (;;) {
+			// Current page is supervisor only
+			if ((page_ptr & PAGETABLE_KERNAL_MASK) && !is_kernel) {
+				failure = true;
+				return ~0;
+			}
+
+			// Write only page
+			if ((page_ptr & PAGETABLE_RO_MASK) && write) {
+				failure = true;
+				return ~0;
+			}
+
+			// Not a global page (or TBL global disabled)
+			if (PAGETABLE_GLOBAL_MASK & ~(page_ptr | process_state)) {
+				if ((PAGETABLE_PID_MASK & process_state) != (PAGETABLE_PID_MASK & page_ptr)) {
+					failure = true;
+					return ~0;
+				}
+			}
+
+			int length = (page_ptr & PAGETABLE_LEN_MASK) * 8;
+
+			if (length == 0) {
+				uint32_t mask = ~0 >> bits;
+				return (address & mask) | (page_ptr & ~mask);
+			}
+
+			bits -= length;
+
+			// Page table grainularity fault
+			if (bits < 12) {
+				failure = true;
+				return ~0;
+			}
+
+			int index = (address >> bits) & ((1 << length) - 1);
+
+			// Chain page table lookups (with a double fault check)
+			page_ptr = Memory::read((page_ptr & PAGETABLE_ADDR_MASK) + (index * 4), failure);
+
+			if (failure) return ~0;
+		} 
 	}
+	
+	// Unmapped through TLB
+	return address & 0x1FFFFFFF;
 }
 
 EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed) {
-	// let cached = true;
-	if (address & 0x8000000 && ~status & STATUS_KUc) {
+	bool translated = (address & 0xC0000000) != 0xC0000000;
+	bool is_kernel = status & STATUS_KUc;
+
+	// Early supervisor test
+	if ((address & 0x80000000) && !is_kernel) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, pc, delayed);
 	}
 
-	// Check if line is cached (does nothing)
-	if ((address & 0xE0000000) == 0xA0000000) {
-		// cached = false;
-	}
-
-	if ((address & 0xC0000000) != 0x80000000) {
-		uint32_t page = address & 0xFFFFF000;
-		uint32_t result = read_tlb(page | (entry_hi & 0xFFF));
-
-		// cached = ~result & 0x0800;
-
-		// TLB line is inactive
-		if (~result & 0x0200) {
-			entry_hi = (entry_hi & ~0xFFFFF000) | (address & 0xFFFFF000);
-			COP0::bus_fault(write ? EXCEPTION_TLBSTORE : EXCEPTION_TLBLOAD, address, pc, delayed);
+	// Is address translated
+	if (translated) {
+		if (!cop_enabled(0)) {
+			exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 		}
 
-		// Writes are not permitted
-		if (write && ~result & 0x0400) {
-			entry_hi = (entry_hi & ~0xFFFFF000) | (address & 0xFFFFF000);
-			COP0::bus_fault(EXCEPTION_TLBMOD, address, pc, delayed);
-		}
+		uint32_t page_ptr = page_table_addr;
+		int bits = 32;
 
-		return (result & 0xFFFFF000) | (address & 0x00000FFF);
-	} else {
-		return address & 0x1FFFFFFF;
+		for (;;) {
+			// Current page is supervisor only
+			if ((page_ptr & PAGETABLE_KERNAL_MASK) && !is_kernel) {
+				exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);			
+			}
+
+			// Write only page
+			if ((page_ptr & PAGETABLE_RO_MASK) && write) {
+				COP0::bus_fault(EXCEPTION_TLBMOD, address, pc, delayed);
+			}
+
+			// Not a global page (or TBL global disabled)
+			if (PAGETABLE_GLOBAL_MASK & ~(page_ptr | process_state)) {
+				if ((PAGETABLE_PID_MASK & process_state) != (PAGETABLE_PID_MASK & page_ptr)) {
+					COP0::bus_fault(write ? EXCEPTION_TLBSTORE : EXCEPTION_TLBLOAD, address, pc, delayed);	
+				}
+			}
+
+			int length = (page_ptr & PAGETABLE_LEN_MASK) * 8;
+
+			if (length == 0) {
+				uint32_t mask = ~0 >> bits;
+				return (address & mask) | (page_ptr & ~mask);
+			}
+
+			bits -= length;
+
+			// Page table grainularity fault
+			if (bits < 12) {
+				COP0::bus_fault(write ? EXCEPTION_TLBSTORE : EXCEPTION_TLBLOAD, address, pc, delayed);
+			}
+
+			int index = (address >> bits) & ((1 << length) - 1);
+
+			// Chain page table lookups (with a double fault check)
+			bool exception = false;
+			page_ptr = Memory::read((page_ptr & PAGETABLE_ADDR_MASK) + (index * 4), exception);
+
+			if (exception) {
+				COP0::bus_fault(EXCEPTION_DOUBLEFAULT, address, pc, delayed);
+			}
+		} 
 	}
+	
+	// Unmapped through TLB
+	return address & 0x1FFFFFFF;
 }
 
 EXPORT void trap(int exception, int address, int delayed, int coprocessor) {
@@ -162,7 +192,7 @@ EXPORT void trap(int exception, int address, int delayed, int coprocessor) {
 	epc = address;
 
 	// Enter kernal mode, and shift the mode flags
-	status = (status & ~ 0x3F) | ((status << 2) & 0x3C) | STATUS_KUc;
+	status = (status & ~0x3F) | ((status << 2) & 0x3C) | STATUS_KUc;
 
 	// Set our cause register
 	cause = (cause & 0x0000FF00) |
@@ -173,11 +203,11 @@ EXPORT void trap(int exception, int address, int delayed, int coprocessor) {
 	switch (exception) {
 	case EXCEPTION_TLBLOAD:
 	case EXCEPTION_TLBSTORE:
-		registers.pc = (status & STATUS_BEV) ? 0xbfc00100 : 0x80000000;
+		registers.pc = (status & STATUS_BEV) ? TLB_EXCEPTION_VECTOR : REMAPPED_TLB_EXCEPTION_VECTOR;
 		break ;
 
 	default:
-		registers.pc = (status & STATUS_BEV) ? 0xbfc00180 : 0x80000080;
+		registers.pc = (status & STATUS_BEV) ? EXCEPTION_VECTOR : REMAPPED_EXCEPTION_VECTOR;
 		break ;
 	}
 }
@@ -200,20 +230,14 @@ EXPORT void MFC0(uint32_t address, uint32_t word, uint32_t delayed) {
 		break ;
 
 	// Virtual-memory registers
-	case 0x0: // c0_index
-		value = index;
+	case 0x0:
+		value = page_table_addr;
 		break ;
 	case 0x1: // c0_random (non-deterministic, cheap method)
 		value = random() << 8;
 		break ;
-	case 0x2: // c0_entrylo
-		value = entry_lo;
-		break ;
-	case 0xA: // c0_entryhi
-		value = entry_hi;
-		break ;
-	case 0x4: // c0_context
-		value = pt_base | ((bad_addr & 0xFFFFF800) >> 11);
+	case 0x2:
+		value = process_state;
 		break ;
 	case 0x8: // c0_vaddr
 		value = bad_addr;
@@ -245,18 +269,12 @@ EXPORT void MTC0(uint32_t address, uint32_t word, uint32_t delayed) {
 	uint32_t value = read_reg(FIELD_RT(word));
 
 	switch (FIELD_RD(word)) {
-	// Virtual-memory registers
-	case 0x0: // c0_index
-		index = value & 0x3F00;
+	// Virtual address registers
+	case 0x0:
+		page_table_addr = value;
 		break ;
-	case 0x2: // c0_entrylo
-		entry_lo = value & 0xFFFFFFC0;
-		break ;
-	case 0xA: // c0_entryhi
-		entry_hi = value & 0xFFFFFF00;
-		break ;
-	case 0x4: // c0_context
-		pt_base = value & 0xFFE00000;
+	case 0x2:
+		process_state = value & (PAGETABLE_GLOBAL_MASK | PAGETABLE_PID_MASK);
 		break ;
 
 	// Status/Exception registers
@@ -281,6 +299,7 @@ EXPORT void RFE(uint32_t address, uint32_t word, uint32_t delayed) {
 	status = (status & ~0xF) | ((status >> 2) & 0xF);
 }
 
+/*
 EXPORT void TLBR(uint32_t address, uint32_t word, uint32_t delayed) {
 	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
@@ -319,6 +338,7 @@ EXPORT void TLBP(uint32_t address, uint32_t word, uint32_t delayed) {
 		index |= 0x80000000;
 	}
 }
+*/
 
 // ***********
 // ** Unused move instructions

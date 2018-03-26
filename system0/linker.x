@@ -1,6 +1,6 @@
 SECTIONS
 {
-	.text 0xbfc00000 : {
+	.text 0xffc00000 : {
 		*(.reset)
 		. = 0x100;
 		*(.tlb)
@@ -12,7 +12,7 @@ SECTIONS
 	. = ALIGN(8);
 	_DATA_ROM = .;
 
-	. = 0x80020000;
+	. = 0xE0020000;
 	_STACK_TOP = .;
 	_DATA_START = .;
 	.data : { *(.data) }
