@@ -148,9 +148,6 @@ export const instructions = {
         0x10: {
             // Note: this does not match all the extra zeros
             field: "funct",
-            0x01: "TLBR",
-            0x02: "TLBWI",
-            0x06: "TLBWR",
             0x08: "TLBP",
             0x10: "RFE"
         },

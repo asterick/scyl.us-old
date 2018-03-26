@@ -17,6 +17,7 @@ static uint32_t cause;
 static uint32_t epc;
 static uint32_t bad_addr;
 
+static uint32_t index;
 static uint32_t page_table_addr;
 static uint32_t process_state;
 
@@ -97,7 +98,7 @@ uint32_t COP0::lookup(uint32_t address, bool write, bool& failure) {
 
 			if (length == 0) {
 				uint32_t mask = ~0 >> bits;
-				return (address & mask) | (page_ptr & ~mask);
+				return (address & mask & 0xFFFFFFFC) | (page_ptr & ~mask);
 			}
 
 			bits -= length;
@@ -118,7 +119,7 @@ uint32_t COP0::lookup(uint32_t address, bool write, bool& failure) {
 	}
 	
 	// Unmapped through TLB
-	return address & 0x1FFFFFFF;
+	return address & 0x1FFFFFFC;
 }
 
 EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed) {
@@ -161,7 +162,7 @@ EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_
 
 			if (length == 0) {
 				uint32_t mask = ~0 >> bits;
-				return (address & mask) | (page_ptr & ~mask);
+				return (address & mask & 0xFFFFFFFC) | (page_ptr & ~mask);
 			}
 
 			bits -= length;
@@ -184,7 +185,7 @@ EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_
 	}
 	
 	// Unmapped through TLB
-	return address & 0x1FFFFFFF;
+	return address & 0x1FFFFFFC;
 }
 
 EXPORT void trap(int exception, int address, int delayed, int coprocessor) {
@@ -230,13 +231,16 @@ EXPORT void MFC0(uint32_t address, uint32_t word, uint32_t delayed) {
 		break ;
 
 	// Virtual-memory registers
-	case 0x0:
-		value = page_table_addr;
+	case 0x0: //
+		value = index;
 		break ;
 	case 0x1: // c0_random (non-deterministic, cheap method)
 		value = random() << 8;
 		break ;
 	case 0x2:
+		value = page_table_addr;
+		break ;
+	case 0x3:
 		value = process_state;
 		break ;
 	case 0x8: // c0_vaddr
@@ -299,46 +303,20 @@ EXPORT void RFE(uint32_t address, uint32_t word, uint32_t delayed) {
 	status = (status & ~0xF) | ((status >> 2) & 0xF);
 }
 
-/*
-EXPORT void TLBR(uint32_t address, uint32_t word, uint32_t delayed) {
-	if (!cop_enabled(0)) {
-		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
-	}
-
-	entry_lo = tlb_lo[(index >> 8) & 0x3F];
-	entry_hi = tlb_hi[(index >> 8) & 0x3F];
-}
-
-EXPORT void TLBWI(uint32_t address, uint32_t word, uint32_t delayed) {
-	if (!cop_enabled(0)) {
-		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
-	}
-
-	write_tlb((index >> 8) & 0x3F);
-}
-
-EXPORT void TLBWR(uint32_t address, uint32_t word, uint32_t delayed) {
-	if (!cop_enabled(0)) {
-		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
-	}
-
-	write_tlb(random());
-}
-
 EXPORT void TLBP(uint32_t address, uint32_t word, uint32_t delayed) {
 	if (!cop_enabled(0)) {
 		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
 	}
 
-	uint32_t found = read_tlb(entry_hi);
+	bool failure = false;
+	uint32_t value = COP0::lookup(address, false, failure);
 
-	if (found & 0x200) {
-		index = (found & 0x3F) << 8;
+	if (failure) {
+		index |= 0x00000003;
 	} else {
-		index |= 0x80000000;
+		index = value;
 	}
 }
-*/
 
 // ***********
 // ** Unused move instructions
