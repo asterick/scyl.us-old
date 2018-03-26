@@ -104,15 +104,17 @@ uint32_t COP0::translate(uint32_t address, uint32_t write, SystemException& prob
 
 			// Page table grainularity fault
 			if (bits < 12) {
-				problem = write ? EXCEPTION_TLBSTORE : EXCEPTION_TLBLOAD;
+				problem = EXCEPTION_TLBFAILURE;
 			}
 
 			int index = (address >> bits) & ((1 << length) - 1);
+			int address = (page_ptr & PAGETABLE_ADDR_MASK) + (index * 4);
 
-			// Chain page table lookups (with a double fault check)
-			page_ptr = Memory::read((page_ptr & PAGETABLE_ADDR_MASK) + (index * 4), false, problem);
+			// Chain page table lookups
+			page_ptr = Memory::read(address, false, problem);
 
 			if (problem != EXCEPTION_NONE) {
+				problem = EXCEPTION_TLBFAILURE;
 				return ~0;
 			}
 		}
@@ -130,6 +132,7 @@ EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_
 		case EXCEPTION_TLBSTORE:
 		case EXCEPTION_TLBLOAD:
 		case EXCEPTION_TLBMOD:
+		case EXCEPTION_TLBFAILURE:
 			bad_addr = address;
 		default:
 			exception(problem, pc, delayed, 0);
