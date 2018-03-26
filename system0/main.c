@@ -17,8 +17,8 @@ volatile uint32_t DATA[] = {
 };
 
 void* memcpy(void* dst, const void* src, size_t n) {
-	uint32_t source = (uint32_t)src;
-	uint32_t target = (uint32_t)dst;
+	uint32_t source = 0x1FFFFFFF & (uint32_t)src;
+	uint32_t target = 0x1FFFFFFF & (uint32_t)dst;
 
 	if ((3 & source) == (target & 3)) {
 		while (source & 3) {

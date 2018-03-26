@@ -53,75 +53,6 @@ void COP0::bus_fault(int ex, uint32_t address, uint32_t pc, uint32_t delayed) {
 	exception(ex, pc, delayed, 0);
 }
 
-uint32_t COP0::lookup(uint32_t address, bool write, bool& failure) {
-	bool translated = (address & 0xC0000000) != 0xC0000000;
-	bool is_kernel = status & STATUS_KUc;
-
-	// Early supervisor test
-	if ((address & 0x80000000) && !is_kernel) {
-		failure = true;
-		return ~0;
-	}
-
-	// Is address translated
-	if (translated) {
-		if (!cop_enabled(0)) {
-			failure = true;
-			return ~0;
-		}
-
-		uint32_t page_ptr = page_table_addr;
-		int bits = 32;
-
-		for (;;) {
-			// Current page is supervisor only
-			if ((page_ptr & PAGETABLE_KERNAL_MASK) && !is_kernel) {
-				failure = true;
-				return ~0;
-			}
-
-			// Write only page
-			if ((page_ptr & PAGETABLE_RO_MASK) && write) {
-				failure = true;
-				return ~0;
-			}
-
-			// Not a global page (or TBL global disabled)
-			if (PAGETABLE_GLOBAL_MASK & ~(page_ptr | process_state)) {
-				if ((PAGETABLE_PID_MASK & process_state) != (PAGETABLE_PID_MASK & page_ptr)) {
-					failure = true;
-					return ~0;
-				}
-			}
-
-			int length = (page_ptr & PAGETABLE_LEN_MASK) * 8;
-
-			if (length == 0) {
-				uint32_t mask = ~0 >> bits;
-				return (address & mask & 0xFFFFFFFC) | (page_ptr & ~mask);
-			}
-
-			bits -= length;
-
-			// Page table grainularity fault
-			if (bits < 12) {
-				failure = true;
-				return ~0;
-			}
-
-			int index = (address >> bits) & ((1 << length) - 1);
-
-			// Chain page table lookups (with a double fault check)
-			page_ptr = Memory::read((page_ptr & PAGETABLE_ADDR_MASK) + (index * 4), failure);
-
-			if (failure) return ~0;
-		} 
-	}
-	
-	// Unmapped through TLB
-	return address & 0x1FFFFFFC;
-}
-
 EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed) {
 	bool translated = (address & 0xC0000000) != 0xC0000000;
 	bool is_kernel = status & STATUS_KUc;
@@ -301,21 +232,6 @@ EXPORT void RFE(uint32_t address, uint32_t word, uint32_t delayed) {
 	}
 
 	status = (status & ~0xF) | ((status >> 2) & 0xF);
-}
-
-EXPORT void TLBP(uint32_t address, uint32_t word, uint32_t delayed) {
-	if (!cop_enabled(0)) {
-		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
-	}
-
-	bool failure = false;
-	uint32_t value = COP0::lookup(address, false, failure);
-
-	if (failure) {
-		index |= 0x00000003;
-	} else {
-		index = value;
-	}
 }
 
 // ***********
