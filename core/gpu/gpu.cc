@@ -36,7 +36,7 @@ uint32_t VRAM_WORDS[VRAM_WIDTH * VRAM_HEIGHT];
 // 0001yyyy yyyy yyyy ???? xxxx xxxx xxxx	// Set texture X/Y
 // 1010yyyy yyyy yyyy ?EMM xxxx xxxx xxxx	// Set CLUT mode (0 = 1bpp, 1 = 2bpp, 2 = 4bpp, 3 = 8bpp, E = enable)
 // 1011???? ???? ??sm aaaa bbbb cccc dddd	// Set blend coff + masking	
-// 11kkpctb									// Draw primitive
+// 11kkpctb	RRRR RRRR GGGG GGGG BBBB BBBB 	// Draw primitive + first color
 
 // KK = kind (point, line, triangle, quads)
 //  C = Flat shaded?
@@ -106,10 +106,10 @@ EXPORT void test_gpu() {
     
     {
     	static const uint16_t temp[] = {
-	        0,   0, 0x00FF, 0x0000,
-	        0, 240, 0xFF00, 0x0000,
-	      256,   0, 0x0000, 0x00FF,
-	      256, 240, 0xFFFF, 0x00FF,
+			0x00FF, 0x0000,   0,   0,
+			0xFF00, 0x0000,   0, 240,
+			0x0000, 0x00FF, 256,   0,
+			0xFFFF, 0x00FF, 256, 240,
 	  	};
 	    render(GL_TRIANGLE_STRIP, temp, 0, 4, false, false);
     }
@@ -148,6 +148,7 @@ EXPORT void test_gpu() {
 
     {
 	    static const uint16_t temp[] = {
+    		0, 	  0,	// Dummy color
 	        64,  64, 0, 0,
 	       192,  64, 4, 0,
 	        64, 192, 0, 4,
@@ -158,6 +159,7 @@ EXPORT void test_gpu() {
 
     {
     	static const uint16_t temp[] = {
+    		0, 	  0,	// Dummy color
 	    	96,  96,
 	        96, 160,
 	       160,  96,
