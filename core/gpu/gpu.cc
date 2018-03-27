@@ -102,7 +102,7 @@ void GPU::write(uint32_t address, uint32_t value, uint32_t mask) {
 // This prevents the compiler from being extremely stupid with some array init
 __attribute__ ((optnone))
 EXPORT void test_gpu() {
-    set_clut(true, 2, 0, 220);
+    set_clut(2, 0, 220);
     
     {
     	static const uint16_t temp[] = {
