@@ -14,7 +14,7 @@ var _memory8, _memory16;
 var _drawX, _drawY;
 var _viewX, _viewY, _viewWidth, _viewHeight;
 var _setSrcCoff, _setDstCoff, _resetSrcCoff, _resetDstCoff;
-var _clutEnable, _clutMode, _clutX, _clutY, _clutIndexMask, _clutIndexShift, _clutColorMask;
+var _clutMode, _clutX, _clutY;
 var _clipX, _clipY, _clipWidth, _clipHeight;
 var _viewX, _viewY, _viewWidth, _viewHeight;
 var _dither;
@@ -52,16 +52,10 @@ export function set_texture_mask(mx, my, ox, oy) {
 	_textureMaskOffsetY = oy;
 }
 
-export function set_clut(enable, mode, x, y) {
-	_clutEnable = enable;
+export function set_clut(mode, x, y) {
 	_clutMode = mode;
 	_clutX = x;
 	_clutY = y;
-
-	// Precompute some constants
-	_clutIndexMask = (1 << _clutMode) - 1;
-	_clutIndexShift = 4 - _clutMode;
-	_clutColorMask = (1 << (1 << _clutMode)) - 1;
 }
 
 export function set_draw(x, y) {
@@ -199,17 +193,20 @@ export function render (type, vertex_ptr, offset, count, blend, textured, color)
    	// Texture settings
    	gl.uniform1i(_drawShader.uniforms.uTextured, textured);
    	if (textured) {
+   		const clutEnable = _clutMode < 16;
+
 	   	gl.uniform2i(_drawShader.uniforms.uTextureOffset, _textureX, _textureY);
 	   	gl.uniform2i(_drawShader.uniforms.uTextureMask, _textureMaskX, _textureMaskY);
 	   	gl.uniform2i(_drawShader.uniforms.uTextureMaskOffset, _textureMaskOffsetX, _textureMaskOffsetY);
-	   	gl.uniform1i(_drawShader.uniforms.uClutEnable, _clutEnable);
+	   	gl.uniform1i(_drawShader.uniforms.uClutEnable, clutEnable);
 
-	   	if (_clutEnable) {
+		// Precompute some constants
+	   	if (clutEnable) {
 		   	gl.uniform1i(_drawShader.uniforms.uClutMode, _clutMode);
 	   		gl.uniform2i(_drawShader.uniforms.uClutOffset, _clutX, _clutY);
-	   		gl.uniform1i(_drawShader.uniforms.uClutIndexMask, _clutIndexMask);
-	   		gl.uniform1i(_drawShader.uniforms.uClutIndexShift, _clutIndexShift);
-	   		gl.uniform1ui(_drawShader.uniforms.uClutColorMask, _clutColorMask);
+	   		gl.uniform1i(_drawShader.uniforms.uClutIndexMask, (1 << _clutMode) - 1);
+	   		gl.uniform1i(_drawShader.uniforms.uClutIndexShift, 4 - _clutMode);
+	   		gl.uniform1ui(_drawShader.uniforms.uClutColorMask, (1 << (1 << _clutMode)) - 1);
 	   	}
    	}
 

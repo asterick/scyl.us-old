@@ -43,7 +43,7 @@ void main(void) {
 
 	// Load our texture
 	if (uTextured) {
-		ivec2 iVec = (ivec2(vTexture) & ~uTextureMask) | uTextureMaskOffset;	// TODO PROPER MASK
+		ivec2 iVec = (ivec2(vTexture) & ~uTextureMask) | (uTextureMaskOffset & uTextureMask);
 		ivec2 texpos;
 
 		// Paletted mode

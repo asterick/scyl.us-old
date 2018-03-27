@@ -15,7 +15,7 @@ extern "C" {
 	void set_blend_coff(float setSrcCoff, float setDstCoff, float resetSrcCoff, float resetDstCoff);
 	void set_texture(uint16_t x, uint16_t y);
 	void set_texture_mask(uint16_t mx, uint16_t my, uint16_t ox, uint16_t oy);
-	void set_clut(bool enable, int mode, uint16_t x, uint16_t y);
+	void set_clut(int mode, uint16_t x, uint16_t y);
 	void set_draw(uint16_t x, uint16_t y);
 	void set_clip(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
 	void set_viewport (uint16_t x, uint16_t y, uint16_t width, uint16_t height);
@@ -23,6 +23,7 @@ extern "C" {
 	void set_mask (bool masked, bool setMask);
 	void get_vram_data (uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t* target);
 	void set_vram_data (uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint32_t* target);
+
 	void render (GLenum type, const uint16_t* vertexes, int offset, int count, bool blend, bool textured, int color);
 }
 
@@ -31,9 +32,11 @@ const int VRAM_HEIGHT = 512;
 
 uint32_t VRAM_WORDS[VRAM_WIDTH * VRAM_HEIGHT];
 
-// 00000000_XXXX_XXXX_XXXX_YYYY_YYYY_YYYY	// Set Frame X/Y
-// 00000001_XXXX_XXXX_XXXX_YYYY_YYYY_YYYY	// Set Frame X/Y
-// 11kkctpb
+// 0000yyyy yyyy yyyy ???? xxxx xxxx xxxx	// Set draw X/Y
+// 0001yyyy yyyy yyyy ???? xxxx xxxx xxxx	// Set texture X/Y
+// 1010yyyy yyyy yyyy ?EMM xxxx xxxx xxxx	// Set CLUT mode (0 = 1bpp, 1 = 2bpp, 2 = 4bpp, 3 = 8bpp, E = enable)
+// 1011???? ???? ??sm aaaa bbbb cccc dddd	// Set blend coff + masking	
+// 11kkpctb									// Draw primitive
 
 // KK = kind (point, line, triangle, quads)
 //  C = Flat shaded?
@@ -81,7 +84,7 @@ void GPU::reset() {
 	set_clip(0, 0, 256, 240);
 	set_draw(0, 0);
 	set_texture(0, 0);
-	set_clut(false, 0, 0, 0);
+	set_clut(16, 0, 0);	// Disable CLUT
 	set_mask(true, false);
 	set_dither(true);
 	set_blend_coff(1, 0, 0.5, 0.5);
