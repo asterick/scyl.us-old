@@ -27,6 +27,15 @@ const MemoryRegion memory_regions[] = {
     { NULL }
 };
 
+extern "C" {
+	uint32_t cedar_read(uint32_t);
+	void cedar_write(uint32_t, uint32_t, uint32_t);
+	uint32_t dsp_read(uint32_t);
+	void dsp_write(uint32_t, uint32_t, uint32_t);
+	uint32_t spu_read(uint32_t);
+	void spu_write(uint32_t, uint32_t, uint32_t);
+}
+
 uint32_t Memory::read(uint32_t logical, uint32_t code, SystemException& problem) {
 	uint32_t physical = COP0::translate(logical, false, problem);
 
