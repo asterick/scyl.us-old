@@ -12,7 +12,7 @@ import * as renderer from "./renderer";
 
 import { 
 	register_memory,
-	set_blend, set_texture, set_clut, set_draw, set_clip, set_viewport, set_dither, set_mask, 
+	set_blend_coff, set_texture, set_texture_mask, set_clut, set_draw, set_clip, set_viewport, set_dither, set_mask, 
 	get_vram_data, set_vram_data, render 
 } from "./renderer";
 
@@ -31,7 +31,7 @@ const _environment = {
 	execute,
 
 	// GPU Rendering calls
-	set_blend, set_texture, set_clut, set_draw, set_clip, set_viewport, set_dither, set_mask,
+	set_blend_coff, set_texture, set_texture_mask, set_clut, set_draw, set_clip, set_viewport, set_dither, set_mask,
 	get_vram_data, set_vram_data, render,
 
 	// Accessors
@@ -113,6 +113,7 @@ export async function initialize() {
 	registers = new Uint32Array(memory, dv.getUint32(address, true), 64);
 
 	register_memory(memory);
+	exports.test_gpu();
 
 	return module;
 }

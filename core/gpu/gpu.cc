@@ -12,8 +12,9 @@
 #include "gpu.h"
 
 extern "C" {
-	void set_blend(bool blend, float setSrcCoff, float setDstCoff, float resetSrcCoff, float resetDstCoff);
+	void set_blend_coff(float setSrcCoff, float setDstCoff, float resetSrcCoff, float resetDstCoff);
 	void set_texture(uint16_t x, uint16_t y);
+	void set_texture_mask(uint16_t mx, uint16_t my, uint16_t ox, uint16_t oy);
 	void set_clut(bool enable, int mode, uint16_t x, uint16_t y);
 	void set_draw(uint16_t x, uint16_t y);
 	void set_clip(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
@@ -22,13 +23,23 @@ extern "C" {
 	void set_mask (bool masked, bool setMask);
 	void get_vram_data (uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t* target);
 	void set_vram_data (uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint32_t* target);
-	void render (GLenum type, int offset, int count, bool textured, int color, const uint16_t* vertexes);
+	void render (GLenum type, const uint16_t* vertexes, int offset, int count, bool blend, bool textured, int color);
 }
 
 const int VRAM_WIDTH = 1024;
 const int VRAM_HEIGHT = 512;
 
 uint32_t VRAM_WORDS[VRAM_WIDTH * VRAM_HEIGHT];
+
+// 00000000_XXXX_XXXX_XXXX_YYYY_YYYY_YYYY	// Set Frame X/Y
+// 00000001_XXXX_XXXX_XXXX_YYYY_YYYY_YYYY	// Set Frame X/Y
+// 11kkctpb
+
+// KK = kind (point, line, triangle, quads)
+//  C = Flat shaded?
+//  T = Textured? (ignored for points)
+//  P = Poly (repeat until msb of X or Y is set)
+//  B = Enable blending
 
 static void read_data(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t* target) {
 	get_vram_data(x, y, width, height, VRAM_WORDS);
@@ -73,18 +84,18 @@ void GPU::reset() {
 	set_clut(false, 0, 0, 0);
 	set_mask(true, false);
 	set_dither(true);
-	set_blend(false, 0, 0, 0, 0);
+	set_blend_coff(1, 0, 0.5, 0.5);
+	set_texture_mask(0, 0, 0, 0);
 }
 
-uint32_t GPU::read(uint32_t) {
+uint32_t GPU::read(uint32_t address) {
 	return ~0;
 }
 
-void GPU::write(uint32_t, uint32_t, uint32_t) {
+void GPU::write(uint32_t address, uint32_t value, uint32_t mask) {
 
 }
 
-/*
 // This prevents the compiler from being extremely stupid with some array init
 __attribute__ ((optnone))
 EXPORT void test_gpu() {
@@ -94,10 +105,10 @@ EXPORT void test_gpu() {
     	static const uint16_t temp[] = {
 	        0,   0, 0b1000000000000000,
 	        0, 240, 0b1000000000011111,
-	      256, 240, 0b1111111111100000,
 	      256,   0, 0b1111110000000000,
+	      256, 240, 0b1111111111100000,
 	  	};
-	    render(GL_TRIANGLE_FAN, 0, 4, false, -1, temp);
+	    render(GL_TRIANGLE_STRIP, temp, 0, 4, false, false, -1);
     }
 
     {
@@ -130,16 +141,16 @@ EXPORT void test_gpu() {
     }
     
     set_mask(false, false);
-    set_blend(true, 1.0, 0.00, 0.50, 0.50);
+    set_blend_coff(1.0, 0.00, 0.50, 0.50);
 
     {
 	    static const uint16_t temp[] = {
 	        64,  64, 0, 0,
-	        64, 192, 0, 4,
 	       192,  64, 4, 0,
+	        64, 192, 0, 4,
 	       192, 192, 4, 4,
 	   	};
-	    render(GL_TRIANGLE_STRIP, 0, 4, true, 0b1111111111111111, temp);
+	    render(GL_TRIANGLE_STRIP, temp, 0, 4, true, true, 0b1111111111111111);
 	}
 
     {
@@ -149,7 +160,7 @@ EXPORT void test_gpu() {
 	       160,  96,
 	       160, 160
 	   	};
-	    render(GL_POINTS, 0, 4, false, 0b1111111111111111, temp);
+	    render(GL_POINTS, temp, 0, 4, true, false, 0b1111111111111111);
     }
 }
-//*/
+

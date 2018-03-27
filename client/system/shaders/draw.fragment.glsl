@@ -6,6 +6,8 @@ uniform mediump usampler2D sVram;
 
 uniform bool uTextured;
 uniform ivec2 uTextureOffset;
+uniform ivec2 uTextureMask;
+uniform ivec2 uTextureMaskOffset;
 uniform ivec2 uClutOffset;
 
 uniform bool uClutEnable;
@@ -41,7 +43,7 @@ void main(void) {
 
 	// Load our texture
 	if (uTextured) {
-		ivec2 iVec = ivec2(vTexture) & 0xFF;
+		ivec2 iVec = (ivec2(vTexture) & ~uTextureMask) | uTextureMaskOffset;	// TODO PROPER MASK
 		ivec2 texpos;
 
 		// Paletted mode

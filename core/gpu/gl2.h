@@ -1,6 +1,6 @@
-// Heavily stripped down GL defines
-
 #pragma once
+
+// Heavily stripped down GL defines
 
 #include <stdint.h>
 

@@ -13,13 +13,16 @@ var _dirty = false;
 var _memory8, _memory16;
 var _drawX, _drawY;
 var _viewX, _viewY, _viewWidth, _viewHeight;
-var _blend, _setSrcCoff, _setDstCoff, _resetSrcCoff, _resetDstCoff;
+var _setSrcCoff, _setDstCoff, _resetSrcCoff, _resetDstCoff;
 var _clutEnable, _clutMode, _clutX, _clutY, _clutIndexMask, _clutIndexShift, _clutColorMask;
 var _clipX, _clipY, _clipWidth, _clipHeight;
 var _viewX, _viewY, _viewWidth, _viewHeight;
 var _dither;
 var _masked, _setMask;
+
 var _textureX, _textureY;
+var _textureMaskX, _textureMaskY;
+var _textureMaskOffsetX, _textureMaskOffsetY;
 
 var _canvas, _viewportWidth, _viewportHeight, _aspectRatio;
 var _isRendering;
@@ -30,8 +33,7 @@ var _copyBuffer, _drawBuffer;
 var _vram, _shadow, _framebuffer;
 
 // Bind our function
-export function set_blend(blend, setSrcCoff, setDstCoff, resetSrcCoff, resetDstCoff) {
-	_blend = blend;
+export function set_blend_coff(setSrcCoff, setDstCoff, resetSrcCoff, resetDstCoff) {
 	_setSrcCoff = setSrcCoff;
 	_setDstCoff = setDstCoff;
 	_resetSrcCoff = resetSrcCoff;
@@ -41,6 +43,13 @@ export function set_blend(blend, setSrcCoff, setDstCoff, resetSrcCoff, resetDstC
 export function set_texture(x, y) {
 	_textureX = x;
 	_textureY = y;
+}
+
+export function set_texture_mask(mx, my, ox, oy) {
+	_textureMaskX = mx;
+	_textureMaskY = my;
+	_textureMaskOffsetX = ox;
+	_textureMaskOffsetY = oy;
 }
 
 export function set_clut(enable, mode, x, y) {
@@ -173,14 +182,14 @@ export function set_vram_data (x, y, width, height, target) {
 	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _memory8, target);
 }
 
-export function render (type, offset, count, textured, color, vertex_ptr) {
+export function render (type, vertex_ptr, offset, count, blend, textured, color) {
 	const flat = color >= 0;
 	const size = 4 + (textured ? 4 : 0) + (flat ? 0 : 2);
 
 	_enterRender();
 	_requestRepaint();
 
-	if (_blend) {
+	if (blend) {
 		_parityCopy();
 	}
 
@@ -191,6 +200,8 @@ export function render (type, offset, count, textured, color, vertex_ptr) {
    	gl.uniform1i(_drawShader.uniforms.uTextured, textured);
    	if (textured) {
 	   	gl.uniform2i(_drawShader.uniforms.uTextureOffset, _textureX, _textureY);
+	   	gl.uniform2i(_drawShader.uniforms.uTextureMask, _textureMaskX, _textureMaskY);
+	   	gl.uniform2i(_drawShader.uniforms.uTextureMaskOffset, _textureMaskOffsetX, _textureMaskOffsetY);
 	   	gl.uniform1i(_drawShader.uniforms.uClutEnable, _clutEnable);
 
 	   	if (_clutEnable) {
@@ -203,8 +214,8 @@ export function render (type, offset, count, textured, color, vertex_ptr) {
    	}
 
    	// Blending flags
-	gl.uniform1i(_drawShader.uniforms.uSemiTransparent, _blend);
-	if (_blend) {
+	gl.uniform1i(_drawShader.uniforms.uSemiTransparent, blend);
+	if (blend) {
 		gl.uniform2f(_drawShader.uniforms.uSetCoff, _setSrcCoff, _setDstCoff);
 		gl.uniform2f(_drawShader.uniforms.uResetCoff, _resetSrcCoff, _resetDstCoff);
 	}
