@@ -176,8 +176,7 @@ export function set_vram_data (x, y, width, height, target) {
 	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _memory8, target);
 }
 
-export function render (type, vertex_ptr, offset, count, blend, textured, color) {
-	const shaded = color === 0;
+export function render (type, vertex_ptr, offset, count, blend, textured, shaded) {
 	const size = 4 + (textured ? 4 : 0) + (shaded ? 4 : 0);
 
 	_enterRender();
@@ -231,7 +230,9 @@ export function render (type, vertex_ptr, offset, count, blend, textured, color)
 		gl.vertexAttribIPointer(_drawShader.attributes.aColor, 2, gl.SHORT, size, offset);
 		gl.enableVertexAttribArray(_drawShader.attributes.aColor);
 	} else {
-		gl.vertexAttribI4i(_drawShader.attributes.aColor, color & 0xFFFF, color >> 16, color & 0xFFFF, color >> 16);
+		gl.vertexAttribI4i(_drawShader.attributes.aColor, 
+			_memory16[vertex_ptr / 2], _memory16[vertex_ptr / 2 + 1], 
+			_memory16[vertex_ptr / 2], _memory16[vertex_ptr / 2 + 1]);
 		gl.disableVertexAttribArray(_drawShader.attributes.aColor);
 	}
 
