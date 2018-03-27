@@ -6,6 +6,7 @@
 
   "deploy": {
     "production": {
+      "ssh_options": ["ForwardAgent=yes"],
       "user": "node",
       "host": "scyl.us",
       "ref": "origin/master",
