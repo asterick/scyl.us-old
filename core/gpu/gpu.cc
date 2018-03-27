@@ -24,7 +24,7 @@ extern "C" {
 	void get_vram_data (uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t* target);
 	void set_vram_data (uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint32_t* target);
 
-	void render (GLenum type, const uint16_t* vertexes, int offset, int count, bool blend, bool textured, int color);
+	void render (GLenum type, const uint16_t* vertexes, int offset, int count, bool blend, bool textured, int color = 0);
 }
 
 const int VRAM_WIDTH = 1024;
@@ -106,12 +106,12 @@ EXPORT void test_gpu() {
     
     {
     	static const uint16_t temp[] = {
-	        0,   0, 0b1000000000000000,
-	        0, 240, 0b1000000000011111,
-	      256,   0, 0b1111110000000000,
-	      256, 240, 0b1111111111100000,
+	        0,   0, 0x00FF, 0x0000,
+	        0, 240, 0xFF00, 0x0000,
+	      256,   0, 0x0000, 0x00FF,
+	      256, 240, 0xFFFF, 0x00FF,
 	  	};
-	    render(GL_TRIANGLE_STRIP, temp, 0, 4, false, false, -1);
+	    render(GL_TRIANGLE_STRIP, temp, 0, 4, false, false);
     }
 
     {
@@ -144,7 +144,7 @@ EXPORT void test_gpu() {
     }
     
     set_mask(false, false);
-    set_blend_coff(1.0, 0.00, 0.50, 0.50);
+    set_blend_coff(1.0, 0.00, 0.5, 0.5);
 
     {
 	    static const uint16_t temp[] = {
@@ -153,7 +153,7 @@ EXPORT void test_gpu() {
 	        64, 192, 0, 4,
 	       192, 192, 4, 4,
 	   	};
-	    render(GL_TRIANGLE_STRIP, temp, 0, 4, true, true, 0b1111111111111111);
+	    render(GL_TRIANGLE_STRIP, temp, 0, 4, true, true, 0xFFFFFF);
 	}
 
     {
@@ -163,7 +163,6 @@ EXPORT void test_gpu() {
 	       160,  96,
 	       160, 160
 	   	};
-	    render(GL_POINTS, temp, 0, 4, true, false, 0b1111111111111111);
+	    render(GL_POINTS, temp, 0, 4, true, false, 0xFF00FF);
     }
 }
-

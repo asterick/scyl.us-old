@@ -27,7 +27,6 @@ uniform bool uDither;
 in vec2 vTexture;
 in vec2 vAbsolute;
 in vec3 vColor;
-flat in lowp uint vMask;
 
 out uvec4 fragColor;
 
@@ -62,9 +61,9 @@ void main(void) {
 		if (uMasked && maskClear) discard ;
 
 		fragColor.rgb = uvec3(vColor * vec3(texel.rgb & 0xF8u));
-		fragColor.a   = uSetMask ? vMask : (maskClear ? 0u : 0xFFu);
+		fragColor.a   = (uSetMask || !maskClear) ? 0xFFu : 0x00u;
 	} else {
-		fragColor = uvec4(vColor * 255.0, vMask);
+		fragColor = uvec4(vColor * 255.0, uSetMask ? 0xFFu : 0x00u);
 	}
 
 	// Blending work

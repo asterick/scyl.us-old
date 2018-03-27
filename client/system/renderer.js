@@ -177,8 +177,8 @@ export function set_vram_data (x, y, width, height, target) {
 }
 
 export function render (type, vertex_ptr, offset, count, blend, textured, color) {
-	const flat = color >= 0;
-	const size = 4 + (textured ? 4 : 0) + (flat ? 0 : 2);
+	const shaded = color === 0;
+	const size = 4 + (textured ? 4 : 0) + (shaded ? 4 : 0);
 
 	_enterRender();
 	_requestRepaint();
@@ -237,12 +237,12 @@ export function render (type, vertex_ptr, offset, count, blend, textured, color)
 		gl.disableVertexAttribArray(_drawShader.attributes.aTexture);
 	}
 
-	if (flat) {
-		gl.vertexAttribI4i(_drawShader.attributes.aColor, color, color, color, color);
-		gl.disableVertexAttribArray(_drawShader.attributes.aColor);
-	} else {
-		gl.vertexAttribIPointer(_drawShader.attributes.aColor, 1, gl.SHORT, size, offset + (textured ? 8 : 4));
+	if (shaded) {
+		gl.vertexAttribIPointer(_drawShader.attributes.aColor, 2, gl.SHORT, size, offset + (textured ? 8 : 4));
 		gl.enableVertexAttribArray(_drawShader.attributes.aColor);
+	} else {
+		gl.vertexAttribI4i(_drawShader.attributes.aColor, color & 0xFFFF, color >> 16, color & 0xFFFF, color >> 16);
+		gl.disableVertexAttribArray(_drawShader.attributes.aColor);
 	}
 
 	// Draw array
