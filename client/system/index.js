@@ -113,7 +113,6 @@ export async function initialize() {
 	registers = new Uint32Array(memory, dv.getUint32(address, true), 64);
 
 	register_memory(memory);
-	exports.test_gpu();
 
 	return module;
 }

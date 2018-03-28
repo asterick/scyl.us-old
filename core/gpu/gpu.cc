@@ -32,18 +32,6 @@ const int VRAM_HEIGHT = 512;
 
 uint32_t VRAM_WORDS[VRAM_WIDTH * VRAM_HEIGHT];
 
-// 0000yyyy yyyy yyyy ???? xxxx xxxx xxxx	// Set draw X/Y
-// 0001yyyy yyyy yyyy ???? xxxx xxxx xxxx	// Set texture X/Y
-// 1010yyyy yyyy yyyy ?EMM xxxx xxxx xxxx	// Set CLUT mode (0 = 1bpp, 1 = 2bpp, 2 = 4bpp, 3 = 8bpp, E = enable)
-// 1011???? ???? ??sm aaaa bbbb cccc dddd	// Set blend coff + masking	
-// 11kkpctb	RRRR RRRR GGGG GGGG BBBB BBBB 	// Draw primitive + first color
-
-// KK = kind (point, line, triangle, quads)
-//  C = Flat shaded?
-//  T = Textured? (ignored for points)
-//  P = Poly (repeat until msb of X or Y is set)
-//  B = Enable blending
-
 static void read_data(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t* target) {
 	get_vram_data(x, y, width, height, VRAM_WORDS);
 
@@ -78,93 +66,10 @@ static void write_data(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 	set_vram_data(x, y, width, height, VRAM_WORDS);
 }
 
-void GPU::reset() {
-	// Initialization state
-	set_viewport(0, 0, 256, 240);
-	set_clip(0, 0, 256, 240);
-	set_draw(0, 0);
-	set_texture(0, 0);
-	set_clut(16, 0, 0);	// Disable CLUT
-	set_mask(true, false);
-	set_dither(true);
-	set_blend_coff(1, 0, 0.5, 0.5);
-	set_texture_mask(0, 0, 0, 0);
-}
-
 uint32_t GPU::read(uint32_t address) {
 	return ~0;
 }
 
 void GPU::write(uint32_t address, uint32_t value, uint32_t mask) {
 
-}
-
-// This prevents the compiler from being extremely stupid with some array init
-__attribute__ ((optnone))
-EXPORT void test_gpu() {
-    set_clut(2, 0, 220);
-    
-    {
-    	static const uint16_t temp[] = {
-			0x00FF, 0x0000,   0,   0,
-			0xFF00, 0x0000,   0, 240,
-			0x0000, 0x00FF, 256,   0,
-			0xFFFF, 0x00FF, 256, 240,
-	  	};
-	    render(GL_TRIANGLE_STRIP, temp, 0, 4, false, false, true);
-    }
-
-    {
-	    uint16_t palette[16];
-	    
-	    for (int i = 0; i < 16; i++) {
-	    	palette[i] = (i * 0x42) | (((i % 5) == 0) ? 0x8000 : 0);
-	    }
-
-	    write_data(0, 220, 16, 1, palette);
-    }
-    
-    {
-	   	static const uint16_t px[] = {
-	        0x3210,
-	        0x7654,
-	        0xBA98,
-	        0xFEDC
-	   	};
-
-	   	uint16_t px2[4];
-	    write_data(0, 0, 1, 4, px);
-	    read_data(0, 0, 1, 4, px2);
-	    
-	    for (int i = 0; i < 4; i++)
-		if (px[i] != px2[i]) {
-	    	DEBUG(999, (uint32_t) i, px[i], px2[i]);
-	    	break ;
-	    }
-    }
-    
-    set_mask(false, false);
-    set_blend_coff(1.0, 0.00, 0.5, 0.5);
-
-    {
-	    static const uint16_t temp[] = {
-    		0xFFFF, 0x00FF, // Flat shaded color
-	        64,  64, 0, 0,
-	       192,  64, 4, 0,
-	        64, 192, 0, 4,
-	       192, 192, 4, 4,
-	   	};
-	    render(GL_TRIANGLE_STRIP, temp, 0, 4, true, true, false);
-	}
-
-    {
-    	static const uint16_t temp[] = {
-    		0x00FF, 0x00FF, // Flat shaded color
-	    	96,  96,
-	        96, 160,
-	       160,  96,
-	       160, 160
-	   	};
-	    render(GL_POINTS, temp, 0, 4, true, false, false);
-    }
 }

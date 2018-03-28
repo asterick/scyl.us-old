@@ -32,6 +32,17 @@ var _displayShader, _drawShader;
 var _copyBuffer, _drawBuffer;
 var _vram, _shadow, _framebuffer;
 
+// Default settings
+set_viewport(0, 0, 256, 240);
+set_clip(0, 0, 256, 240);
+set_draw(0, 0);
+set_texture(0, 0);
+set_clut(16, 0, 0);
+set_mask(true, false);
+set_dither(true);
+set_blend_coff(1, 0, 0.5, 0.5);
+set_texture_mask(0, 0, 0, 0);
+
 // Bind our function
 export function set_blend_coff(setSrcCoff, setDstCoff, resetSrcCoff, resetDstCoff) {
 	_setSrcCoff = setSrcCoff;
@@ -230,9 +241,7 @@ export function render (type, vertex_ptr, offset, count, blend, textured, shaded
 		gl.vertexAttribIPointer(_drawShader.attributes.aColor, 2, gl.SHORT, size, offset);
 		gl.enableVertexAttribArray(_drawShader.attributes.aColor);
 	} else {
-		gl.vertexAttribI4i(_drawShader.attributes.aColor, 
-			_memory16[vertex_ptr / 2], _memory16[vertex_ptr / 2 + 1], 
-			_memory16[vertex_ptr / 2], _memory16[vertex_ptr / 2 + 1]);
+		gl.vertexAttribI4i(_drawShader.attributes.aColor, _memory16[vertex_ptr / 2], _memory16[vertex_ptr / 2 + 1], 0, 0);
 		gl.disableVertexAttribArray(_drawShader.attributes.aColor);
 	}
 

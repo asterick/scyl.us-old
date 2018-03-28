@@ -29,7 +29,6 @@ EXPORT void reset() {
     registers.clocks = 0;
 
     COP0::reset();
-    GPU::reset();
 }
 
 EXPORT const SystemConfiguration* getConfiguration() {
