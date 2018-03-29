@@ -16,7 +16,7 @@ enum GPUCommand {
  	GPU_SETDATA_COMMAND 	= 0xA0000000,
 };
 
-#define GPU_COLOR(r,g,b)					(((r << 16) & 0xFF0000)|((g << 8) & 0xFF00)|(b & 0xFF))
+#define GPU_COLOR(r,g,b)						(((r << 16) & 0xFF0000)|((g << 8) & 0xFF00)|(b & 0xFF))
 
 #define GPU_POINT_X_MASK						0x0000FFFF
 #define GPU_POINT_X_SHIFT						0
