@@ -33,14 +33,16 @@ var _copyBuffer, _drawBuffer;
 var _vram, _shadow, _framebuffer;
 
 // Default settings
-set_viewport(0, 0, 256, 240);
-set_clip(0, 0, 256, 240);
+set_viewport_pos(0, 0);
+set_viewport_size(256, 240);
+set_clip_pos(0, 0);
+set_clip_size(256, 240);
 set_draw(0, 0);
 set_texture(0, 0);
 set_clut(16, 0, 0);
 set_mask(true, false);
 set_dither(true);
-set_blend_coff(1, 0, 0.5, 0.5);
+//set_blend_coff(1, 0, 0.5, 0.5);
 set_texture_mask(0, 0, 0, 0);
 
 // Bind our function
@@ -74,19 +76,28 @@ export function set_draw(x, y) {
 	_drawY = x;
 }
 
-export function set_clip(x, y, width, height) {
+export function set_clip_pos(x, y) {
 	// This forces a copy back, and reconfigure the shader
 	_leaveRender();
 
 	_clipX = x;
 	_clipY = y;
+}
+
+export function set_clip_size(width, height) {
+	// This forces a copy back, and reconfigure the shader
+	_leaveRender();
+
 	_clipWidth = width;
 	_clipHeight = height;
 }
 
-export function set_viewport (x, y, width, height) {
+export function set_viewport_pos (x, y) {
 	_viewX = x;
 	_viewY = y;
+}
+
+export function set_viewport_size (width, height) {
 	_viewWidth = width;
 	_viewHeight = height;
 }
@@ -187,7 +198,7 @@ export function set_vram_data (x, y, width, height, target) {
 	gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _memory8, target);
 }
 
-export function render (type, vertex_ptr, offset, count, blend, textured, shaded) {
+export function render (type, vertex_ptr, count, blend, textured, shaded) {
 	const size = 4 + (textured ? 4 : 0) + (shaded ? 4 : 0);
 
 	_enterRender();
@@ -238,17 +249,17 @@ export function render (type, vertex_ptr, offset, count, blend, textured, shaded
 
 	// Setup our vertex pointers
 	if (shaded) {
-		gl.vertexAttribIPointer(_drawShader.attributes.aColor, 2, gl.SHORT, size, offset);
+		gl.vertexAttribIPointer(_drawShader.attributes.aColor, 2, gl.SHORT, size, 0);
 		gl.enableVertexAttribArray(_drawShader.attributes.aColor);
 	} else {
 		gl.vertexAttribI4i(_drawShader.attributes.aColor, _memory16[vertex_ptr / 2], _memory16[vertex_ptr / 2 + 1], 0, 0);
 		gl.disableVertexAttribArray(_drawShader.attributes.aColor);
 	}
 
-	gl.vertexAttribIPointer(_drawShader.attributes.aVertex, 2, gl.SHORT, size, offset + 4);
+	gl.vertexAttribIPointer(_drawShader.attributes.aVertex, 2, gl.SHORT, size, 4);
 
 	if (textured) {
-		gl.vertexAttribIPointer(_drawShader.attributes.aTexture, 2, gl.SHORT, size, offset + 8);
+		gl.vertexAttribIPointer(_drawShader.attributes.aTexture, 2, gl.SHORT, size, 8);
 		gl.enableVertexAttribArray(_drawShader.attributes.aTexture);
 	} else {
 		gl.vertexAttribI4i(_drawShader.attributes.aTexture, 0, 0, 0, 0);

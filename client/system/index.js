@@ -12,7 +12,10 @@ import * as renderer from "./renderer";
 
 import { 
 	register_memory,
-	set_blend_coff, set_texture, set_texture_mask, set_clut, set_draw, set_clip, set_viewport, set_dither, set_mask, 
+	set_blend_coff, set_texture, set_texture_mask, set_clut, set_dither, set_mask, 
+	set_draw, 
+	set_clip_pos, set_clip_size, 
+	set_viewport_pos, set_viewport_size, 
 	get_vram_data, set_vram_data, render 
 } from "./renderer";
 
@@ -31,7 +34,11 @@ const _environment = {
 	execute,
 
 	// GPU Rendering calls
-	set_blend_coff, set_texture, set_texture_mask, set_clut, set_draw, set_clip, set_viewport, set_dither, set_mask,
+	set_blend_coff, set_texture, set_texture_mask, set_clut, 
+	set_draw, 
+	set_clip_pos, set_clip_size, 
+	set_viewport_pos, set_viewport_size, 
+	set_dither, set_mask,
 	get_vram_data, set_vram_data, render,
 
 	// Accessors
