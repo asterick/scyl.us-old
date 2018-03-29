@@ -1,7 +1,7 @@
 #pragma once
 
-#define VRAM_WIDTH			1024
-#define VRAM_HEIGHT			512
+#define VRAM_WIDTH								1024
+#define VRAM_HEIGHT								512
 
 enum GPUCommand {
 	GPU_TEXSIZE_COMMAND 	= 0x10000000,
@@ -18,12 +18,12 @@ enum GPUCommand {
 
 #define GPU_COLOR(r,g,b)					(((r << 16) & 0xFF0000)|((g << 8) & 0xFF00)|(b & 0xFF))
 
-#define GPU_POINT_X_MASK	0x0000FFFF
-#define GPU_POINT_X_SHIFT	0
-#define GPU_POINT_Y_MASK	0xFFFF0000
-#define GPU_POINT_Y_SHIFT	16
+#define GPU_POINT_X_MASK						0x0000FFFF
+#define GPU_POINT_X_SHIFT						0
+#define GPU_POINT_Y_MASK						0xFFFF0000
+#define GPU_POINT_Y_SHIFT						16
 
-#define GPU_POINT(x, y)						(((y << GPU_POINT_Y_SHIFT) & GPU_POINT_Y_MASK) | ((x << GPU_POINT_X_SHIFT) & GPU_POINT_X_MASK))
+#define GPU_POINT(x, y)							(((y << GPU_POINT_Y_SHIFT) & GPU_POINT_Y_MASK) | ((x << GPU_POINT_X_SHIFT) & GPU_POINT_X_MASK))
 
 // Configure masking and texture 'size'
 #define GPU_TEXSIZE_MASK_X_SHIFT				0
