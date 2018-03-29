@@ -122,7 +122,7 @@ static bool process_fifo() {
 			const int x = (cmd & GPU_CLUT_X_MASK) >> GPU_CLUT_X_SHIFT;
 			const int y = (cmd & GPU_CLUT_Y_MASK) >> GPU_CLUT_Y_SHIFT;
 
-			set_clut(1 << mode, x, y);
+			set_clut(mode, x, y);
 		}
 		break ;
 	case GPU_TEXPOS_COMMAND:

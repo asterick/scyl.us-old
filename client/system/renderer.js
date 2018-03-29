@@ -214,7 +214,7 @@ export function render (type, vertex_ptr, count, blend, textured, shaded) {
    	// Texture settings
    	gl.uniform1i(_drawShader.uniforms.uTextured, textured);
    	if (textured) {
-   		const clutEnable = _clutMode < 16;
+   		const clutEnable = _clutMode < 4;
 
 	   	gl.uniform2i(_drawShader.uniforms.uTextureOffset, _textureX, _textureY);
 	   	gl.uniform2i(_drawShader.uniforms.uTextureMask, _textureMaskX, _textureMaskY);

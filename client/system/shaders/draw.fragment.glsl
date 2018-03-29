@@ -49,7 +49,6 @@ void main(void) {
 		if (uClutEnable) {
 			uvec4 color = texelFetch(sVram, ivec2(iVec.x >> uClutMode, iVec.y) + uTextureOffset, 0);
 			uint word = (color.r >> 3) | ((color.g >> 3) << 5) | ((color.b >> 3) << 10) | (color.a >= 128u ? 0x8000u : 0u);
-			word = 0xFACEu;
 
 			texpos = ivec2((word >> ((iVec.x & uClutIndexMask) << uClutIndexShift)) & uClutColorMask, 0) + uClutOffset;
 		} else {
