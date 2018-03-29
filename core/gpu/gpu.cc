@@ -209,14 +209,27 @@ static bool process_fifo() {
 			const bool poly = (cmd & GPU_DRAW_POLY) != 0;
 			const bool blended = (cmd & GPU_DRAW_BLENDED) != 0;
 
-			const int size = 2 +
+			const int min_size = 2 +
 				(shaded ? 2 : 1) +
 				(textured ? 2 : 0);
 
-			if (write_depth < size) return false;
-			// TODO: POLY LINE HERE
+			int count = 2;
 
-			render(GL_LINE_STRIP, (const uint16_t*) &write_fifo, 2, blended, textured, shaded);
+			if (write_depth < min_size) return false;
+
+			if (poly) {
+				int run_length = 1 + (shaded ? 1 : 0) + (textured ? 1 : 0);
+				int offset = run_length * 3; // Test first word for overflow (MSB of RGB, or upper bit of Y)
+
+				while (~write_fifo[offset] & 0x80000000) {
+					if (offset >= write_depth) return false;
+
+					count++;
+					offset += run_length;
+				}
+			}
+
+			render(GL_LINE_STRIP, (const uint16_t*) &write_fifo, count, blended, textured, shaded);
 		}
 		break ;
 	case GPU_COMMAND_TRIANGLE:
