@@ -79,4 +79,6 @@ void main(void) {
 		ivec2 ditherCoord = vramTarget % 4;
 		fragColor.rgb = fragColor.rgb + ordered_dither[ditherCoord.g * 4 + ditherCoord.r];
 	}
+
+	fragColor.rgb &= ~7u; // Trim off lower 3 bits
 }
