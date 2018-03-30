@@ -16,6 +16,8 @@ volatile uint32_t DATA[] = {
 	0x01234567
 };
 
+volatile uint32_t fifo_read[32];
+
 void* memcpy(void* dst, const void* src, size_t n) {
 	uint32_t source = (uint32_t)src;
 	uint32_t target = (uint32_t)dst;
@@ -53,8 +55,8 @@ void* memcpy(void* dst, const void* src, size_t n) {
 			| DMA_TRIGGER_NONE 
 			| DMA_WIDTH_BIT16
 			| DMACR_ACTIVE_MASK 
-			| (4 << DMACR_SSTRIDE_POS)
-			| (4 << DMACR_TSTRIDE_POS)
+			| (2 << DMACR_SSTRIDE_POS)
+			| (2 << DMACR_TSTRIDE_POS)
 			;
 		source += n & ~1;
 		target += n & ~1;
@@ -67,8 +69,8 @@ void* memcpy(void* dst, const void* src, size_t n) {
 			| DMA_TRIGGER_NONE 
 			| DMA_WIDTH_BIT8
 			| DMACR_ACTIVE_MASK 
-			| (4 << DMACR_SSTRIDE_POS)
-			| (4 << DMACR_TSTRIDE_POS)
+			| (1 << DMACR_SSTRIDE_POS)
+			| (1 << DMACR_TSTRIDE_POS)
 			;
 		
 		n = 0;
@@ -101,7 +103,6 @@ static const uint32_t GPU_TEST[] = {
 	GPU_SETDATA(0, 0, 1, 4),
 	0x76543210,
 	0xFEDCBA98,
-	GPU_GETDATA(0, 0, 1, 4),
 
 	GPU_CLUT(GPU_CLUT_4BPP, 0, 220),
 	GPU_SETDATA(0, 220, 16, 1),
@@ -138,11 +139,24 @@ static const uint32_t GPU_TEST[] = {
 	GPU_POINT(128, 176),
 	GPU_POINT( 64, 112),
 	GPU_POINT(128,  48),
-	0xFFFFFFFF
+	0xFFFFFFFF,
+
+	GPU_GETDATA(0, 0, 1, 4)
 };
 
 int main(void) {
-	for (int i = 0; i < sizeof(GPU_TEST) / sizeof(GPU_TEST[0]); i++) {
-		GPU_Registers->fifo = GPU_TEST[i];
+	DMA_Channels[1].source = (uint32_t) &GPU_TEST;
+	DMA_Channels[1].target = (uint32_t) &GPU_Registers->fifo;
+	DMA_Channels[1].length = sizeof(GPU_TEST) / sizeof(GPU_TEST[0]);
+	DMA_Channels[1].flags = 0
+		| DMA_TRIGGER_GPU_RX_FIFO
+		| DMA_WIDTH_BIT32
+		| DMACR_ACTIVE_MASK 
+		| (4 << DMACR_SSTRIDE_POS)
+		| (4 << DMACR_TSTRIDE_POS)
+		;
+
+	for (int i = 0; i < 8; i++) {
+		fifo_read[i] = GPU_Registers->fifo;
 	}
 }

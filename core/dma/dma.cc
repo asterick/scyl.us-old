@@ -13,6 +13,7 @@
 #include "memory.h"
 #include "registers.h"
 #include "memory.h"
+#include "gpu.h"
 
 #define WORD_LENGTH (sizeof(channels) / sizeof(uint32_t))
 
@@ -43,10 +44,10 @@ static bool check_trigger(int channel) {
    case DMA_TRIGGER_DMA5: return (channels[5].flags & DMACR_ACTIVE_MASK) == 0;
    case DMA_TRIGGER_DMA6: return (channels[6].flags & DMACR_ACTIVE_MASK) == 0;
    case DMA_TRIGGER_DMA7: return (channels[7].flags & DMACR_ACTIVE_MASK) == 0;
+   case DMA_TRIGGER_GPU_TX_FIFO :return !GPU::tx_empty();
+   case DMA_TRIGGER_GPU_RX_FIFO: return !GPU::rx_full();
 
    // Unimplemented (currently locks the channel)
-   case DMA_TRIGGER_GPU_TX_FIFO:
-   case DMA_TRIGGER_GPU_RX_FIFO:
    case DMA_TRIGGER_DSP_IDLE:
    case DMA_TRIGGER_DSP_FINISHED:
    default:
