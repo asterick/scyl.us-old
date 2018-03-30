@@ -55,6 +55,7 @@ static uint32_t fifo[fifo_depth];
 static uint32_t fifo_write_index = 0;
 static uint32_t fifo_read_index = 0;
 static uint32_t fifo_size = 0;
+static uint32_t cr = 0;
 
 static inline uint32_t read_fifo() {
 	uint32_t data = fifo[fifo_read_index];
@@ -79,21 +80,22 @@ static void process_fifo() {
 	while (fifo_size > 0) {
 		switch (mode) {
 			case GPU_MODE_RENDERING:
-				while (fifo_size > 0) {
+				{
 					uint32_t data = read_fifo();
 
 					// Poly fill mode
-					if (vertex_reset && (data & 0x80000000)) {
+					if (data & 0x80000000) {
 						mode = GPU_MODE_IDLE;
-						break ;
+						continue ;
 					} else {
-						vertex_reset = false;
+						mode = GPU_MODE_RENDERING;
 					}
 
 					vertexes[vertex_index++] = data;
 
 					// until we've filled an entire vertex buffer
 					if (--vertex_fill > 0) continue ;
+
 					render(prim_type, (uint16_t*)vertexes, vertex_count, blended, textured, shaded);
 					
 					if (poly) {
@@ -102,9 +104,9 @@ static void process_fifo() {
 						vertex_reset = true;
 					} else {
 						mode = GPU_MODE_IDLE;
-						break ;
 					}
 				}
+
 				continue ;
 			case GPU_MODE_GET_DATA:
 				return ;
@@ -268,10 +270,6 @@ static void process_fifo() {
 					uint16_t g = (i & 0x0000F800) >>  6;
 					uint16_t b = (i & 0x00F80000) >>  9;
 					uint16_t a = (i & 0x80000000) >> 16;
-
-					DEBUG(i);
-
-
 					*(target++) = r | g | b | a;
 				}
 
@@ -284,6 +282,11 @@ static void process_fifo() {
 		case GPU_COMMAND_LINE:
 		case GPU_COMMAND_TRIANGLE:
 		case GPU_COMMAND_QUAD:
+			shaded = (cmd & GPU_DRAW_SHADED) != 0;
+			textured = (cmd & GPU_DRAW_TEXTURED) != 0;
+			poly = (cmd & GPU_DRAW_POLY) != 0;
+			blended = (cmd & GPU_DRAW_BLENDED) != 0;
+
 			switch (cmd & 0xF0000000) {
 				case GPU_COMMAND_POINT:
 					prim_type = GL_POINTS;
@@ -304,11 +307,6 @@ static void process_fifo() {
 			}
 
 			mode = GPU_MODE_RENDERING;
-
-			shaded = (cmd & GPU_DRAW_SHADED) != 0;
-			textured = (cmd & GPU_DRAW_TEXTURED) != 0;
-			poly = (cmd & GPU_DRAW_POLY) != 0;
-			blended = (cmd & GPU_DRAW_BLENDED) != 0;
 		
 			vertexes[0] = cmd;
 			vertex_index = 1;
@@ -319,7 +317,6 @@ static void process_fifo() {
 				(shaded ? vertex_count : 1) +
 				(textured ? vertex_count : 0);
 			vertex_fill = vertex_end - 1;
-			vertex_reset = false;
 	 		continue ;
 		}
 
@@ -350,6 +347,10 @@ uint32_t GPU::read(uint32_t address) {
 		}
 		break ;
 	case 0x00000001: // CONTROL REGISTER
+		return cr |
+			(tx_empty() ? GPU_CR_TX_EMPTY : 0) |
+			(rx_full() ? GPU_CR_RX_FULL : 0) |
+			(mode != GPU_MODE_IDLE ? GPU_CR_BUSY : 0);
 		break ; 
 	}
 
@@ -368,6 +369,41 @@ void GPU::write(uint32_t address, uint32_t value, uint32_t mask) {
 		}
 		break ;
 	case 0x00000001: // CONTROL REGISTER
+		if (value & GPU_CR_RESET) {
+			fifo_write_index = 0;
+			fifo_read_index = 0;
+			fifo_size = 0;
+			mode = GPU_MODE_IDLE;
+		}
+
+		cr = value & GPU_CR_VIDEOMODE_MASK;
+		switch((cr & GPU_CR_VIDEOMODE_MASK) >> GPU_CR_VIDEOMODE_SHIFT) {
+		case GPU_CR_VIDEOMODE_256_240:
+			set_viewport_size(256, 240);
+			break ;
+		case GPU_CR_VIDEOMODE_320_240:
+			set_viewport_size(320, 240);
+			break ;
+		case GPU_CR_VIDEOMODE_512_240:
+			set_viewport_size(512, 240);
+			break ;
+		case GPU_CR_VIDEOMODE_640_240:
+			set_viewport_size(640, 240);
+			break ;
+		case GPU_CR_VIDEOMODE_256_480:
+			set_viewport_size(256, 480);
+			break ;
+		case GPU_CR_VIDEOMODE_320_480:
+			set_viewport_size(320, 480);
+			break ;
+		case GPU_CR_VIDEOMODE_512_480:
+			set_viewport_size(512, 480);
+			break ;
+		case GPU_CR_VIDEOMODE_640_480:
+			set_viewport_size(640, 480);
+			break ;
+		}
+
 		break ; 
 	}
 }

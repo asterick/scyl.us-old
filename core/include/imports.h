@@ -13,3 +13,5 @@ extern "C" {
 	uint32_t exception(uint32_t code, uint32_t pc, uint32_t delayed, uint32_t cop);
 	void invalidate(uint32_t physical);
 }
+
+EXPORT void adjust_clock(uint32_t cycles);

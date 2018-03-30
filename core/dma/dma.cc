@@ -11,7 +11,7 @@
 #include "dma.h"
 #include "cop0.h"
 #include "memory.h"
-#include "registers.h"
+//#include "registers.h"
 #include "memory.h"
 #include "gpu.h"
 
@@ -61,18 +61,20 @@ static inline bool chain(DMAChannel& channel) {
 
       channel.length = Memory::read(channel.source, false, problem);
       channel.source += (channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS;
-      registers.clocks --;
+      int clocks = 1;
 
       if (channel.flags & DMACR_CHAIN_T_MASK) {
          channel.target = Memory::read(channel.source, false, problem);
          channel.source += (channel.flags & DMACR_SSTRIDE_MASK) >> DMACR_SSTRIDE_POS;
-         registers.clocks --;
+         clocks ++;
       }
 
       if (channel.flags & DMACR_CHAIN_S_MASK) {
          channel.source = Memory::read(channel.source, false, problem);
-         registers.clocks --;
+         clocks ++;
       }
+
+      adjust_clock(clocks);
 
       if (problem != EXCEPTION_NONE) {
          if (channel.flags & DMACR_INTERRUPT_MASK) COP0::interrupt(DMA_IRQn);
@@ -193,7 +195,7 @@ static inline bool fast_dma(DMAChannel& channel) {
       memcpy(trg, src, length);
    }
 
-   registers.clocks -= (length / word_width) * 2;
+   adjust_clock((length / word_width) * 2);
    channel.source += length;
    channel.target += length;
    channel.length -= length / word_width;
@@ -231,7 +233,7 @@ void DMA::advance() {
          uint32_t value = Memory::read(channel.source, false, problem);
 
          value = adjust((channel.target & 3) - (channel.source & 3), value);
-         registers.clocks -= 2; // No cross bar
+         adjust_clock(2); // No cross bar
 
          switch (channel.flags & DMACR_WIDTH_MASK) {
             case DMA_WIDTH_BIT8:
