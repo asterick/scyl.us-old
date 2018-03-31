@@ -57,12 +57,50 @@ static uint32_t fifo_read_index = 0;
 static uint32_t fifo_size = 0;
 static uint32_t cr = 0;
 
+static uint32_t delay_timer = 0;
+
 static inline uint32_t read_fifo() {
 	uint32_t data = fifo[fifo_read_index];
 	fifo_read_index = (fifo_read_index + 1) % fifo_depth;
 	fifo_size--;
 
 	return data;
+}
+
+static int calc_tri_size(int size, const uint16_t* data) {
+	int x[3], y[3];
+
+	for (int i = 0; i < 3; i++) {
+		x[i] = data[0]; y[i] = data[1];
+		data += size;
+	}
+
+	int total = 
+		x[0]*(y[1]-y[2]) +
+		x[1]*(y[2]-y[0]) +
+		x[2]*(y[0]-y[1]);
+
+	return ((total < 0) ? -total : total) / 2;
+}
+
+static int calc_clocks(int count, int size, const uint16_t* vertexes) {
+	switch (count) {
+		case 1: return 1;
+		case 2: {
+			int x = vertexes[0] - vertexes[size];
+			int y = vertexes[1] - vertexes[size+1];
+			
+			if (x < 0) x = -x;
+			if (y < 0) y = -y;
+
+			return (x < y) ? y : x;
+		}
+		case 3:
+			return calc_tri_size(size, vertexes);
+		case 4:
+			return calc_tri_size(size, vertexes) + calc_tri_size(size, &vertexes[size]);
+	}
+	return 0;
 }
 
 static void process_fifo() {
@@ -98,6 +136,10 @@ static void process_fifo() {
 
 					render(prim_type, (uint16_t*)vertexes, vertex_count, blended, textured, shaded);
 					
+					delay_timer += calc_clocks(vertex_count, vertex_size * 2, (const uint16_t*)&vertexes[1]) * (vertex_size + (blended ? 1 : 0));
+
+					DEBUG((uint32_t)delay_timer);
+
 					if (poly) {
 						if (vertex_index >= vertex_end) vertex_index = shaded ? 0 : 1;
 						vertex_fill = vertex_size;
