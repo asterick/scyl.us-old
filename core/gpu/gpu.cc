@@ -112,6 +112,8 @@ static void process_fifo() {
 	static int vertex_size;
 	static int vertex_fill;
 	static int vertex_end;
+	static int fill_clock;
+	static bool paletted;
 	static bool vertex_reset;
 	static GLenum prim_type;
 
@@ -136,7 +138,7 @@ static void process_fifo() {
 
 					render(prim_type, (uint16_t*)vertexes, vertex_count, blended, textured, shaded);
 					
-					delay_timer += calc_clocks(vertex_count, vertex_size * 2, (const uint16_t*)&vertexes[1]) * (vertex_size + (blended ? 1 : 0));
+					delay_timer += calc_clocks(vertex_count, vertex_size * 2, (const uint16_t*)&vertexes[1]) * fill_clock;
 
 					DEBUG((uint32_t)delay_timer);
 
@@ -230,6 +232,8 @@ static void process_fifo() {
 				const int mode = (cmd & GPU_CLUT_MODE_MASK) >> GPU_CLUT_MODE_SHIFT;
 				const int x = (cmd & GPU_CLUT_X_MASK) >> GPU_CLUT_X_SHIFT;
 				const int y = (cmd & GPU_CLUT_Y_MASK) >> GPU_CLUT_Y_SHIFT;
+
+				paletted = mode < 4;
 
 				set_clut(mode, x, y);
 			}
@@ -359,6 +363,14 @@ static void process_fifo() {
 				(shaded ? vertex_count : 1) +
 				(textured ? vertex_count : 0);
 			vertex_fill = vertex_end - 1;
+
+			// Time it takes for the system to fill one pixel on the screen
+			fill_clock = 1 +
+				(textured ? 1 : 0) +
+				(paletted ? 1 : 0) +
+				(shaded ? 1 : 0) +
+				(blended ? 1 : 0);
+
 	 		continue ;
 		}
 
