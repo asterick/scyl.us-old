@@ -140,8 +140,6 @@ static void process_fifo() {
 					
 					delay_timer += calc_clocks(vertex_count, vertex_size * 2, (const uint16_t*)&vertexes[1]) * fill_clock;
 
-					DEBUG((uint32_t)delay_timer);
-
 					if (poly) {
 						if (vertex_index >= vertex_end) vertex_index = shaded ? 0 : 1;
 						vertex_fill = vertex_size;

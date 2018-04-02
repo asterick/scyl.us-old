@@ -4,6 +4,7 @@
   "description": "My personal webpage",
   "main": "server/index.js",
   "scripts": {
+    "watch": "find {system0,core} | grep -v -i \"\\.o$\" | entr npm run core",
     "start": "NODE_ENV=development node server",
     "core": "make -C system0 clean all; make -C core clean all",
     "build": "NODE_ENV=production webpack"

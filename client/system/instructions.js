@@ -12,6 +12,7 @@ var _import_section;
 var _imports;
 var _functions;
 var _function_base;
+export var function_names;
 var _templates;
 
 var _block_start;
@@ -31,17 +32,38 @@ function names(table) {
 const terminate = ["execute_call", "calculate_clock", "finalize_call"];
 const boilerplate = terminate.concat(names(instructions));
 
+function evaluate(code) {
+	var stack = [];
+
+	code.forEach(op => {
+		if (op === 'end') return ;
+
+		switch (op.op) {
+		case 'i32.const':
+			stack.push(op.value);
+			break;
+		default:
+			throw new Error("Cannot evaluate");
+		}
+	});
+
+	return stack.pop();
+}
+
 export function initialize(ab) {
 	const defs = Import(ab);
 
 	// Validate
-	const exported_functions = defs.export_section
-		.filter(v => v.kind === 'func_type')
-		.map(v => v.index)
-		;
-
 	const imported_functions =
 		defs.import_section.filter((v) => v.type.type === 'func_type').length;
+
+	const exported_functions = defs.export_section
+		.filter(v => v.kind === 'func_type')
+		.reduce((acc, v) => { 
+			acc[v.index] = v.field;
+			return acc;
+		}, [])
+		;
 
 	_import_section = defs.import_section.concat(
 		defs.export_section.map((i) => {
@@ -69,6 +91,17 @@ export function initialize(ab) {
             }
 		})
 	);
+
+	function_names = [];
+	defs.table_section.forEach((v, index) => {
+		if (v.element_type !== 'anyfunc') return ;
+
+		defs.element_section.forEach((el) => {
+			if (el.index !== index) return ;
+			var offset = evaluate(el.offset);
+			el.elements.forEach((el, i) => function_names[i+offset] = exported_functions[el])
+		});	
+	});
 
 	_imports = {};
 	var index = 0;
