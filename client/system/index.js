@@ -24,8 +24,8 @@ export { attach } from "./renderer";
 export var registers;
 export var regions = null;
 export var running = false;
+export var exports;
 
-var exports;
 var adjust_clock;
 var cache = [];
 

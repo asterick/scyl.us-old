@@ -1,6 +1,6 @@
 import { Fields } from "./fields";
-import { disassembly, instructions } from "./table";
-import { load } from ".";
+import { instructions } from "./table";
+import { load, exports } from ".";
 
 import Export from "../../dynast/export";
 import Import from "../../dynast/import";
@@ -18,19 +18,8 @@ var _templates;
 var _block_start;
 var _block_end;
 
-function names(table) {
-	return Object.keys(table).reduce((acc, key) => {
-		const entry = table[key];
-		if (typeof entry === 'string') {
-			return (key !== 'field') ? acc.concat(entry) : acc;
-		} else {
-			return acc.concat(names(entry));
-		}
-	}, []);
-}
-
 const terminate = ["execute_call", "calculate_clock", "finalize_call"];
-const boilerplate = terminate.concat(names(instructions));
+const boilerplate = terminate.concat(Object.keys(instructions));
 
 function evaluate(code) {
 	var stack = [];
@@ -391,21 +380,17 @@ export function compile(start, length) {
 }
 
 export function locate(word) {
+	const instruction = exports.locate(word);
+
+	if (instruction <= 0) throw new Error(`Could not decode instruction ${word.toString(16)}`);
+
 	const fields = new Fields(word);
-	var entry = instructions;
-	var fallback = null;
-
-	while (typeof entry === "object") {
-		fallback = entry.fallback || fallback;
-		entry = entry[fields[entry.field]];
-	}
-
-	fields.name = entry || fallback;
+	fields.name = function_names[instruction];
 
 	return fields;
 }
 
 export function disassemble(word, address) {
 	const op = locate(word);
-	return disassembly[op.name](op, address);
+	return instructions[op.name](op, address);
 }
