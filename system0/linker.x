@@ -1,13 +1,11 @@
 SECTIONS
 {
-	.text 0xffc00000 : {
+	.text 0x00000000 : {
 		*(.reset)
-		. = 0x100;
-		*(.tlb)
-		. = 0x180;
-		*(.exception)
 		*(.text)
 		*(.rodata)
+		*(.init)
+		*(.fini)
 	}
 	. = ALIGN(8);
 	_DATA_ROM = .;
@@ -15,11 +13,13 @@ SECTIONS
 	. = 0xE0020000;
 	_STACK_TOP = .;
 	_DATA_START = .;
-	.data : { *(.data) }
+	.data : {
+		*(.init_array)
+		*(.fini_array)
+		*(.data)
+	}
 	. = ALIGN(4);
    	_DATA_SIZE = . - _DATA_START;
 
-   	_BSS_START = .;
    	.bss : { *(.bss) }
-   	_BSS_END = .;
 }
