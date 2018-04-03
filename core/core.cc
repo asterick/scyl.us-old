@@ -53,7 +53,7 @@ EXPORT void step_execute() {
     execute(start_pc, false);
 }
 
-void execute(uint32_t pc, bool delayed) {
+EXPORT void execute(uint32_t pc, bool delayed) {
     const uint32_t data = Memory::load(pc, true, pc, delayed);
     const InstructionCall call = locate(data);
 

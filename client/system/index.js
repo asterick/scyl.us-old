@@ -51,6 +51,7 @@ const _environment = {
 	},
 
 	// Glue
+	execute: (a, b) => exports(a, b),
 	exception: (code, pc, delayed, cop) => {
 		throw new Exception(code, pc, delayed, cop);
 	},
