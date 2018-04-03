@@ -1,7 +1,7 @@
 import Exception from "./exception";
 import Registers from "./registers";
 
-import { locate, compile, initialize as initialize_compiler } from "./instructions";
+import { locate, compile, function_names, initialize as initialize_compiler } from "./instructions";
 import { Exceptions, SYSTEM_CLOCK, MAX_COMPILE_SIZE, MIN_COMPILE_SIZE } from "./consts";
 
 import { read as cedar_read, write as cedar_write } from "./cedar";
@@ -24,15 +24,12 @@ export { attach } from "./renderer";
 export var registers;
 export var regions = null;
 export var running = false;
+export var exports;
 
-var exports;
 var adjust_clock;
 var cache = [];
 
 const _environment = {
-	// Execute bytecode
-	execute,
-
 	// GPU Rendering calls
 	set_blend_coff, set_texture, set_texture_mask, set_clut, 
 	set_draw, 
@@ -46,7 +43,6 @@ const _environment = {
 	cedar_write, dsp_write, spu_write,
 
 	// Stub to stop complaining
-	call_indirect: a => null,
 	debug: (x, l) => {
 		const array = new Uint32Array(exports.memory.buffer, x, l / 4);
 		const out = new Array(array.length);
@@ -182,10 +178,7 @@ export function block_execute () {
 
 export function step_execute () {
 	try {
-		const start_pc = Registers.pc;
-		Registers.pc += 4;
-		exports.sync_state();
-		execute(start_pc, false);
+		exports.step_execute();
 	} catch (e) {
 		if (e instanceof Exception) {
 			exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
@@ -197,17 +190,6 @@ export function step_execute () {
 
 export function load (word, pc) {
 	return exports.load(word, pc);
-}
-
-// This forces delay slots at the end of a page to
-// be software interpreted so TLB changes don't
-// cause cache failures
-function execute(pc, delayed) {
-	const data = load(pc, true, pc, delayed);
-	const call = locate(data);
-
-	exports.adjust_clock(1);
-	exports[call.name](pc, data, delayed);
 }
 
 export function blockSize(address) {

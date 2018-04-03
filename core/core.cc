@@ -4,6 +4,7 @@
 
 #include "compiler.h"
 #include "imports.h"
+#include "table.h"
 
 #include "cop0.h"
 #include "memory.h"
@@ -44,23 +45,40 @@ EXPORT void sync_state() {
     DMA::advance();
 }
 
+EXPORT void step_execute() {
+    start_pc = registers.pc;
+    registers.pc += 4;
+
+    sync_state();
+    execute(start_pc, false);
+}
+
+EXPORT void execute(uint32_t pc, bool delayed) {
+    const uint32_t data = Memory::load(pc, true, pc, delayed);
+    const InstructionCall call = locate(data);
+
+    adjust_clock(1);
+    call(pc, data, delayed);
+}
+
 // *******
 // ** Interface helpers
 // *******
 
 extern "C" void _start() { }
-extern "C" void call_indirect(int index);
 
 EXPORT void execute_call(uint32_t start, uint32_t length) {
+    typedef void (*instruction_index)();
+
     if (registers.clocks > MAX_CLOCK_LAG) registers.clocks = MAX_CLOCK_LAG;
 
-    start_pc = start;
     while (registers.clocks > 0) {
-        uint32_t index = ((start_pc = registers.pc) - start) >> 2;
+        start_pc = registers.pc;
+        const uint32_t index = (start_pc - start) >> 2;
 
         if (index >= length) return ;
-
-        call_indirect(index);
+        const instruction_index call = (instruction_index) index;
+        call();
     }
 }
 

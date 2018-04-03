@@ -1,6 +1,6 @@
 import { Fields } from "./fields";
-import { disassembly, instructions } from "./table";
-import { load } from ".";
+import { instructions } from "./table";
+import { load, exports } from ".";
 
 import Export from "../../dynast/export";
 import Import from "../../dynast/import";
@@ -12,36 +12,46 @@ var _import_section;
 var _imports;
 var _functions;
 var _function_base;
+export var function_names;
 var _templates;
 
 var _block_start;
 var _block_end;
 
-function names(table) {
-	return Object.keys(table).reduce((acc, key) => {
-		const entry = table[key];
-		if (typeof entry === 'string') {
-			return (key !== 'field') ? acc.concat(entry) : acc;
-		} else {
-			return acc.concat(names(entry));
-		}
-	}, []);
-}
+const boilerplate = ["execute_call", "calculate_clock", "finalize_call"].concat(Object.keys(instructions));
 
-const terminate = ["execute_call", "calculate_clock", "finalize_call"];
-const boilerplate = terminate.concat(names(instructions));
+function evaluate(code) {
+	var stack = [];
+
+	code.forEach(op => {
+		if (op === 'end') return ;
+
+		switch (op.op) {
+		case 'i32.const':
+			stack.push(op.value);
+			break;
+		default:
+			throw new Error("Cannot evaluate");
+		}
+	});
+
+	return stack.pop();
+}
 
 export function initialize(ab) {
 	const defs = Import(ab);
 
 	// Validate
-	const exported_functions = defs.export_section
-		.filter(v => v.kind === 'func_type')
-		.map(v => v.index)
-		;
-
 	const imported_functions =
 		defs.import_section.filter((v) => v.type.type === 'func_type').length;
+
+	const exported_functions = defs.export_section
+		.filter(v => v.kind === 'func_type')
+		.reduce((acc, v) => { 
+			acc[v.index] = v.field;
+			return acc;
+		}, [])
+		;
 
 	_import_section = defs.import_section.concat(
 		defs.export_section.map((i) => {
@@ -69,6 +79,17 @@ export function initialize(ab) {
             }
 		})
 	);
+
+	function_names = [];
+	defs.table_section.forEach((v, index) => {
+		if (v.element_type !== 'anyfunc') return ;
+
+		defs.element_section.forEach((el) => {
+			if (el.index !== index) return ;
+			var offset = evaluate(el.offset);
+			el.elements.forEach((el, i) => function_names[i+offset] = exported_functions[el])
+		});	
+	});
 
 	_imports = {};
 	var index = 0;
@@ -132,10 +153,6 @@ function template(func, name) {
 				}
 
 				modified.unshift( { template: 'delay' } );
-				continue ;
-			} else if (term.function_index === _imports.call_indirect) {
-				modified.unshift( { op: 'call_indirect', type_index: 0, reserved: 0 } );
-				i--;
 				continue ;
 			}
 			break ;
@@ -323,8 +340,6 @@ export function compile(start, length) {
 		import_section: _import_section,
 		function_section: _functions,
 
-		type_section: [{ type: "func_type", parameters: [], returns: [] }],
-
 		export_section: [{
 			"field": "block",
 			"kind": "func_type",
@@ -358,21 +373,17 @@ export function compile(start, length) {
 }
 
 export function locate(word) {
+	const instruction = exports.locate(word);
+
+	if (instruction <= 0) throw new Error(`Could not decode instruction ${word.toString(16)}`);
+
 	const fields = new Fields(word);
-	var entry = instructions;
-	var fallback = null;
-
-	while (typeof entry === "object") {
-		fallback = entry.fallback || fallback;
-		entry = entry[fields[entry.field]];
-	}
-
-	fields.name = entry || fallback;
+	fields.name = function_names[instruction];
 
 	return fields;
 }
 
 export function disassemble(word, address) {
 	const op = locate(word);
-	return disassembly[op.name](op, address);
+	return instructions[op.name](op, address);
 }

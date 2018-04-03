@@ -27,7 +27,7 @@ defs.data_section = defs.data_section.filter(section => {
 const reset = defs.export_section.filter(v => v.kind == 'func_type' && v.field == 'reset').pop();
 if (reset) defs.start_section = reset.index;
 
-// Validate
+// Force all calls to be exported (for JIT compatability)
 const exported_functions = defs.export_section
 	.filter(v => v.kind === 'func_type')
 	.map(v => v.index)
@@ -36,7 +36,6 @@ const exported_functions = defs.export_section
 const imported_functions =
 	defs.import_section.filter((v) => v.type.type === 'func_type').length;
 
-// Force all calls to be exported (for JIT compatability)
 for (var i = 0; i < defs.function_section.length; i++) {
 	const index = i + imported_functions;
 	
@@ -45,4 +44,5 @@ for (var i = 0; i < defs.function_section.length; i++) {
 	defs.export_section.push({ field: `@@export\$${index}`, kind: "func_type", index })
 }
 
+// Write back file
 fs.writeFileSync(process.argv[2], new Uint8Array(encode(defs)))
