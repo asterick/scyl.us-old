@@ -43,7 +43,6 @@ const _environment = {
 	cedar_write, dsp_write, spu_write,
 
 	// Stub to stop complaining
-	call_indirect: a => null,
 	debug: (x, l) => {
 		const array = new Uint32Array(exports.memory.buffer, x, l / 4);
 		const out = new Array(array.length);

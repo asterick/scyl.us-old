@@ -155,14 +155,6 @@ function template(func, name) {
 
 				modified.unshift( { template: 'delay' } );
 				continue ;
-			} else if (term.function_index === _imports.call_indirect) {
-				modified.unshift( { op: 'call_indirect', type: {
-					parameters: [],
-					returns: [], 
-					type: "func_type"
-				}, reserved: 0 } );
-				i--;
-				continue ;
 			}
 			break ;
 
