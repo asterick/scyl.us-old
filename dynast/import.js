@@ -110,7 +110,7 @@ function decode_code_expr(payload) {
 			codes.push({ op: ReverseByteCode[byte], function_index: payload.varuint() });
 			break ;
 		case ByteCode["call_indirect"]:
-			codes.push({ op: ReverseByteCode[byte], type_index: payload.varuint(), reserved: payload.varuint() });
+			codes.push({ op: ReverseByteCode[byte], type: _result.type_section[payload.varuint()], reserved: payload.varuint() });
 			break ;
 
 		case ByteCode["get_local"]:
@@ -389,20 +389,22 @@ const DECODE_TYPES = {
 	[PAYLOAD_TYPES.DATA]: { name: "data_section", decode: decode_data_section }
 };
 
+var _result;
+
 module.exports = function (array) {
 	const stream = new ReadStream(array);
-	const result = {
+	_result = {
 		magicNumber: stream.uint32(),
 		version: stream.uint32(),
 		custom: []
 	};
 
-	if (result.magicNumber != MAGIC_NUMBER) {
+	if (_result.magicNumber != MAGIC_NUMBER) {
 		throw new Error("Attempted to decode something that was not a wasm module");
 	}
 
-	if (result.version != 1) {
-		throw new Error(`Cannot decode wasm v${result.version} modules`);
+	if (_result.version != 1) {
+		throw new Error(`Cannot decode wasm v${_result.version} modules`);
 	}
 
 	while (!stream.eof()) {
@@ -413,11 +415,11 @@ module.exports = function (array) {
 		const decoder = DECODE_TYPES[id];
 
 		if (decoder) {
-			result[decoder.name] = decoder.decode(payload);
+			_result[decoder.name] = decoder.decode(payload);
 		} else if (id != PAYLOAD_TYPES.CUSTOM) {
 			throw new Error(`unsupported section type ${id}`);
 		} else {
-			result.custom.push({ name, data: payload.buffer() });
+			_result.custom.push({ name, data: payload.buffer() });
 		}
 
 		if (payload.remaining() > 0) {
@@ -426,24 +428,24 @@ module.exports = function (array) {
 	}
 
 	// Type stamp the imports
-	if (result.import_section)
-	result.import_section.forEach((imp) => {
+	if (_result.import_section)
+	_result.import_section.forEach((imp) => {
 		switch (imp.type.type) {
 		case "func_type":
-			imp.type = result.type_section[imp.type.index];
+			imp.type = _result.type_section[imp.type.index];
 			break ;
 		}
 	});
 
 	// Roll up function (for ease of use)
-	if (result.function_section)
-	result.function_section = result.function_section.map((code, i) => {
-		code.type = result.type_section[result.function_type_section[i]];
+	if (_result.function_section)
+	_result.function_section = _result.function_section.map((code, i) => {
+		code.type = _result.type_section[_result.function_type_section[i]];
 		return code;
 	});
 
-	delete result.function_type_section;
-	delete result.type_section;
+	delete _result.function_type_section;
+	delete _result.type_section;
 
-	return result;
+	return _result;
 }

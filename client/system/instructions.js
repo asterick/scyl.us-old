@@ -110,8 +110,6 @@ export function initialize(ab) {
 
 		_templates[exp.field] = template(func, exp.field);
 	});
-
-	debugger ;
 }
 
 function template(func, name) {
@@ -158,7 +156,11 @@ function template(func, name) {
 				modified.unshift( { template: 'delay' } );
 				continue ;
 			} else if (term.function_index === _imports.call_indirect) {
-				modified.unshift( { op: 'call_indirect', type_index: 0, reserved: 0 } );
+				modified.unshift( { op: 'call_indirect', type: {
+					parameters: [],
+					returns: [], 
+					type: "func_type"
+				}, reserved: 0 } );
 				i--;
 				continue ;
 			}
@@ -346,8 +348,6 @@ export function compile(start, length) {
 
 		import_section: _import_section,
 		function_section: _functions,
-
-		type_section: [{ type: "func_type", parameters: [], returns: [] }],
 
 		export_section: [{
 			"field": "block",

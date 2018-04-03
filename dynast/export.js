@@ -6,6 +6,8 @@ const {
 	ByteCode
 } = require("./const");
 
+var typeIndex;
+
 /************
  ** WASM encoder
  ************/
@@ -116,7 +118,7 @@ function encode_code_expr(payload, codes) {
 			payload.varuint(code.function_index);
 			break ;
 		case "call_indirect":
-			payload.varuint(code.type_index);
+			payload.varuint(typeIndex(code.type));
 			payload.varuint(code.reserved);
 			break ;
 
@@ -373,8 +375,9 @@ module.exports = function (ast) {
 	var mappedTypes = {};
 	ast = Object.create(ast);
 	ast.function_type_section = [];
+	ast.type_section = [];
 
-	function typeIndex(def) {
+	typeIndex = function(def) {
 		var form;
 
 		switch (def.type) {
@@ -392,14 +395,6 @@ module.exports = function (ast) {
 
 		return mappedTypes[form];
 	}
-
-	// Prepopulate type section
-	if (ast.type_section) {
-		ast.type_section.forEach(typeIndex);
-	} else {
-		ast.type_section = [];
-	}
-
 
 	// Unstamp the import section
 	if (ast.import_section)
