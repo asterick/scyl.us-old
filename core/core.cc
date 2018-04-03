@@ -77,8 +77,6 @@ EXPORT void execute_call(uint32_t start, uint32_t length) {
 
         if (index >= length) return ;
         const instruction_index call = (instruction_index) index;
-
-        call();
     }
 }
 
