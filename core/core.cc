@@ -53,7 +53,7 @@ EXPORT void step_execute() {
     execute(start_pc, false);
 }
 
-EXPORT void execute(uint32_t pc, bool delayed) {
+void execute(uint32_t pc, bool delayed) {
     const uint32_t data = Memory::load(pc, true, pc, delayed);
     const InstructionCall call = locate(data);
 
@@ -66,17 +66,19 @@ EXPORT void execute(uint32_t pc, bool delayed) {
 // *******
 
 extern "C" void _start() { }
-typedef void (*instruction_index)();
 
 EXPORT void execute_call(uint32_t start, uint32_t length) {
+    typedef void (*instruction_index)();
+
     if (registers.clocks > MAX_CLOCK_LAG) registers.clocks = MAX_CLOCK_LAG;
 
-    start_pc = start;
     while (registers.clocks > 0) {
-        const uint32_t index = ((start_pc = registers.pc) - start) >> 2;
+        start_pc = registers.pc;
+        const uint32_t index = (start_pc - start) >> 2;
 
         if (index >= length) return ;
         const instruction_index call = (instruction_index) index;
+        call();
     }
 }
 
