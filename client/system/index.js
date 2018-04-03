@@ -30,9 +30,6 @@ var adjust_clock;
 var cache = [];
 
 const _environment = {
-	// Execute bytecode
-	execute,
-
 	// GPU Rendering calls
 	set_blend_coff, set_texture, set_texture_mask, set_clut, 
 	set_draw, 
@@ -182,10 +179,8 @@ export function block_execute () {
 
 export function step_execute () {
 	try {
-		const start_pc = Registers.pc;
-		Registers.pc += 4;
 		exports.sync_state();
-		execute(start_pc, false);
+		exports.step_execute();
 	} catch (e) {
 		if (e instanceof Exception) {
 			exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
@@ -197,17 +192,6 @@ export function step_execute () {
 
 export function load (word, pc) {
 	return exports.load(word, pc);
-}
-
-// This forces delay slots at the end of a page to
-// be software interpreted so TLB changes don't
-// cause cache failures
-function execute(pc, delayed) {
-	const data = load(pc, true, pc, delayed);
-	const call = locate(data);
-
-	exports.adjust_clock(1);
-	exports[call.name](pc, data, delayed);
 }
 
 export function blockSize(address) {

@@ -4,6 +4,7 @@
 
 #include "compiler.h"
 #include "imports.h"
+#include "table.h"
 
 #include "cop0.h"
 #include "memory.h"
@@ -42,6 +43,21 @@ EXPORT const SystemConfiguration* getConfiguration() {
 EXPORT void sync_state() {
     COP0::handle_interrupt();
     DMA::advance();
+}
+
+EXPORT void step_execute() {
+    start_pc = registers.pc;
+    registers.pc += 4;
+
+    execute(start_pc, false);
+}
+
+void execute(uint32_t pc, bool delayed) {
+    const uint32_t data = Memory::load(pc, true, pc, delayed);
+    const InstructionCall call = locate(data);
+
+    adjust_clock(1);
+    call(pc, data, delayed);
 }
 
 // *******
