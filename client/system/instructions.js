@@ -18,8 +18,7 @@ var _templates;
 var _block_start;
 var _block_end;
 
-const terminate = ["execute_call", "calculate_clock", "finalize_call"];
-const boilerplate = terminate.concat(Object.keys(instructions));
+const boilerplate = ["execute_call", "calculate_clock", "finalize_call"].concat(Object.keys(instructions));
 
 function evaluate(code) {
 	var stack = [];
