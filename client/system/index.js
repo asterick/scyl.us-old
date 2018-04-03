@@ -179,7 +179,6 @@ export function block_execute () {
 
 export function step_execute () {
 	try {
-		exports.sync_state();
 		exports.step_execute();
 	} catch (e) {
 		if (e instanceof Exception) {

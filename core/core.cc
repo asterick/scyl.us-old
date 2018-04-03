@@ -49,6 +49,7 @@ EXPORT void step_execute() {
     start_pc = registers.pc;
     registers.pc += 4;
 
+    sync_state();
     execute(start_pc, false);
 }
 
