@@ -36,7 +36,15 @@ extern "C" {
 	void spu_write(uint32_t, uint32_t, uint32_t);
 }
 
-uint32_t Memory::read(uint32_t logical, uint32_t code, SystemException& problem) {
+EXPORT uint32_t blockSize(uint32_t address) {
+	if ((address & 0xC0000000) != 0xC0000000) {
+		return MIN_COMPILE_SIZE;
+	} else {
+		return MAX_COMPILE_SIZE;
+	}
+}
+
+uint32_t Memory::read(uint32_t logical, bool code, SystemException& problem) {
 	uint32_t physical = COP0::translate(logical, false, problem);
 
 	if (problem != EXCEPTION_NONE) return -1;
@@ -102,26 +110,26 @@ void Memory::write(uint32_t logical, uint32_t value, uint32_t mask, SystemExcept
 	problem = EXCEPTION_BUSERRORDATA;
 }
 
-EXPORT uint32_t Memory::load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t delayed) {
+EXPORT uint32_t Memory::load(uint32_t logical, bool code, uint32_t pc) {
 	SystemException problem = EXCEPTION_NONE;
 
 	uint32_t value = read(logical, code, problem);
 
 	if (problem != EXCEPTION_NONE) {
 		COP0::bad_addr = logical;
-		exception(problem, pc, delayed, 0);
+		exception(problem, pc);
 	}
 
 	return value;
 }
 
-EXPORT void Memory::store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed) {
+EXPORT void Memory::store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc) {
 	SystemException problem = EXCEPTION_NONE;
 
 	write(logical, value, mask, problem);
 
 	if (problem != EXCEPTION_NONE) {
 		COP0::bad_addr = logical;
-		exception(problem, pc, delayed, 0);
+		exception(problem, pc);
 	}
 }

@@ -2,6 +2,9 @@
 
 static const int REGS_RA = 31;
 
+static const uint32_t MIN_COMPILE_SIZE	= 0x1000;				// One TLB page
+static const uint32_t MAX_COMPILE_SIZE	= 0x10000;				// 64K blocks are the maximum block compile size
+
 enum SystemException {
 	EXCEPTION_INTERRUPT = 0x00,
 	EXCEPTION_TLBMOD = 0x01,

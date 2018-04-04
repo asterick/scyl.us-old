@@ -1,11 +1,9 @@
 import { ExceptionNames } from "./consts";
 
 export default class {
-	constructor(exception, pc, delayed, coprocessor) {
+	constructor(exception, pc) {
 		this.exception = exception;
 		this.pc = pc;
-		this.delayed = delayed;
-		this.coprocessor = coprocessor;
 	}
 
 	toString() {

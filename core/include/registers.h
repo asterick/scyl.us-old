@@ -3,17 +3,21 @@
 #include <stdint.h>
 
 union Registers {
-    struct {
-		uint32_t regs[32];
-        uint32_t lo;
-        uint32_t hi;
-		uint32_t pc;
-		int clocks;
-    };
-    struct {
-    	uint32_t _align[32];
-    	uint64_t wide;
-	};
+    // Clocks for 
+    int clocks;
+
+	uint32_t r[16];
+    uint32_t fiq[7];
+    uint32_t svc[2];
+    uint32_t abt[2];
+    uint32_t irq[2];
+    uint32_t und[2];
+
+    uint32_t cpsr;
+    uint32_t spsr_fiq;
+    uint32_t spsr_svc;
+    uint32_t spsr_abt;
+    uint32_t spsr_irq;
 };
 
 extern union Registers registers;

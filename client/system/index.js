@@ -51,8 +51,8 @@ const _environment = {
 	},
 
 	// Glue
-	exception: (code, pc, delayed, cop) => {
-		throw new Exception(code, pc, delayed, cop);
+	exception: (code, pc) => {
+		throw new Exception(code, pc);
 	},
 	invalidate: (physical, logical) => {
 		// Invalidate cache line
@@ -130,7 +130,7 @@ export function reset() {
 export function block_execute () {
 	while (Registers.clocks > 0) {
 		const start_pc = Registers.pc
-		const block_size = blockSize(start_pc);
+		const block_size = exports.block_size(start_pc);
 		const block_mask = -block_size; // equilivant to ~(block_size - 1)
 		const physical = (exports.translate(start_pc, false, start_pc, false) & block_mask) >>> 0;
 		const logical = (start_pc & block_mask) >>> 0;
@@ -165,7 +165,7 @@ export function block_execute () {
 		} catch (e) {
 			if (e instanceof Exception) {
 				exports.calculate_clock(e.pc);
-				exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
+				exports.trap(e.exception, e.pc);
 			} else {
 				throw e;
 			}
@@ -181,7 +181,7 @@ export function step_execute () {
 		exports.step_execute();
 	} catch (e) {
 		if (e instanceof Exception) {
-			exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
+			exports.trap(e.exception, e.pc);
 		} else {
 			throw e;
 		}
@@ -190,14 +190,4 @@ export function step_execute () {
 
 export function load (word, pc) {
 	return exports.load(word, pc);
-}
-
-export function blockSize(address) {
-	if ((address & 0xC0000000) !== (0x80000000 >> 0)) {
-		return MIN_COMPILE_SIZE;
-	} else if (address >= 0x1FC00000 && address < 0x1FC80000) {
-		return MAX_COMPILE_SIZE;
-	} else {
-		return MIN_COMPILE_SIZE;
-	}
 }

@@ -1,0 +1,98 @@
+	31	30	29	28	27	26	25	24	23	22	21	20	19	18	17	16	15	14	13	12	11	10	9	8	7	6	5	4	3	2	1	0
+	cond				0	0	0	0	0	0	0	S	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	0	0	0	0	0	0	S	Rn				Rd				Rs				0	shift		1	Rm			
+	cond				0	0	0	0	0	0	0	S	Rd				SBZ				Rs				1	0	0	1	Rm			
+	cond				0	0	0	P	U	I	W	0	Rn				Rd				addr_mode				1	0	1	1	addr_mode			
+	cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	0	1	1	addr_mode			
+	cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	1	0	1	addr_mode			
+	cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	1	1	1	addr_mode			
+	cond				0	0	0	0	0	0	1	S	Rn				Rn				shift#					shift		0	Rm			
+	cond				0	0	0	0	0	0	1	S	Rn				Rn				Rs				0	shift		1	Rm			
+	cond				0	0	0	0	0	0	1	S	Rd				Rn				Rs				1	0	0	1	Rm			
+	cond				0	0	0	0	0	1	0	S	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	0	0	0	0	1	0	S	Rn				Rd				Rs				0	shift		1	Rm			
+	cond				0	0	0	0	0	1	1	S	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	0	0	0	0	1	1	S	Rn				Rd				Rs				0	shift		1	Rm			
+	cond				0	0	0	0	1	0	0	S	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	0	0	0	1	0	0	S	Rn				Rd				Rs				0	shift		1	Rm			
+	cond				0	0	0	0	1	0	0	S	RdHi				RdLo				Rs				1	0	0	1	Rm			
+	cond				0	0	0	0	1	0	1	S	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	0	0	0	1	0	1	S	Rn				Rd				Rs				0	shift		1	Rm			
+	cond				0	0	0	0	1	0	1	S	RdHi				RdLo				Rs				1	0	0	1	Rm			
+	cond				0	0	0	0	1	1	0	S	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	0	0	0	1	1	0	S	Rn				Rd				Rs				0	shift		1	Rm			
+	cond				0	0	0	0	1	1	0	S	RdHi				RdLo				Rs				1	0	0	1	Rm			
+	cond				0	0	0	0	1	1	1	S	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	0	0	0	1	1	1	S	Rn				Rd				Rs				0	shift		1	Rm			
+	cond				0	0	0	0	1	1	1	S	RdHi				RdLo				Rs				1	0	0	1	Rm			
+	cond				0	0	0	1	0	0	0	1	Rn				SBZ				shift#					shift		0	Rm			
+	cond				0	0	0	1	0	0	0	1	Rn				SBZ				Rs				0	shift		1	Rm			
+	cond				0	0	0	1	0	0	0	0	SBO				Rd				SBZ											
+	cond				0	0	0	1	0	0	SBZ		Rn				Rd				SBZ				1	0	0	1	Rm			
+	cond				0	0	0	1	0	0	1	1	Rn				SBZ				shift#					shift		0	Rm			
+	cond				0	0	0	1	0	0	1	1	Rn				SBZ				Rs				0	shift		1	Rm			
+	cond				0	0	0	1	0	0	1	0	field_mask				SBO				SBZ							0	Rm			
+	cond				0	0	0	1	0	0	1	0	SBO				SBO				SBO				0	0	0	1	Rm			
+	cond				0	0	0	1	0	1	0	1	Rn				SBZ				shift#					shift		0	Rm			
+	cond				0	0	0	1	0	1	0	1	Rn				SBZ				Rs				0	shift		1	Rm			
+	cond				0	0	0	1	0	1	0	0	SBO				Rd				SBZ											
+	cond				0	0	0	1	0	1	SBZ		Rn				Rd				SBZ				1	0	0	1	Rm			
+	cond				0	0	0	1	0	1	1	1	Rn				SBZ				shift#					shift		0	Rm			
+	cond				0	0	0	1	0	1	1	1	Rn				SBZ				Rs				0	shift		1	Rm			
+	cond				0	0	0	1	0	1	1	0	field_mask				SBO				SBZ							0	Rm			
+	cond				0	0	0	1	1	0	0	S	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	0	0	1	1	0	0	S	Rn				Rd				Rs				0	shift		1	Rm			
+	cond				0	0	0	1	1	0	1	S	SBZ				Rd				shift#					shift		0	Rm			
+	cond				0	0	0	1	1	0	1	S	SBZ				Rd				Rs				0	shift		1	Rm			
+	cond				0	0	0	1	1	1	0	S	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	0	0	1	1	1	0	S	Rn				Rd				Rs				0	shift		1	Rm			
+	cond				0	0	0	1	1	1	1	S	SBZ				Rd				shift#					shift		0	Rm			
+	cond				0	0	0	1	1	1	1	S	SBZ				Rd				Rs				0	shift		1	Rm			
+	cond				0	0	1	0	0	0	0	S	Rn				Rd				rotate				imm							
+	cond				0	0	1	0	0	0	1	S	Rn				Rd				rotate				imm							
+	cond				0	0	1	0	0	1	0	S	Rn				Rd				rotate				imm							
+	cond				0	0	1	0	0	1	1	S	Rn				Rd				rotate				imm							
+	cond				0	0	1	0	1	0	0	S	Rn				Rd				rotate				imm							
+	cond				0	0	1	0	1	0	1	S	Rn				Rd				rotate				imm							
+	cond				0	0	1	0	1	1	0	S	Rn				Rd				rotate				imm							
+	cond				0	0	1	0	1	1	1	S	Rn				Rd				rotate				imm							
+	cond				0	0	1	1	0	0	0	1	Rn				SBZ				rotate				imm							
+	cond				0	0	1	1	0	0	1	1	Rn				SBZ				rotate				imm							
+	cond				0	0	1	1	0	0	1	0	field_mask				SBO				rotate				imm							
+	cond				0	0	1	1	0	1	0	1	Rn				SBZ				rotate				imm							
+	cond				0	0	1	1	0	1	1	1	Rn				SBZ				rotate				imm							
+	cond				0	0	1	1	0	1	1	0	field_mask				SBO				rotate				imm							
+	cond				0	0	1	1	1	0	0	S	Rn				Rd				rotate				imm							
+	cond				0	0	1	1	1	0	1	S	SBZ				Rd				rotate				imm							
+	cond				0	0	1	1	1	1	0	S	Rn				Rd				rotate				imm							
+	cond				0	0	1	1	1	1	1	S	SBZ				Rd				rotate				imm							
+	cond				0	1	0	P	U	0	W	0	Rn				Rd				imm											
+	cond				0	1	0	P	U	0	W	1	Rn				Rd				imm											
+	cond				0	1	0	P	U	1	W	0	Rn				Rd				imm											
+	cond				0	1	0	P	U	1	W	1	Rn				Rd				imm											
+	cond				0	1	0	0	U	0	1	0	Rn				Rd				imm											
+	cond				0	1	0	0	U	0	1	1	Rn				Rd				imm											
+	cond				0	1	0	0	U	1	1	0	Rn				Rd				imm											
+	cond				0	1	0	0	U	1	1	1	Rn				Rd				imm											
+	cond				0	1	1	P	U	0	W	0	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	1	1	P	U	0	W	1	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	1	1	P	U	1	W	0	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	1	1	P	U	1	W	1	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	1	1	0	U	0	1	0	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	1	1	0	U	0	1	1	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	1	1	0	U	1	1	0	Rn				Rd				shift#					shift		0	Rm			
+	cond				0	1	1	0	U	1	1	1	Rn				Rd				shift#					shift		0	Rm			
+	cond				1	0	0	P	U	0	W	0	Rn				Register List															
+	cond				1	0	0	P	U	0	W	1	Rn				Register List															
+	cond				1	0	0	P	U	1	0	0	Rn				0	Register List														
+	cond				1	0	0	P	U	1	0	1	Rn				0	Register List														
+	cond				1	0	0	P	U	1	W	0	Rn				1	Register List														
+	cond				1	0	0	P	U	1	W	1	Rn				1	Register List														
+	cond				1	0	1	0	imm																							
+	cond				1	0	1	1	imm																							
+	cond				1	1	0	P	U	N	W	0	Rn				CRd				cp_num				imm							
+	cond				1	1	0	P	U	N	W	1	Rn				CRd				cp_num				imm							
+	cond				1	1	1	0	op1				CRn				CRd				cp_num				op2			0	CRm			
+	cond				1	1	1	0	op1			0	CRn				Rd				cp_num				op2			1	CRm			
+	cond				1	1	1	0	op1			1	CRn				Rd				cp_num				op2			1	CRm			
+	cond				1	1	1	1	imm																							

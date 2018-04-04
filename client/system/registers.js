@@ -11,27 +11,19 @@ export default class Registers {
 	 ** 36: clocks (int)
 	 **/
 
-	static get lo() {
-		return registers[32];
-	}
-
-	static get hi() {
-		return registers[33];
-	}
-
 	static get pc() {
-		return registers[34];
+		return registers[16];
 	}
 
 	static set pc(v) {
-		registers[34] = v;
+		registers[16] = v;
 	}
 
 	static get clocks() {
-		return registers[35] >> 0;
+		return registers[0] >> 0;
 	}
 
 	static set clocks(v) {
-		registers[35] = v;
+		registers[0] = v;
 	}
 }
