@@ -7,14 +7,12 @@
 
 #include "registers.h"
 #include "memory.h"
-#include "cop0.h"
+#include "mmu.h"
 #include "consts.h"
 
 #include "dma.h"
 #include "timer.h"
 #include "gpu.h"
-
-union Registers registers;
 
 uint32_t system_ram[RAM_SIZE / sizeof(uint32_t)];
 uint32_t const system_rom[ROM_SIZE / sizeof(uint32_t)] = {

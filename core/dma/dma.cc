@@ -9,9 +9,7 @@
 #include "consts.h"
 
 #include "dma.h"
-#include "cop0.h"
-#include "memory.h"
-//#include "registers.h"
+#include "mmu.h"
 #include "memory.h"
 #include "gpu.h"
 

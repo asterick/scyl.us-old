@@ -1,4 +1,4 @@
-OBJECTS = arm7/table.o dma/dma.o timer/timer.o gpu/gpu.o memory.o core.o 
+OBJECTS = arm7/registers.o arm7/table.o dma/dma.o timer/timer.o gpu/gpu.o memory.o core.o 
 TARGET = "../assets/core.wasm"
 ROM = "../system0/code.bin"
 SYSTEM0 =  ../system0/code.bin ../system0/data.bin
@@ -12,12 +12,12 @@ all: $(TARGET)
 
 clean:
 	make -C ../system0 clean
-	rm -Rf $(OBJECTS) $(TARGET) system0.h
+	rm -Rf $(OBJECTS) $(TARGET) system0.h arm7/op_table.h
 
 wast: $(TARGET)
 	wasm-dis $<
 
-$(TARGET): $(OBJECTS)
+$(TARGET): arm7/op_table.h $(OBJECTS)
 	$(WASMCEPTION)/dist/bin/wasm-ld $(LDFLAGS) $(OBJECTS) -o $@
 	../tools/strip.js $@
 
@@ -26,6 +26,9 @@ $(TARGET): $(OBJECTS)
 
 %.o: %.cc include system0.h
 	$(WASMCEPTION)/dist/bin/clang++ -std=c++11 $(CFLAGS) $< -c -o $@
+
+arm7/op_table.h: ./tools/opcodes.tsv
+	python2 ./tools/make_table.py ./tools/opcodes.tsv > $@
 
 system0.h:
 	make -C ../system0 all

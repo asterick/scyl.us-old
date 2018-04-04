@@ -13,5 +13,5 @@ extern "C" {
 	void invalidate(uint32_t physical);
 }
 
-EXPORT void adjust_clock(uint32_t cycles);
-EXPORT void execute(uint32_t, bool);
+EXPORT void adjust_clock(int cycles);
+EXPORT void execute(uint32_t);
