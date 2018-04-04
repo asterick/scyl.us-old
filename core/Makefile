@@ -1,4 +1,4 @@
-OBJECTS = arm7/registers.o arm7/table.o dma/dma.o timer/timer.o gpu/gpu.o memory.o core.o 
+OBJECTS = arm7/registers.o arm7/base.o arm7/table.o dma/dma.o timer/timer.o gpu/gpu.o memory.o core.o 
 TARGET = "../assets/core.wasm"
 ROM = "../system0/code.bin"
 SYSTEM0 =  ../system0/code.bin ../system0/data.bin
