@@ -1,20 +1,8 @@
 import csv
 from json import dumps
 
-def lowest_bit(val):
-	if not val:
-		return -1
-
-	b = 0
-	while ~val & (1 << b):
-		b += 1
-
-	return b
-
-def fix_mask(k):
-	while k & (k + 1):
-		k |= k >> 1
-	return k
+def top_bit(mask):
+	return len(bin(mask)[2:]) - 1
 
 def to_fields(line):
 	fields 	= {}
@@ -22,9 +10,7 @@ def to_fields(line):
 	mask 	= 0
 	fixed   = 0
 
-	for bit, element in enumerate(line):
-		#print bit, element,
-
+	for bit, element in enumerate(line[:-1]):
 		if not element:
 			count += 1
 		elif element in ['0', '1']:
@@ -34,45 +20,52 @@ def to_fields(line):
 			fields[element] = (bit - count, count + 1)
 			count = 0
 
-	return { 'type': 'instruction', 'fields': fields, 'mask': mask, 'fixed': fixed }
+	return { 'name': line[-1], 'type': 'instruction', 'fields': fields, 'mask': mask, 'fixed': fixed }
 
-def make_tree(sets, base_mask = 0xFFFFFFFF):
-	print sets
+def make_tree(sets):
 	# edge cases
 	if len(sets) == 0:
 		return None
-	elif not base_mask:
-		if len(sets) == 1:
-			return sets[0]
-		else:
-			raise Exception("Mask volation")
+	elif len(sets) == 1:
+		return sets[0]
+
 
 	# calculate mask
-	mask = base_mask
-	for row in sets:
-		mask &= row['mask']
-
-	#print dumps(sets)
-
-	lsb = lowest_bit(mask)
-	index_mask = fix_mask(mask >> lsb)
-
-	entries = [ [] for i in range(index_mask+1) ]
+	on_mask, off_mask = 0, 0
 
 	for row in sets:
-		index = (row['fixed'] >> lsb) & index_mask
-		entries[index] += [row]
+		on_mask |= (row['fixed'] & row['mask']) 
+		off_mask |= (~row['fixed'] & row['mask'])
 
-	entries = [make_tree(v, base_mask & ~(index_mask << lsb)) for v in entries]
+	mask = on_mask & off_mask
 
-	return { 'type': 'group', 'shift': lsb, 'mask': mask, 'entries': entries }
+	if mask == 0:
+		for r in sets:
+			print bin(r['mask']), bin(r['fixed']), r
+		return "Mask Exception"
+
+	shift = max(0, top_bit(mask) - 3)
+	index_mask, increment = 0xF << shift, 1 << shift
+
+	# divide rows into bit buckets
+	entries = []
+	for i in range(0, mask+1, increment):
+		bucket = []
+		
+		for k, row in enumerate(sets):
+			if (row['fixed'] & index_mask) != i:
+				continue
+			bucket += [row]
+
+		entries += [make_tree(bucket)]
+
+	return { 'type': 'group', 'shift': shift, 'mask': index_mask, 'entries': entries }
 
 
 with open("opcodes.tsv") as tsv:
-	all_lines = [line[::-1][:-1] for line in csv.reader(tsv, dialect="excel-tab")] [1:]
+	all_lines = [line[::-1] for line in csv.reader(tsv, dialect="excel-tab")] [1:]
 
 	masked = [to_fields(line) for line in all_lines]
-
-	print make_tree(masked)
+	tree = make_tree(masked)
 
 	#lines = [ToFields(line[::-1]) for line in csv.reader(tsv, dialect="excel-tab")] [1:]
