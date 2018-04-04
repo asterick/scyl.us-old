@@ -17,7 +17,14 @@ def to_fields(line):
 			mask 	|= 1 << bit
 			fixed	|= int(element) << bit
 		else:
-			fields[element] = (bit - count, count + 1)
+			field_mask = ((2 << count) - 1) << (bit - count)
+			if element == 'SBZ':
+				mask |= field_mask
+			elif element == 'SBO':
+				mask |= field_mask
+				fixed |= field_mask
+			else:
+				fields[element] = (bit - count, field_mask)
 			count = 0
 
 	return { 'name': line[-1], 'type': 'instruction', 'fields': fields, 'mask': mask, 'fixed': fixed }
@@ -29,7 +36,6 @@ def make_tree(sets):
 	elif len(sets) == 1:
 		return sets[0]
 
-
 	# calculate mask
 	on_mask, off_mask = 0, 0
 
@@ -40,8 +46,6 @@ def make_tree(sets):
 	mask = on_mask & off_mask
 
 	if mask == 0:
-		for r in sets:
-			print bin(r['mask']), bin(r['fixed']), r
 		return "Mask Exception"
 
 	shift = max(0, top_bit(mask) - 3)
@@ -67,5 +71,7 @@ with open("opcodes.tsv") as tsv:
 
 	masked = [to_fields(line) for line in all_lines]
 	tree = make_tree(masked)
+
+	print dumps(tree, sort_keys=True, indent=4)
 
 	#lines = [ToFields(line[::-1]) for line in csv.reader(tsv, dialect="excel-tab")] [1:]
