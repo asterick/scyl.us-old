@@ -34,7 +34,7 @@ extern "C" {
 	void spu_write(uint32_t, uint32_t, uint32_t);
 }
 
-EXPORT uint32_t blockSize(uint32_t address) {
+EXPORT uint32_t block_size(uint32_t address) {
 	if ((address & 0xC0000000) != 0xC0000000) {
 		return MIN_COMPILE_SIZE;
 	} else {
