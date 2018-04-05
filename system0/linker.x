@@ -11,7 +11,6 @@ SECTIONS
 	_DATA_ROM = .;
 
 	. = 0x80000000;
-	_STACK_TOP = .;
 	_DATA_START = .;
 	.data : {
 		*(.init_array)

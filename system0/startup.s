@@ -12,6 +12,12 @@
 	.long 		_irq_handler
 	.long 		_fiq_handler
 
+	.section	.data
+	.bss
+	.space		0x10000
+
+_stack_top:
+
 	# Reset / Exception handlers
 	.section	.text
 	.align		4
@@ -21,13 +27,12 @@ _reset:
 	.globl		main
 	.globl		memcpy
 
-	.globl		_STACK_TOP
 	.globl		_DATA_ROM
 	.globl		_DATA_START
 	.globl		_DATA_SIZE
 
 	# Setup stack pointer
-	ldr sp, =_STACK_TOP
+	ldr sp, =_stack_top
 
 	# Setup initialized ram sections
 	ldr r0, =_DATA_START 
