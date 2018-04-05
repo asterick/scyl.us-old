@@ -47,7 +47,7 @@ uint32_t Memory::read(uint32_t logical, bool code, SystemException& problem) {
 
 	if (problem != EXCEPTION_NONE) return -1;
 
-	switch (physical & 0x1FF00000) {
+	switch (physical & 0xFFF00000) {
 		case DMA_BASE: return DMA::read(physical);
 		case TIMER_BASE: return Timer::read(physical);
 		case CEDAR_BASE: return cedar_read(physical);
@@ -59,14 +59,14 @@ uint32_t Memory::read(uint32_t logical, bool code, SystemException& problem) {
 		case ROM_BASE + 0x200000:
 		case ROM_BASE + 0x300000:
 			if (physical >= ROM_BASE && physical < ROM_BASE + sizeof(system_ram)) {
-				return system_rom[(physical - ROM_BASE) >> 2];
+				return system_rom[(physical - ROM_BASE) >> 2] % RAM_SIZE;
 			}
 			break ;
 		default:
-			if (physical < sizeof(system_ram)) {
-				return system_ram[physical >> 2];
+			{
+				int index = (physical - RAM_BASE) % RAM_SIZE;
+				return system_ram[index >> 2];
 			}
-			break ;
 	}
 
 	problem = code ? EXCEPTION_BUSERRORINSTRUCTION : EXCEPTION_BUSERRORDATA;
@@ -81,7 +81,7 @@ void Memory::write(uint32_t logical, uint32_t value, uint32_t mask, SystemExcept
 
 	invalidate(physical);
 
-	switch (physical & 0x1FF00000) {
+	switch (physical & 0xFFF00000) {
 		case DMA_BASE: DMA::write(physical, value, mask); return ;
 		case TIMER_BASE: Timer::write(physical, value, mask); return ;
 		case CEDAR_BASE: cedar_write(physical, value, mask); return ;
@@ -92,20 +92,14 @@ void Memory::write(uint32_t logical, uint32_t value, uint32_t mask, SystemExcept
 		case ROM_BASE + 0x100000:
 		case ROM_BASE + 0x200000:
 		case ROM_BASE + 0x300000:
-			if (physical >= ROM_BASE && physical < ROM_BASE + sizeof(system_rom)) {
-				return ;
-			}
 			break ;
 		default:
-			// Out of bounds
-			if (physical < sizeof(system_ram)) {
+			{
+				int index = (physical - RAM_BASE) % RAM_SIZE;
 				system_ram[physical >> 2] = (system_ram[physical >> 2] & ~mask) | (value & mask);
-				return ;
+				break ;
 			}
-			break ;
 	}
-
-	problem = EXCEPTION_BUSERRORDATA;
 }
 
 EXPORT uint32_t Memory::load(uint32_t logical, bool code, uint32_t pc) {

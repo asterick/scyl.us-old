@@ -3,7 +3,7 @@ import Component from 'inferno-component';
 
 import { disassemble } from "../system/instructions";
 
-import { load } from "../system";
+import { load, get_pc } from "../system";
 //import Registers from "../system/registers";
 
 export default class extends Component {
@@ -24,7 +24,7 @@ export default class extends Component {
 		var lines = [];
 
 		for (var i = 0; i < 128; i += 4) {
-			//lines.push(this.disassemble(Registers.pc + i));
+			//lines.push(this.disassemble(get_pc() + i));
 		}
 
 		return lines;

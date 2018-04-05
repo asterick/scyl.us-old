@@ -17,7 +17,7 @@ export default class extends Component {
 		var lines = [];
 
 		for (var i = 0; i < 128; i += 4) {
-			lines.push(this.disassemble(0xE0020000 + i));
+			lines.push(this.disassemble(0x80020000 + i));
 		}
 
 		return lines;

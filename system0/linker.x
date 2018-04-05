@@ -10,7 +10,7 @@ SECTIONS
 	. = ALIGN(8);
 	_DATA_ROM = .;
 
-	. = 0xE0020000;
+	. = 0x80000000;
 	_STACK_TOP = .;
 	_DATA_START = .;
 	.data : {

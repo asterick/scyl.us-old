@@ -64,6 +64,10 @@ const _environment = {
 	}
 };
 
+export function get_pc() {
+	return exports.get_pc();
+}
+
 export function get_registers() {
 	const memory = exports.memory.buffer;
 	const utf8decode = new TextDecoder('utf-8');
