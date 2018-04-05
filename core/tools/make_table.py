@@ -44,7 +44,7 @@ def make_tree(sets):
 	elif len(sets) == 1:
 		return sets[0]
 
-	# calculate mask
+	# calculate sortable bits
 	on_mask, off_mask = 0, 0
 
 	for row in sets:
@@ -54,18 +54,21 @@ def make_tree(sets):
 	mask = on_mask & off_mask
 
 	if mask == 0:
-		return "Mask Exception"
+		for s in sets:
+			print bin(row['mask'] | 0x100000000), bin(row['fixed'] | 0x100000000), s
+		raise Exception("Mask Exception")
 
-	shift = max(0, top_bit(mask) - TABLE_INDEX_BITS + 1)
-	index_mask, increment = ((1 << TABLE_INDEX_BITS) - 1) << shift, 1 << shift
+	shift = max(0, top_bit(mask) - 3)
+	index_mask, increment = 0xF << shift, 1 << shift
 
 	# divide rows into bit buckets
 	entries = []
+
 	for i in range(0, index_mask+increment, increment):
 		bucket = []
 		
 		for k, row in enumerate(sets):
-			if (row['fixed'] & index_mask) != i:
+			if (row['fixed'] & index_mask) != (i & row['mask']):
 				continue
 			bucket += [row]
 

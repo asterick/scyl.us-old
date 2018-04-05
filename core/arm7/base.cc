@@ -211,24 +211,6 @@ EXPORT void str_shift_imm(uint32_t address, uint32_t word){
 EXPORT void ldr_shift_imm(uint32_t address, uint32_t word){
 }
 
-EXPORT void strb_shift_imm(uint32_t address, uint32_t word){
-}
-
-EXPORT void ldrb_shift_imm(uint32_t address, uint32_t word){
-}
-
-EXPORT void strt_shift_imm(uint32_t address, uint32_t word){
-}
-
-EXPORT void ldrt_shift_imm(uint32_t address, uint32_t word){
-}
-
-EXPORT void strbt_shift_imm(uint32_t address, uint32_t word){
-}
-
-EXPORT void ldrbt_shift_imm(uint32_t address, uint32_t word){
-}
-
 EXPORT void strh(uint32_t address, uint32_t word){
 }
 
@@ -245,24 +227,6 @@ EXPORT void str_imm(uint32_t address, uint32_t word){
 }
 
 EXPORT void ldr_imm(uint32_t address, uint32_t word){
-}
-
-EXPORT void strb_imm(uint32_t address, uint32_t word){
-}
-
-EXPORT void ldrb_imm(uint32_t address, uint32_t word){
-}
-
-EXPORT void strt_imm(uint32_t address, uint32_t word){
-}
-
-EXPORT void ldrt_imm(uint32_t address, uint32_t word){
-}
-
-EXPORT void strbt_imm(uint32_t address, uint32_t word){
-}
-
-EXPORT void ldrbt_imm(uint32_t address, uint32_t word){
 }
 
 EXPORT void stm_reglist(uint32_t address, uint32_t word){

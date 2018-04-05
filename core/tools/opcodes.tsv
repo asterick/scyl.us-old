@@ -74,26 +74,14 @@ mrs		cond				0	0	0	1	0	S	0	0	SBO				Rd				SBZ
 msr	reg	cond				0	0	0	1	0	S	1	0	field_mask				SBO				SBZ							0	Rm			
 msr	rot_imm	cond				0	0	1	1	0	S	1	0	field_mask				SBO				rotate				imm							
 																																	
-str	shift_imm	cond				0	1	1	P	U	0	W	0	Rn				Rd				shift#					shift		0	Rm			
-ldr	shift_imm	cond				0	1	1	P	U	0	W	1	Rn				Rd				shift#					shift		0	Rm			
-strb	shift_imm	cond				0	1	1	P	U	1	W	0	Rn				Rd				shift#					shift		0	Rm			
-ldrb	shift_imm	cond				0	1	1	P	U	1	W	1	Rn				Rd				shift#					shift		0	Rm			
-strt	shift_imm	cond				0	1	1	0	U	0	1	0	Rn				Rd				shift#					shift		0	Rm			
-ldrt	shift_imm	cond				0	1	1	0	U	0	1	1	Rn				Rd				shift#					shift		0	Rm			
-strbt	shift_imm	cond				0	1	1	0	U	1	1	0	Rn				Rd				shift#					shift		0	Rm			
-ldrbt	shift_imm	cond				0	1	1	0	U	1	1	1	Rn				Rd				shift#					shift		0	Rm			
+str	shift_imm	cond				0	1	1	P	U	B	W	0	Rn				Rd				shift#					shift		0	Rm			
+ldr	shift_imm	cond				0	1	1	P	U	B	W	1	Rn				Rd				shift#					shift		0	Rm			
 strh		cond				0	0	0	P	U	I	W	0	Rn				Rd				addr_mode				1	0	1	1	addr_mode			
 ldrh		cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	0	1	1	addr_mode			
 ldrsb		cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	1	0	1	addr_mode			
 ldrsh		cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	1	1	1	addr_mode			
-str	imm	cond				0	1	0	P	U	0	W	0	Rn				Rd				imm											
-ldr	imm	cond				0	1	0	P	U	0	W	1	Rn				Rd				imm											
-strb	imm	cond				0	1	0	P	U	1	W	0	Rn				Rd				imm											
-ldrb	imm	cond				0	1	0	P	U	1	W	1	Rn				Rd				imm											
-strt	imm	cond				0	1	0	0	U	0	1	0	Rn				Rd				imm											
-ldrt	imm	cond				0	1	0	0	U	0	1	1	Rn				Rd				imm											
-strbt	imm	cond				0	1	0	0	U	1	1	0	Rn				Rd				imm											
-ldrbt	imm	cond				0	1	0	0	U	1	1	1	Rn				Rd				imm											
+str	imm	cond				0	1	0	P	U	B	W	0	Rn				Rd				imm											
+ldr	imm	cond				0	1	0	P	U	B	W	1	Rn				Rd				imm											
 																																	
 stm	reglist	cond				1	0	0	P	U	S	W	0	Rn				Register List															
 ldm	reglist	cond				1	0	0	P	U	S	W	1	Rn				Register List															
