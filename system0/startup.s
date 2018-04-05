@@ -1,6 +1,23 @@
 	# Reset handler
 	.section	.reset
 	.align		4
+	
+	.long		_reset
+	.long 		_undef_handler
+	.long 		_swi_handler
+	.long 		_prefetch_aborthandler
+	.long 		_data_abort_handler
+	.long 		_address_abort_handler
+	.long 		_exceed_handler
+	.long 		_irq_handler
+	.long 		_fiq_handler
+
+	# Reset / Exception handlers
+	.section	.text
+	.align		4
+	.code		32
+
+_reset:
 	.globl		main
 	.globl		memcpy
 
@@ -8,11 +25,9 @@
 	.globl		_DATA_ROM
 	.globl		_DATA_START
 	.globl		_DATA_SIZE
-	.long		_reset
 
-_reset:
 	# Setup stack pointer
-	#la 	$sp, _STACK_TOP
+	ldr sp, =_STACK_TOP
 
 	# Setup initialized ram sections
 	ldr r0, =_DATA_START 
@@ -21,8 +36,18 @@ _reset:
 	bl	memcpy
 
 	# Jump to main
-	bl main	
+	bl 	main	
 	b   .
 
 	.pool
 
+
+_undef_handler:
+_swi_handler:
+_prefetch_aborthandler:
+_data_abort_handler:
+_address_abort_handler:
+_exceed_handler:
+_irq_handler:
+_fiq_handler:
+	b 	.

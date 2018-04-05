@@ -382,8 +382,3 @@ export function locate(word) {
 
 	return fields;
 }
-
-export function disassemble(word, address) {
-	const op = locate(word);
-	return instructions[op.name](op, address);
-}

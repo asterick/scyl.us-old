@@ -59,7 +59,8 @@ uint32_t Memory::read(uint32_t logical, bool code, SystemException& problem) {
 		case ROM_BASE + 0x200000:
 		case ROM_BASE + 0x300000:
 			if (physical >= ROM_BASE && physical < ROM_BASE + sizeof(system_ram)) {
-				return system_rom[(physical - ROM_BASE) >> 2] % RAM_SIZE;
+				int index = (physical - ROM_BASE) % ROM_SIZE;
+				return system_rom[index >> 2];
 			}
 			break ;
 		default:
@@ -96,7 +97,7 @@ void Memory::write(uint32_t logical, uint32_t value, uint32_t mask, SystemExcept
 		default:
 			{
 				int index = (physical - RAM_BASE) % RAM_SIZE;
-				system_ram[physical >> 2] = (system_ram[physical >> 2] & ~mask) | (value & mask);
+				system_ram[index >> 2] = (system_ram[index >> 2] & ~mask) | (value & mask);
 				break ;
 			}
 	}
