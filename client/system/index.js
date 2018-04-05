@@ -1,5 +1,4 @@
 import Exception from "./exception";
-import Registers from "./registers";
 
 import { locate, compile, function_names, initialize as initialize_compiler } from "./instructions";
 import { Exceptions, SYSTEM_CLOCK, MAX_COMPILE_SIZE, MIN_COMPILE_SIZE } from "./consts";
@@ -21,7 +20,6 @@ import {
 
 export { attach } from "./renderer";
 
-export var registers;
 export var regions = null;
 export var running = false;
 export var exports;
@@ -66,6 +64,31 @@ const _environment = {
 	}
 };
 
+export function get_registers() {
+	const memory = exports.memory.buffer;
+	const utf8decode = new TextDecoder('utf-8');
+	const dv = new DataView(memory);
+	var address = exports.get_registers();
+
+	var registers = [];
+	
+	for (;;) {
+		var name_addr = dv.getUint32(address, true);
+		address += 4;
+		if (!name_addr) break ;
+
+		var value = dv.getUint32(dv.getUint32(address, true), true);
+		address += 4;
+
+		for (var name_length = 0; dv.getUint8(name_addr + name_length, true); name_length++ ) ;
+
+		const name = utf8decode.decode(memory.slice(name_addr, name_length + name_addr));
+		
+		registers.push({ name, value });
+	}
+
+	return registers;
+}
 
 export function start () {
 	if (running) return ;
@@ -87,7 +110,7 @@ export function tick () {
 
 	// System is caught up, advance our CPU clock since last execution
 	const new_clock = Date.now();
-	Registers.clocks += (new_clock - adjust_clock) * (SYSTEM_CLOCK / 1000);
+	exports.add_clock((new_clock - adjust_clock) * (SYSTEM_CLOCK / 1000));
 	adjust_clock = new_clock;
 
 	// Schedule next tick when the CPU is free
@@ -108,14 +131,7 @@ export async function initialize() {
 	exports = module.instance.exports;
 	cache = [];
 
-	const address = exports.getConfiguration();
-	const memory = exports.memory.buffer;
-	const bytes = new Uint8Array(exports.memory.buffer);
-	const dv = new DataView(memory);
-
-	registers = new Uint32Array(memory, dv.getUint32(address, true), 64);
-
-	register_memory(memory);
+	register_memory(exports.memory.buffer);	// to GPU
 
 	return module;
 }
@@ -128,11 +144,11 @@ export function reset() {
 
 // Execute a single frame
 export function block_execute () {
-	while (Registers.clocks > 0) {
-		const start_pc = Registers.pc
+	while (exports.get_clock()) {
+		const start_pc = exports.get_pc();
 		const block_size = exports.block_size(start_pc);
 		const block_mask = -block_size; // equilivant to ~(block_size - 1)
-		const physical = (exports.translate(start_pc, false, start_pc, false) & block_mask) >>> 0;
+		const physical = (exports.translate(start_pc, false, start_pc) & block_mask) >>> 0;
 		const logical = (start_pc & block_mask) >>> 0;
 
 		const funct = cache[physical];

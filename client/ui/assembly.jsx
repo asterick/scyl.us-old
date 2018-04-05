@@ -4,7 +4,7 @@ import Component from 'inferno-component';
 import { disassemble } from "../system/instructions";
 
 import { load } from "../system";
-import Registers from "../system/registers";
+//import Registers from "../system/registers";
 
 export default class extends Component {
 	disassemble(pc) {
@@ -23,8 +23,8 @@ export default class extends Component {
 	listing() {
 		var lines = [];
 
-		for (var i = 0; i < 140; i += 4) {
-			lines.push(this.disassemble(Registers.pc + i));
+		for (var i = 0; i < 128; i += 4) {
+			//lines.push(this.disassemble(Registers.pc + i));
 		}
 
 		return lines;

@@ -27,15 +27,9 @@ static uint32_t clocks;
 // *******
 
 EXPORT void reset() {
-    COP0::reset();
-}
-
-EXPORT const RegisterSet* getConfiguration() {
-    return &regs_usr;   // TODO
 }
 
 EXPORT void sync_state() {
-    COP0::handle_interrupt();
     DMA::advance();
 }
 
@@ -74,6 +68,18 @@ EXPORT void execute_call(uint32_t start, uint32_t length) {
         const instruction_index call = (instruction_index) index;
         call();
     }
+}
+
+EXPORT uint32_t get_pc() {
+    return reg_pc;
+}
+
+EXPORT void add_clock(int cycles) {
+    clocks += cycles;
+}
+
+EXPORT int get_clock() {
+    return clocks;
 }
 
 EXPORT void adjust_clock(int cycles) {

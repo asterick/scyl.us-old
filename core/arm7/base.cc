@@ -4,6 +4,9 @@
 
 // Stub functions
 
+EXPORT void UndefinedOperation(uint32_t address, uint32_t word){
+}
+
 EXPORT void b_imm(uint32_t address, uint32_t word){
 }
 
