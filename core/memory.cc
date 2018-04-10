@@ -58,7 +58,7 @@ uint32_t Memory::read(uint32_t logical, bool code, SystemException& problem) {
 		case ROM_BASE + 0x100000:
 		case ROM_BASE + 0x200000:
 		case ROM_BASE + 0x300000:
-			if (physical >= ROM_BASE && physical < ROM_BASE + sizeof(system_ram)) {
+			if (physical >= ROM_BASE && physical < ROM_BASE + ROM_SIZE) {
 				int index = (physical - ROM_BASE) % ROM_SIZE;
 				return system_rom[index >> 2];
 			}
