@@ -1,14 +1,17 @@
 import { Registers, COP0Registers } from "./consts";
 import { locate } from "./instructions";
+import * as table_calls from "./disassembly";
 
 export const instructions = {
-    UndefinedOperation: (fields, pc) => `und`,
+    UndefinedOperation: (fields, pc) => ``,
 };
+
+Object.assign(instructions, table_calls);
 
 export function disassemble(word, address) {
 	const op = locate(word);
 
-	if (instructions[op.name] === undefined) return `failed ${op.name}`
+	if (op.name === "UndefinedOperation") return "und"
 
-	return instructions[op.name](op, address);
+	return instructions[op.name](op.word, address) || `failed ${op.name}`;
 }

@@ -1,5 +1,5 @@
+import argparse
 import csv
-from sys import argv
 
 TABLE_INDEX_BITS = 4
 
@@ -14,9 +14,6 @@ def to_fields(line):
 	name, arg = line[-1], line[-2]
 	if arg:
 		name = "%s_%s" % (name, arg)
-
-	print "EXPORT void %s(uint32_t address, uint32_t word);" % (name)
-	print "PREPARE_INSTRUCTION(%s);" % name
 
 	for bit, element in enumerate(line[:-2]):
 		if not element:
@@ -55,7 +52,7 @@ def make_tree(sets):
 
 	if mask == 0:
 		for s in sets:
-			print bin(row['mask'] | 0x100000000), bin(row['fixed'] | 0x100000000), s
+			print bin(row['mask'] | 0x100000000), bin(row['fixed'] | 0x100000000), s['name'], s
 		raise Exception("Mask Exception")
 
 	shift = max(0, top_bit(mask) - 3)
@@ -76,36 +73,99 @@ def make_tree(sets):
 
 	return { 'type': 'group', 'shift': shift, 'mask': index_mask, 'entries': entries }
 
+def output_stubs(target, masked):
+	for s in masked:
+		name = s['name']
+		target.write("EXPORT void %s(uint32_t address, uint32_t word);\n" % (name))
+		target.write("PREPARE_INSTRUCTION(%s);\n" % name)
+
 global tree_index
 tree_index = 0
-def output_tree(tree, name="root_table"):
+def output_tree(target, tree, name="root_table"):
 	if tree == None:
 		return "        UNKNOWN_OP,"
 	elif tree['type'] == 'group':
 		global tree_index
 
 		tree_index += 1
-		children = [output_tree(element, "sub_tree_%i" % tree_index) for element in tree['entries']]
+		children = [output_tree(target, element, "sub_tree_%i" % tree_index) for element in tree['entries']]
 
-		print "static const InstructionTable %s = {" % name
-		print "    ENTRY_TABLE, %i, {" % tree['shift']
+		target.write("static const InstructionTable %s = {\n" % name)
+		target.write("    ENTRY_TABLE, %i, {\n" % tree['shift'])
 		
-		for child in children:
-			print child
+		target.write("%s\n" % '\n'.join(children))
 
-		print "    }"
-		print "};"
-		print
+		target.write("    }\n")
+		target.write("};\n")
+		target.write("\n")
 
 		return "        &%s," % name
 	elif tree['type'] == 'instruction':
 		return "        INSTRUCTION(%s)," % tree['name']
 
+def output_jsstub(target, masked):
+	settings = {
+		('cond', 28, 0xf0000000): 'Conditions[ (word & 0x%(mask)x) >>> %(shift)i ]',
+		( 'imm',  0, 0x00ffffff): '%(signed)s'
+	}
 
-with open(argv[1]) as tsv:
-	all_lines = [line[::-1] for line in csv.reader(tsv, dialect="excel-tab") if line[0]] [1:]
+	body = {
+		'b_imm': 	"`b${cond}   ${((imm << 2) + address + 8).toString(16)}`",
+		'bl_imm': 	"`bl${cond}	 ${((imm << 2) + address + 8).toString(16)}`"
+	}
 
-	masked = [to_fields(line) for line in all_lines]
-	tree = make_tree(masked)
+	target.write("import { Registers, Conditions } from './consts';\n\n")
+	for call in masked:
+		target.write("export function %s(word, address) {\n" % call['name'])
+		for name, (shift, mask) in call['fields'].items():
+			pre_shift = 31 - top_bit(mask)
+			fields = { 
+				'name': name.replace("#", "Num"), 
+				'shift': shift, 
+				'mask': mask, 
+				'unsigned': "(word & 0x%x) >>> %i" % (mask, shift),
+				'signed': "(word & 0x%x) << %i >> %i" % (mask, pre_shift, shift + pre_shift)
+			}
 
-	output_tree(tree)
+			if (name, shift, mask) in settings:
+				format = "    const %(name)s = " + settings[(name, shift, mask)] + ";\n"
+			else:
+				format = "    const %(name)s = %(unsigned)s;\n"
+
+			target.write(format % fields)
+
+		if call['name'] in body:
+			target.write("\n    return %s;" % body[call['name']])
+		else:
+			print "%s is incomplete" % call['name']
+
+		target.write("\n}\n\n")
+
+def parse(fns):
+	for fn in fns:
+		with open(fn) as tsv:
+			for line in csv.reader(tsv, dialect="excel-tab"):
+				if not line[0]:
+					continue
+				yield line
+
+parser = argparse.ArgumentParser(description='Process opcode table')
+parser.add_argument('TSVs', metavar='N', type=str, nargs='+',
+                    help='input tables')
+parser.add_argument('--table', help='generate C table for decoding instructions')
+parser.add_argument('--jsstub', help='generate C table for decoding instructions')
+
+args = parser.parse_args()
+
+masked = [to_fields(line[::-1]) for line in parse(args.TSVs)]
+tree = make_tree(masked)
+
+
+if args.table:
+	with open(args.table, "w") as target:
+		output_stubs(target, masked)
+		output_tree(target, tree)
+
+if args.jsstub:
+	with open(args.jsstub, "w") as target:
+		output_jsstub(target, masked)

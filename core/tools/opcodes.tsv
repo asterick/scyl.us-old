@@ -1,6 +1,8 @@
 		31	30	29	28	27	26	25	24	23	22	21	20	19	18	17	16	15	14	13	12	11	10	9	8	7	6	5	4	3	2	1	0
-bx	reg	cond				0	0	0	1	0	0	1	0	SBO				SBO				SBO				0	0	L	1	Rm			
-b	imm	cond				1	0	1	L	imm																							
+bx	reg	cond				0	0	0	1	0	0	1	0	SBO				SBO				SBO				0	0	0	1	Rm			
+blx	reg	cond				0	0	0	1	0	0	1	0	SBO				SBO				SBO				0	0	1	1	Rm			
+b	imm	cond				1	0	1	0	imm																							
+bl	imm	cond				1	0	1	1	imm																							
 																																	
 stc		cond				1	1	0	P	U	N	W	0	Rn				CRd				cp_num				imm							
 ldc		cond				1	1	0	P	U	N	W	1	Rn				CRd				cp_num				imm							
@@ -83,5 +85,5 @@ ldrsh		cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	1	1	1	addr_mode
 str	imm	cond				0	1	0	P	U	B	W	0	Rn				Rd				imm											
 ldr	imm	cond				0	1	0	P	U	B	W	1	Rn				Rd				imm											
 																																	
-stm	reglist	cond				1	0	0	P	U	S	W	0	Rn				Register List															
-ldm	reglist	cond				1	0	0	P	U	S	W	1	Rn				Register List															
+stm	reglist	cond				1	0	0	P	U	S	W	0	Rn				reg_list															
+ldm	reglist	cond				1	0	0	P	U	S	W	1	Rn				reg_list															
