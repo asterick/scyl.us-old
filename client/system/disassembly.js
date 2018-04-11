@@ -1004,4 +1004,3 @@ export function ldrsh(word, address) {
 
     return 'failed\tldrsh';
 }
-
