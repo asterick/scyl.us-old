@@ -33,7 +33,6 @@ _reset:
 
 	# Setup stack pointer
 	ldr 	sp, =_stack_top
-	str 	r0, [sp, r1, lsl #2]!
 
 	# Setup initialized ram sections
 	ldr r0, =_DATA_START 
