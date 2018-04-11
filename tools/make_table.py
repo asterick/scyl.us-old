@@ -235,7 +235,7 @@ parser = argparse.ArgumentParser(description='Process opcode table')
 parser.add_argument('TSVs', metavar='N', type=str, nargs='+',
                     help='input tables')
 parser.add_argument('--table', help='generate C table for decoding instructions')
-parser.add_argument('--jsstub', help='generate C table for decoding instructions')
+parser.add_argument('--jsstub', help='generate JS functions for disassembling')
 
 args = parser.parse_args()
 
