@@ -4,7 +4,7 @@
 
 // Stub functions
 
-EXPORT void UndefinedOperation(uint32_t address, uint32_t word) {
+EXPORT void undefined_op(uint32_t address, uint32_t word) {
 }
 
 EXPORT void bx_reg(uint32_t address, uint32_t word) {

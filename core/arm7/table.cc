@@ -6,9 +6,9 @@
 #include "instructions.h"
 #include "imports.h"
 
-EXPORT void UndefinedOperation(uint32_t address, uint32_t word);
-PREPARE_INSTRUCTION(UndefinedOperation);
-#define UNKNOWN_OP INSTRUCTION(UndefinedOperation)
+EXPORT void undefined_op(uint32_t address, uint32_t word);
+PREPARE_INSTRUCTION(undefined_op);
+#define UNKNOWN_OP INSTRUCTION(undefined_op)
 
 #include "op_table.h"
 

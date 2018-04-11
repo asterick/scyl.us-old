@@ -48,6 +48,7 @@ table.registers {
 }
 
 td { white-space: pre; }
+td.instruction { text-align: left; }
 
 table.registers td:first-child { text-align: right; }
 

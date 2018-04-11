@@ -98,22 +98,80 @@ def output_tree(target, tree, name="root_table"):
 		return "        INSTRUCTION(%s)," % tree['name']
 
 def output_jsstub(target, masked):
-	settings = {
-		('cond', 28, 0xf0000000): 'Conditions[ (word & 0x%(mask)x) >>> %(shift)i ]',
-		( 'imm',  0, 0x00ffffff): '%(signed)s'
+	remap_field = {
+		(  'cond', 28, 0xf0000000): 'Conditions[ (word & 0x%(mask)x) >>> %(shift)i ]',
+		(   'imm',  0, 0x00ffffff): '%(signed)s',
+		('rotate',  8, 0x00000f00): '(%(unsigned)s) * 2',
+		(     'S', 20, 0x00100000): '(%(unsigned)s) ? "s" : ""',
+		'Rn':						'Registers[%(unsigned)s]',
+		'Rd':						'Registers[%(unsigned)s]',
+		'Rs':						'Registers[%(unsigned)s]',
+		'Rm':						'Registers[%(unsigned)s]',
 	}
 
 	body = {
-		'bx_reg': 	"`bx${cond}  ${Registers[Rm]}`",
-		'blx_reg': 	"`blx${cond} ${Registers[Rm]}`",
-		'b_imm': 	"`b${cond}   ${((imm << 2) + address + 8).toString(16)}`",
-		'bl_imm': 	"`bl${cond}  ${((imm << 2) + address + 8).toString(16)}`",
-		'swi_imm':  "`swi${cond} #%(imm)i"
+		'bx_reg': 		"`bx${cond}\t${Rn}`",
+		'blx_reg': 		"`blx${cond}\t${Rm}`",
+		'b_imm': 		"`b${cond}\t${((imm << 2) + address + 8).toString(16)}`",
+		'bl_imm': 		"`bl${cond}\t${((imm << 2) + address + 8).toString(16)}`",
+		'swi_imm':  	"`swi${cond}\t#${imm}`",
+
+		'and_rot_imm':	"`and${cond}${S}\t${Rd}, ${Rn}, %(rot_imm)s`",
+		'eor_rot_imm':	"`eor${cond}${S}\t${Rd}, ${Rn}, %(rot_imm)s`",
+		'sub_rot_imm':	"`sub${cond}${S}\t${Rd}, ${Rn}, %(rot_imm)s`",
+		'rsb_rot_imm':	"`rsb${cond}${S}\t${Rd}, ${Rn}, %(rot_imm)s`",
+		'add_rot_imm':	"`add${cond}${S}\t${Rd}, ${Rn}, %(rot_imm)s`",
+		'adc_rot_imm':	"`adc${cond}${S}\t${Rd}, ${Rn}, %(rot_imm)s`",
+		'sbc_rot_imm':	"`sbc${cond}${S}\t${Rd}, ${Rn}, %(rot_imm)s`",
+		'rsc_rot_imm':	"`rsc${cond}${S}\t${Rd}, ${Rn}, %(rot_imm)s`",
+		'tst_rot_imm':	"`tst${cond}${S}\t${Rn}, %(rot_imm)s`",
+		'teq_rot_imm':	"`teq${cond}${S}\t${Rn}, %(rot_imm)s`",
+		'cmp_rot_imm':	"`cmp${cond}${S}\t${Rn}, %(rot_imm)s`",
+		'cmn_rot_imm':	"`cmn${cond}${S}\t${Rn}, %(rot_imm)s`",
+		'orr_rot_imm':	"`orr${cond}${S}\t${Rd}, ${Rn}, %(rot_imm)s`",
+		'mov_rot_imm':	"`mov${cond}${S}\t${Rd}, %(rot_imm)s`",
+		'bic_rot_imm':	"`bic${cond}${S}\t${Rd}, ${Rn}, %(rot_imm)s`",
+		'mvn_rot_imm':	"`mvn${cond}${S}\t${Rd}, ${Rn}, %(rot_imm)s`",
+
+		'and_shift_imm':	"`and${cond}${S}\t${Rd}, ${Rn}, %(shift_imm)s`",
+		'eor_shift_imm':	"`eor${cond}${S}\t${Rd}, ${Rn}, %(shift_imm)s`",
+		'sub_shift_imm':	"`sub${cond}${S}\t${Rd}, ${Rn}, %(shift_imm)s`",
+		'rsb_shift_imm':	"`rsb${cond}${S}\t${Rd}, ${Rn}, %(shift_imm)s`",
+		'add_shift_imm':	"`add${cond}${S}\t${Rd}, ${Rn}, %(shift_imm)s`",
+		'adc_shift_imm':	"`adc${cond}${S}\t${Rd}, ${Rn}, %(shift_imm)s`",
+		'sbc_shift_imm':	"`sbc${cond}${S}\t${Rd}, ${Rn}, %(shift_imm)s`",
+		'rsc_shift_imm':	"`rsc${cond}${S}\t${Rd}, ${Rn}, %(shift_imm)s`",
+		'tst_shift_imm':	"`tst${cond}${S}\t${Rn}, %(shift_imm)s`",
+		'teq_shift_imm':	"`teq${cond}${S}\t${Rn}, %(shift_imm)s`",
+		'cmp_shift_imm':	"`cmp${cond}${S}\t${Rn}, %(shift_imm)s`",
+		'cmn_shift_imm':	"`cmn${cond}${S}\t${Rn}, %(shift_imm)s`",
+		'orr_shift_imm':	"`orr${cond}${S}\t${Rd}, ${Rn}, %(shift_imm)s`",
+		'mov_shift_imm':	"`mov${cond}${S}\t${Rd}, %(shift_imm)s`",
+		'bic_shift_imm':	"`bic${cond}${S}\t${Rd}, ${Rn}, %(shift_imm)s`",
+		'mvn_shift_imm':	"`mvn${cond}${S}\t${Rd}, ${Rn}, %(shift_imm)s`",
+
+		'and_shift_reg':	"`and${cond}${S}\t${Rd}, ${Rn}, %(shift_reg)s`",
+		'eor_shift_reg':	"`eor${cond}${S}\t${Rd}, ${Rn}, %(shift_reg)s`",
+		'sub_shift_reg':	"`sub${cond}${S}\t${Rd}, ${Rn}, %(shift_reg)s`",
+		'rsb_shift_reg':	"`rsb${cond}${S}\t${Rd}, ${Rn}, %(shift_reg)s`",
+		'add_shift_reg':	"`add${cond}${S}\t${Rd}, ${Rn}, %(shift_reg)s`",
+		'adc_shift_reg':	"`adc${cond}${S}\t${Rd}, ${Rn}, %(shift_reg)s`",
+		'sbc_shift_reg':	"`sbc${cond}${S}\t${Rd}, ${Rn}, %(shift_reg)s`",
+		'rsc_shift_reg':	"`rsc${cond}${S}\t${Rd}, ${Rn}, %(shift_reg)s`",
+		'tst_shift_reg':	"`tst${cond}${S}\t${Rn}, %(shift_reg)s`",
+		'teq_shift_reg':	"`teq${cond}${S}\t${Rn}, %(shift_reg)s`",
+		'cmp_shift_reg':	"`cmp${cond}${S}\t${Rn}, %(shift_reg)s`",
+		'cmn_shift_reg':	"`cmn${cond}${S}\t${Rn}, %(shift_reg)s`",
+		'orr_shift_reg':	"`orr${cond}${S}\t${Rd}, ${Rn}, %(shift_reg)s`",
+		'mov_shift_reg':	"`mov${cond}${S}\t${Rd}, %(shift_reg)s`",
+		'bic_shift_reg':	"`bic${cond}${S}\t${Rd}, ${Rn}, %(shift_reg)s`",
+		'mvn_shift_reg':	"`mvn${cond}${S}\t${Rd}, ${Rn},%(shift_reg)s`"
 	}
 
-	target.write("import { Registers, Conditions } from './consts';\n\n")
+	target.write("import { Registers, Conditions, ShiftType } from './table';\n\n")
 	for call in masked:
 		target.write("export function %s(word, address) {\n" % call['name'])
+
 		for name, (shift, mask) in call['fields'].items():
 			pre_shift = 31 - top_bit(mask)
 			fields = { 
@@ -124,16 +182,27 @@ def output_jsstub(target, masked):
 				'signed': "(word & 0x%x) << %i >> %i" % (mask, pre_shift, shift + pre_shift)
 			}
 
-			if (name, shift, mask) in settings:
-				format = "    const %(name)s = " + settings[(name, shift, mask)] + ";\n"
+			if (name, shift, mask) in remap_field:
+				format = "    const %(name)s = " + remap_field[(name, shift, mask)] + ";\n"
+			elif name in remap_field:
+				format = "    const %(name)s = " + remap_field[name] + ";\n"
 			else:
 				format = "    const %(name)s = %(unsigned)s;\n"
 
 			target.write(format % fields)
 
+		fields = {
+			'rot_imm': 		"${(imm << rotate) | (imm >>> (32 - rotate))}",
+			'shift_imm':	"${(typ || shift) ? `${Rm} ${ShiftType[typ]} #${shift}` : Rm}",
+			'shift_reg':	"${Rm} ${ShiftType[typ]} ${Rs}"
+		}
+
 		if call['name'] in body:
-			target.write("\n    return %s;" % body[call['name']])
+			formatted = body[call['name']] % fields
+
+			target.write("\n    return %s;" % formatted)
 		else:
+			target.write("\n    return 'failed\\t%s';" % call['name'])
 			print "%s is incomplete" % call['name']
 
 		target.write("\n}\n\n")
