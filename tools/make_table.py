@@ -103,6 +103,7 @@ def output_jsstub(target, masked):
 		(   'imm',  0, 0x00ffffff): '%(signed)s',
 		('rotate',  8, 0x00000f00): '(%(unsigned)s) * 2',
 		(     'S', 20, 0x00100000): '(%(unsigned)s) ? "s" : ""',
+		'field_mask':				'MSRFields[%(unsigned)s]',
 		'Rn':						'Registers[%(unsigned)s]',
 		'Rd':						'Registers[%(unsigned)s]',
 		'Rs':						'Registers[%(unsigned)s]',
@@ -165,13 +166,27 @@ def output_jsstub(target, masked):
 		'orr_shift_reg':	"`orr${cond}${S}\t${Rd}, ${Rn}, %(shift_reg)s`",
 		'mov_shift_reg':	"`mov${cond}${S}\t${Rd}, %(shift_reg)s`",
 		'bic_shift_reg':	"`bic${cond}${S}\t${Rd}, ${Rn}, %(shift_reg)s`",
-		'mvn_shift_reg':	"`mvn${cond}${S}\t${Rd}, ${Rn},%(shift_reg)s`"
+		'mvn_shift_reg':	"`mvn${cond}${S}\t${Rd}, ${Rn},%(shift_reg)s`",
+
+		'swp':				"`swp${cond}${S}\t${Rd}, ${Rm}, ${Rs}, ${Rn}`",
+		'cswp':				"`cswp${cond}${S}\t${Rd}, ${Rm}, ${Rs}, ${Rn}`",
+		'mul':				"`mul${cond}${S}\t${Rd}, ${Rm}, ${Rs}`",
+		'mla':				"`mla${cond}${S}\t${Rd}, ${Rm}, ${Rs}, ${Rn}`",
+		'umull':			"`umull${cond}${S}\t${RdLo}, ${RdHi}, ${Rm}, ${Rs}`",
+		'umlal':			"`umlal${cond}${S}\t${RdLo}, ${RdHi}, ${Rm}, ${Rs}`",
+		'smull':			"`smull${cond}${S}\t${RdLo}, ${RdHi}, ${Rm}, ${Rs}`",
+		'smlal':			"`smlal${cond}${S}\t${RdLo}, ${RdHi}, ${Rm}, ${Rs}`",
+
+		'mrs':				"`mrs${cond}\t${Rd}, ${S ? 'spsr' : 'cspr'}`",
+		'msr_reg':			"`msr${cond}\t${S ? 'spsr' : 'cspr'}_${field_mask}, ${Rm}`",
+		'msr_rot_imm':		"`msr${cond}\t${S ? 'spsr' : 'cspr'}_${field_mask}, %(rot_imm)s`",
 	}
 
-	target.write("import { Registers, Conditions, ShiftType } from './table';\n\n")
+	target.write("import { Registers, Conditions, ShiftType, MSRFields } from './table';\n\n")
 	for call in masked:
 		target.write("export function %s(word, address) {\n" % call['name'])
 
+		# Format / break out fields
 		for name, (shift, mask) in call['fields'].items():
 			pre_shift = 31 - top_bit(mask)
 			fields = { 
@@ -191,6 +206,7 @@ def output_jsstub(target, masked):
 
 			target.write(format % fields)
 
+		# composite fields
 		fields = {
 			'rot_imm': 		"${(imm << rotate) | (imm >>> (32 - rotate))}",
 			'shift_imm':	"${(typ || shift) ? `${Rm} ${ShiftType[typ]} #${shift}` : Rm}",

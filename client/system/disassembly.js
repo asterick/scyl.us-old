@@ -1,4 +1,4 @@
-import { Registers, Conditions, ShiftType } from './table';
+import { Registers, Conditions, ShiftType, MSRFields } from './table';
 
 export function bx_reg(word, address) {
     const Rm = Registers[(word & 0xf) >>> 0];
@@ -633,7 +633,7 @@ export function swp(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
 
-    return 'failed\tswp';
+    return `swp${cond}${S}	${Rd}, ${Rm}, ${Rs}, ${Rn}`;
 }
 
 export function cswp(word, address) {
@@ -642,7 +642,7 @@ export function cswp(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
 
-    return 'failed\tcswp';
+    return `cswp${cond}${S}	${Rd}, ${Rm}, ${Rs}, ${Rn}`;
 }
 
 export function mul(word, address) {
@@ -652,7 +652,7 @@ export function mul(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rs = Registers[(word & 0xf00) >>> 8];
 
-    return 'failed\tmul';
+    return `mul${cond}${S}	${Rd}, ${Rm}, ${Rs}`;
 }
 
 export function mla(word, address) {
@@ -663,7 +663,7 @@ export function mla(word, address) {
     const Rm = Registers[(word & 0xf) >>> 0];
     const Rn = Registers[(word & 0xf000) >>> 12];
 
-    return 'failed\tmla';
+    return `mla${cond}${S}	${Rd}, ${Rm}, ${Rs}, ${Rn}`;
 }
 
 export function umull(word, address) {
@@ -674,7 +674,7 @@ export function umull(word, address) {
     const RdHi = (word & 0xf0000) >>> 16;
     const Rm = Registers[(word & 0xf) >>> 0];
 
-    return 'failed\tumull';
+    return `umull${cond}${S}	${RdLo}, ${RdHi}, ${Rm}, ${Rs}`;
 }
 
 export function umlal(word, address) {
@@ -685,7 +685,7 @@ export function umlal(word, address) {
     const RdHi = (word & 0xf0000) >>> 16;
     const Rm = Registers[(word & 0xf) >>> 0];
 
-    return 'failed\tumlal';
+    return `umlal${cond}${S}	${RdLo}, ${RdHi}, ${Rm}, ${Rs}`;
 }
 
 export function smull(word, address) {
@@ -696,7 +696,7 @@ export function smull(word, address) {
     const RdHi = (word & 0xf0000) >>> 16;
     const Rm = Registers[(word & 0xf) >>> 0];
 
-    return 'failed\tsmull';
+    return `smull${cond}${S}	${RdLo}, ${RdHi}, ${Rm}, ${Rs}`;
 }
 
 export function smlal(word, address) {
@@ -707,7 +707,7 @@ export function smlal(word, address) {
     const RdHi = (word & 0xf0000) >>> 16;
     const Rm = Registers[(word & 0xf) >>> 0];
 
-    return 'failed\tsmlal';
+    return `smlal${cond}${S}	${RdLo}, ${RdHi}, ${Rm}, ${Rs}`;
 }
 
 export function mrs(word, address) {
@@ -715,16 +715,16 @@ export function mrs(word, address) {
     const S = (word & 0x400000) >>> 22;
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
 
-    return 'failed\tmrs';
+    return `mrs${cond}	${Rd}, ${S ? 'spsr' : 'cspr'}`;
 }
 
 export function msr_reg(word, address) {
     const Rm = Registers[(word & 0xf) >>> 0];
     const S = (word & 0x400000) >>> 22;
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
-    const field_mask = (word & 0xf0000) >>> 16;
+    const field_mask = MSRFields[(word & 0xf0000) >>> 16];
 
-    return 'failed\tmsr_reg';
+    return `msr${cond}	${S ? 'spsr' : 'cspr'}_${field_mask}, ${Rm}`;
 }
 
 export function msr_rot_imm(word, address) {
@@ -732,9 +732,9 @@ export function msr_rot_imm(word, address) {
     const S = (word & 0x400000) >>> 22;
     const rotate = ((word & 0xf00) >>> 8) * 2;
     const imm = (word & 0xff) >>> 0;
-    const field_mask = (word & 0xf0000) >>> 16;
+    const field_mask = MSRFields[(word & 0xf0000) >>> 16];
 
-    return 'failed\tmsr_rot_imm';
+    return `msr${cond}	${S ? 'spsr' : 'cspr'}_${field_mask}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function str_shift_imm(word, address) {
