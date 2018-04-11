@@ -47,6 +47,8 @@ table.registers {
 	display: inline-block;
 }
 
+td { white-space: pre; }
+
 table.registers td:first-child { text-align: right; }
 
 table { background: white; }

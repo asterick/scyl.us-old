@@ -12,7 +12,7 @@ export default class extends Component {
 			return <tr>
 				<td className="number">{pc.toString(16)}</td> 
 				<td className="number">{word.toString(16)}</td> 
-				{ disassemble(word, pc) }
+				<td>{ disassemble(word, pc) }</td>
 			</tr>;
 		} catch(e) {
 			return <tr><td className="number">{pc.toString(16)}</td> <td colSpan="2">Bus error</td></tr>;

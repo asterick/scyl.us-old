@@ -110,8 +110,11 @@ def output_jsstub(target, masked):
 	}
 
 	body = {
+		'bx_reg': 	"`bx${cond}  ${Registers[Rm]}`",
+		'blx_reg': 	"`blx${cond} ${Registers[Rm]}`",
 		'b_imm': 	"`b${cond}   ${((imm << 2) + address + 8).toString(16)}`",
-		'bl_imm': 	"`bl${cond}	 ${((imm << 2) + address + 8).toString(16)}`"
+		'bl_imm': 	"`bl${cond}  ${((imm << 2) + address + 8).toString(16)}`",
+		'swi_imm':  "`swi${cond} #%(imm)i"
 	}
 
 	target.write("import { Registers, Conditions } from './consts';\n\n")
