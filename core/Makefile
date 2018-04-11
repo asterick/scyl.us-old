@@ -27,11 +27,11 @@ $(TARGET): arm7/op_table.h $(OBJECTS)
 %.o: %.cc include system0.h
 	$(WASMCEPTION)/dist/bin/clang++ -std=c++11 $(CFLAGS) $< -c -o $@
 
-arm7/op_table.h: ./tools/opcodes.tsv
-	python2 ./tools/make_table.py ./tools/opcodes.tsv --table $@
+arm7/op_table.h: ../tools/opcodes.tsv
+	python2 ../tools/make_table.py ../tools/opcodes.tsv --table $@
 
 jsstub:
-	python2 ./tools/make_table.py ./tools/opcodes.tsv --jsstub ../client/system/disassembly.js
+	python2 ../tools/make_table.py ../tools/opcodes.tsv --jsstub ../client/system/disassembly.js
 
 system0.h:
 	make -C ../system0 all
