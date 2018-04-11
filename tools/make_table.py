@@ -111,20 +111,6 @@ def output_jsstub(target, masked):
 		'B':						'%(unsigned)s ? "b" : ""'
 	}
 
-	helper = {
-		'T': "((!P&&W) ? 't' : '')",
-
-		'shift_addr': """(P ? 
-		`${Rd}, [${Rn}, ${U ? '' : '-'}%(shift_imm)s]${W ? '!' : ''}` : 
-		`${Rd}, [${Rn}], ${U ? '' : '-'}%(shift_imm)s`
-		)""",
-
-		'imm_addr': """(P ? 
-		`${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]${W ? '!' : ''}` : 
-		`${Rd}, [${Rn}], #${U ? '' : '-'}${imm}`
-		)"""
-	}
-
 	body = {
 		'bx_reg': 		"`bx${cond}\t${Rn}`",
 		'blx_reg': 		"`blx${cond}\t${Rm}`",
@@ -192,10 +178,23 @@ def output_jsstub(target, masked):
 		'smull':			"`smull${cond}${S}\t${RdLo}, ${RdHi}, ${Rm}, ${Rs}`",
 		'smlal':			"`smlal${cond}${S}\t${RdLo}, ${RdHi}, ${Rm}, ${Rs}`",
 
-		'str_imm':			"`str${cond}${B}${%(T)s}\t${Rd}, ${%(imm_addr)s}`" % helper,
-		'ldr_imm':			"`ldr${cond}${B}${%(T)s}\t${Rd}, ${%(imm_addr)s}`" % helper,
-		'str_shift_imm':	"`str${cond}${B}${%(T)s}\t${Rd}, ${%(shift_addr)s}`" % helper,
-		'ldr_shift_imm':	"`ldr${cond}${B}${%(T)s}\t${Rd}, ${%(shift_addr)s}`" % helper,
+		'str_post_imm':			"`str${cond}${B}\t${Rd}, [${Rn}], #${U ? '' : '-'}${imm}`",
+		'ldr_post_imm':			"`ldr${cond}${B}\t${Rd}, [${Rn}], #${U ? '' : '-'}${imm}`",
+		'strt_imm':				"`str${cond}${B}t\t${Rd}, [${Rn}], #${U ? '' : '-'}${imm}`",
+		'ldrt_imm':				"`ldr${cond}${B}t\t${Rd}, [${Rn}], #${U ? '' : '-'}${imm}`",
+		'str_pre_imm':			"`str${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]`",
+		'ldr_pre_imm':			"`ldr${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]`",
+		'str_pre_wb_imm':		"`str${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]!`",
+		'ldr_pre_wb_imm':		"`ldr${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]!`",
+
+		'str_post_shift_imm':	"`str${cond}${B}\t${Rd}, [${Rn}], #${U ? '' : '-'}%(shift_imm)s`",
+		'ldr_post_shift_imm':	"`ldr${cond}${B}\t${Rd}, [${Rn}], #${U ? '' : '-'}%(shift_imm)s`",
+		'strt_shift_imm':		"`str${cond}${B}t\t${Rd}, [${Rn}], #${U ? '' : '-'}%(shift_imm)s`",
+		'ldrt_shift_imm':		"`ldr${cond}${B}t\t${Rd}, [${Rn}], #${U ? '' : '-'}%(shift_imm)s`",
+		'str_pre_shift_imm':	"`str${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}%(shift_imm)s]`",
+		'ldr_pre_shift_imm':	"`ldr${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}%(shift_imm)s]`",
+		'str_pre_wb_shift_imm':	"`str${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}%(shift_imm)s]!`",
+		'ldr_pre_wb_shift_imm':	"`ldr${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}%(shift_imm)s]!`",
 
 		'mrs':				"`mrs${cond}\t${Rd}, ${S ? 'spsr' : 'cspr'}`",
 		'msr_reg':			"`msr${cond}\t${S ? 'spsr' : 'cspr'}_${field_mask}, ${Rm}`",

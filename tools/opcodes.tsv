@@ -76,14 +76,27 @@ mrs		cond				0	0	0	1	0	S	0	0	1	1	1	1	Rd				0	0	0	0	0	0	0	0	0	0	0	0
 msr	reg	cond				0	0	0	1	0	S	1	0	field_mask				1	1	1	1	0	0	0	0	0	0	0	0	Rm			
 msr	rot_imm	cond				0	0	1	1	0	S	1	0	field_mask				1	1	1	1	rotate				imm							
 																																	
-str	shift_imm	cond				0	1	1	P	U	B	W	0	Rn				Rd				shift					typ		0	Rm			
-ldr	shift_imm	cond				0	1	1	P	U	B	W	1	Rn				Rd				shift					typ		0	Rm			
+str_post	shift_imm	cond				0	1	1	0	U	B	0	0	Rn				Rd				shift					typ		0	Rm			
+ldr_post	shift_imm	cond				0	1	1	0	U	B	0	1	Rn				Rd				shift					typ		0	Rm			
+strt	shift_imm	cond				0	1	1	0	U	B	1	0	Rn				Rd				shift					typ		0	Rm			
+ldrt	shift_imm	cond				0	1	1	0	U	B	1	1	Rn				Rd				shift					typ		0	Rm			
+str_pre	shift_imm	cond				0	1	1	1	U	B	0	0	Rn				Rd				shift					typ		0	Rm			
+ldr_pre	shift_imm	cond				0	1	1	1	U	B	0	1	Rn				Rd				shift					typ		0	Rm			
+str_pre_wb	shift_imm	cond				0	1	1	1	U	B	1	0	Rn				Rd				shift					typ		0	Rm			
+ldr_pre_wb	shift_imm	cond				0	1	1	1	U	B	1	1	Rn				Rd				shift					typ		0	Rm			
+str_post	imm	cond				0	1	0	0	U	B	0	0	Rn				Rd				imm											
+ldr_post	imm	cond				0	1	0	0	U	B	0	1	Rn				Rd				imm											
+strt	imm	cond				0	1	0	0	U	B	1	0	Rn				Rd				imm											
+ldrt	imm	cond				0	1	0	0	U	B	1	1	Rn				Rd				imm											
+str_pre	imm	cond				0	1	0	1	U	B	0	0	Rn				Rd				imm											
+ldr_pre	imm	cond				0	1	0	1	U	B	0	1	Rn				Rd				imm											
+str_pre_wb	imm	cond				0	1	0	1	U	B	1	0	Rn				Rd				imm											
+ldr_pre_wb	imm	cond				0	1	0	1	U	B	1	1	Rn				Rd				imm											
+																																	
+stm	reglist	cond				1	0	0	P	U	S	W	0	Rn				reg_list															
+ldm	reglist	cond				1	0	0	P	U	S	W	1	Rn				reg_list															
+																																	
 strh		cond				0	0	0	P	U	I	W	0	Rn				Rd				addr_mode				1	0	1	1	addr_mode			
 ldrh		cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	0	1	1	addr_mode			
 ldrsb		cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	1	0	1	addr_mode			
 ldrsh		cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	1	1	1	addr_mode			
-str	imm	cond				0	1	0	P	U	B	W	0	Rn				Rd				imm											
-ldr	imm	cond				0	1	0	P	U	B	W	1	Rn				Rd				imm											
-																																	
-stm	reglist	cond				1	0	0	P	U	S	W	0	Rn				reg_list															
-ldm	reglist	cond				1	0	0	P	U	S	W	1	Rn				reg_list															
