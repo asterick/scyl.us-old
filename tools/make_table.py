@@ -108,14 +108,29 @@ def output_jsstub(target, masked):
 		'Rd':						'Registers[%(unsigned)s]',
 		'Rs':						'Registers[%(unsigned)s]',
 		'Rm':						'Registers[%(unsigned)s]',
+		'B':						'%(unsigned)s ? "b" : ""'
+	}
+
+	helper = {
+		'T': "((!P&&W) ? 't' : '')",
+
+		'shift_addr': """(P ? 
+		`${Rd}, [${Rn}, ${U ? '' : '-'}%(shift_imm)s]${W ? '!' : ''}` : 
+		`${Rd}, [${Rn}], ${U ? '' : '-'}%(shift_imm)s`
+		)""",
+
+		'imm_addr': """(P ? 
+		`${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]${W ? '!' : ''}` : 
+		`${Rd}, [${Rn}], #${U ? '' : '-'}${imm}`
+		)"""
 	}
 
 	body = {
 		'bx_reg': 		"`bx${cond}\t${Rn}`",
 		'blx_reg': 		"`blx${cond}\t${Rm}`",
-		'b_imm': 		"`b${cond}\t${((imm << 2) + address + 8).toString(16)}`",
-		'bl_imm': 		"`bl${cond}\t${((imm << 2) + address + 8).toString(16)}`",
-		'swi_imm':  	"`swi${cond}\t#${imm}`",
+		'b_imm': 		"`b${cond}\t#0x${((imm << 2) + address + 8).toString(16)}`",
+		'bl_imm': 		"`bl${cond}\t#0x${((imm << 2) + address + 8).toString(16)}`",
+		'swi_imm':  	"`swi${cond}\t#0x#${imm}`",
 
 		'and_rot_imm':	"`and${cond}${S}\t${Rd}, ${Rn}, %(rot_imm)s`",
 		'eor_rot_imm':	"`eor${cond}${S}\t${Rd}, ${Rn}, %(rot_imm)s`",
@@ -177,6 +192,11 @@ def output_jsstub(target, masked):
 		'smull':			"`smull${cond}${S}\t${RdLo}, ${RdHi}, ${Rm}, ${Rs}`",
 		'smlal':			"`smlal${cond}${S}\t${RdLo}, ${RdHi}, ${Rm}, ${Rs}`",
 
+		'str_imm':			"`str${cond}${B}${%(T)s}\t${Rd}, ${%(imm_addr)s}`" % helper,
+		'ldr_imm':			"`ldr${cond}${B}${%(T)s}\t${Rd}, ${%(imm_addr)s}`" % helper,
+		'str_shift_imm':	"`str${cond}${B}${%(T)s}\t${Rd}, ${%(shift_addr)s}`" % helper,
+		'ldr_shift_imm':	"`ldr${cond}${B}${%(T)s}\t${Rd}, ${%(shift_addr)s}`" % helper,
+
 		'mrs':				"`mrs${cond}\t${Rd}, ${S ? 'spsr' : 'cspr'}`",
 		'msr_reg':			"`msr${cond}\t${S ? 'spsr' : 'cspr'}_${field_mask}, ${Rm}`",
 		'msr_rot_imm':		"`msr${cond}\t${S ? 'spsr' : 'cspr'}_${field_mask}, %(rot_imm)s`",
@@ -209,8 +229,8 @@ def output_jsstub(target, masked):
 		# composite fields
 		fields = {
 			'rot_imm': 		"${(imm << rotate) | (imm >>> (32 - rotate))}",
-			'shift_imm':	"${(typ || shift) ? `${Rm} ${ShiftType[typ]} #${shift}` : Rm}",
-			'shift_reg':	"${Rm} ${ShiftType[typ]} ${Rs}"
+			'shift_imm':	"${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}",
+			'shift_reg':	"${Rm}, ${ShiftType[typ]} ${Rs}"
 		}
 
 		if call['name'] in body:
