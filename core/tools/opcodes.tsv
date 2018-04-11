@@ -1,6 +1,6 @@
 		31	30	29	28	27	26	25	24	23	22	21	20	19	18	17	16	15	14	13	12	11	10	9	8	7	6	5	4	3	2	1	0
-bx	reg	cond				0	0	0	1	0	0	1	0	SBO				SBO				SBO				0	0	0	1	Rm			
-blx	reg	cond				0	0	0	1	0	0	1	0	SBO				SBO				SBO				0	0	1	1	Rm			
+bx	reg	cond				0	0	0	1	0	0	1	0	1	1	1	1	1	1	1	1	1	1	1	1	0	0	0	1	Rm			
+blx	reg	cond				0	0	0	1	0	0	1	0	1	1	1	1	1	1	1	1	1	1	1	1	0	0	1	1	Rm			
 b	imm	cond				1	0	1	0	imm																							
 bl	imm	cond				1	0	1	1	imm																							
 																																	
@@ -12,39 +12,39 @@ mrc		cond				1	1	1	0	op1			1	CRn				Rd				cp_num				op2			1	CRm
 																																	
 swi	imm	cond				1	1	1	1	imm																							
 																																	
-and	shift_imm	cond				0	0	0	0	0	0	0	S	Rn				Rd				shift#					shift		0	Rm			
-eor	shift_imm	cond				0	0	0	0	0	0	1	S	Rn				Rn				shift#					shift		0	Rm			
-sub	shift_imm	cond				0	0	0	0	0	1	0	S	Rn				Rd				shift#					shift		0	Rm			
-rsb	shift_imm	cond				0	0	0	0	0	1	1	S	Rn				Rd				shift#					shift		0	Rm			
-add	shift_imm	cond				0	0	0	0	1	0	0	S	Rn				Rd				shift#					shift		0	Rm			
-adc	shift_imm	cond				0	0	0	0	1	0	1	S	Rn				Rd				shift#					shift		0	Rm			
-sbc	shift_imm	cond				0	0	0	0	1	1	0	S	Rn				Rd				shift#					shift		0	Rm			
-rsc	shift_imm	cond				0	0	0	0	1	1	1	S	Rn				Rd				shift#					shift		0	Rm			
-tst	shift_imm	cond				0	0	0	1	0	0	0	1	Rn				SBZ				shift#					shift		0	Rm			
-teq	shift_imm	cond				0	0	0	1	0	0	1	1	Rn				SBZ				shift#					shift		0	Rm			
-cmp	shift_imm	cond				0	0	0	1	0	1	0	1	Rn				SBZ				shift#					shift		0	Rm			
-cmn	shift_imm	cond				0	0	0	1	0	1	1	1	Rn				SBZ				shift#					shift		0	Rm			
-orr	shift_imm	cond				0	0	0	1	1	0	0	S	Rn				Rd				shift#					shift		0	Rm			
-mov	shift_imm	cond				0	0	0	1	1	0	1	S	SBZ				Rd				shift#					shift		0	Rm			
-bic	shift_imm	cond				0	0	0	1	1	1	0	S	Rn				Rd				shift#					shift		0	Rm			
-mvn	shift_imm	cond				0	0	0	1	1	1	1	S	SBZ				Rd				shift#					shift		0	Rm			
+and	shift_imm	cond				0	0	0	0	0	0	0	S	Rn				Rd				shift					typ		0	Rm			
+eor	shift_imm	cond				0	0	0	0	0	0	1	S	Rn				Rn				shift					typ		0	Rm			
+sub	shift_imm	cond				0	0	0	0	0	1	0	S	Rn				Rd				shift					typ		0	Rm			
+rsb	shift_imm	cond				0	0	0	0	0	1	1	S	Rn				Rd				shift					typ		0	Rm			
+add	shift_imm	cond				0	0	0	0	1	0	0	S	Rn				Rd				shift					typ		0	Rm			
+adc	shift_imm	cond				0	0	0	0	1	0	1	S	Rn				Rd				shift					typ		0	Rm			
+sbc	shift_imm	cond				0	0	0	0	1	1	0	S	Rn				Rd				shift					typ		0	Rm			
+rsc	shift_imm	cond				0	0	0	0	1	1	1	S	Rn				Rd				shift					typ		0	Rm			
+tst	shift_imm	cond				0	0	0	1	0	0	0	1	Rn				0	0	0	0	shift					typ		0	Rm			
+teq	shift_imm	cond				0	0	0	1	0	0	1	1	Rn				0	0	0	0	shift					typ		0	Rm			
+cmp	shift_imm	cond				0	0	0	1	0	1	0	1	Rn				0	0	0	0	shift					typ		0	Rm			
+cmn	shift_imm	cond				0	0	0	1	0	1	1	1	Rn				0	0	0	0	shift					typ		0	Rm			
+orr	shift_imm	cond				0	0	0	1	1	0	0	S	Rn				Rd				shift					typ		0	Rm			
+mov	shift_imm	cond				0	0	0	1	1	0	1	S	0	0	0	0	Rd				shift					typ		0	Rm			
+bic	shift_imm	cond				0	0	0	1	1	1	0	S	Rn				Rd				shift					typ		0	Rm			
+mvn	shift_imm	cond				0	0	0	1	1	1	1	S	0	0	0	0	Rd				shift					typ		0	Rm			
 																																	
-and	shift_reg	cond				0	0	0	0	0	0	0	S	Rn				Rd				Rs				0	shift		1	Rm			
-eor	shift_reg	cond				0	0	0	0	0	0	1	S	Rn				Rn				Rs				0	shift		1	Rm			
-sub	shift_reg	cond				0	0	0	0	0	1	0	S	Rn				Rd				Rs				0	shift		1	Rm			
-rsb	shift_reg	cond				0	0	0	0	0	1	1	S	Rn				Rd				Rs				0	shift		1	Rm			
-add	shift_reg	cond				0	0	0	0	1	0	0	S	Rn				Rd				Rs				0	shift		1	Rm			
-adc	shift_reg	cond				0	0	0	0	1	0	1	S	Rn				Rd				Rs				0	shift		1	Rm			
-sbc	shift_reg	cond				0	0	0	0	1	1	0	S	Rn				Rd				Rs				0	shift		1	Rm			
-rsc	shift_reg	cond				0	0	0	0	1	1	1	S	Rn				Rd				Rs				0	shift		1	Rm			
-tst	shift_reg	cond				0	0	0	1	0	0	0	1	Rn				SBZ				Rs				0	shift		1	Rm			
-teq	shift_reg	cond				0	0	0	1	0	0	1	1	Rn				SBZ				Rs				0	shift		1	Rm			
-cmp	shift_reg	cond				0	0	0	1	0	1	0	1	Rn				SBZ				Rs				0	shift		1	Rm			
-cmn	shift_reg	cond				0	0	0	1	0	1	1	1	Rn				SBZ				Rs				0	shift		1	Rm			
-orr	shift_reg	cond				0	0	0	1	1	0	0	S	Rn				Rd				Rs				0	shift		1	Rm			
-mov	shift_reg	cond				0	0	0	1	1	0	1	S	SBZ				Rd				Rs				0	shift		1	Rm			
-bic	shift_reg	cond				0	0	0	1	1	1	0	S	Rn				Rd				Rs				0	shift		1	Rm			
-mvn	shift_reg	cond				0	0	0	1	1	1	1	S	SBZ				Rd				Rs				0	shift		1	Rm			
+and	shift_reg	cond				0	0	0	0	0	0	0	S	Rn				Rd				Rs				0	typ		1	Rm			
+eor	shift_reg	cond				0	0	0	0	0	0	1	S	Rn				Rn				Rs				0	typ		1	Rm			
+sub	shift_reg	cond				0	0	0	0	0	1	0	S	Rn				Rd				Rs				0	typ		1	Rm			
+rsb	shift_reg	cond				0	0	0	0	0	1	1	S	Rn				Rd				Rs				0	typ		1	Rm			
+add	shift_reg	cond				0	0	0	0	1	0	0	S	Rn				Rd				Rs				0	typ		1	Rm			
+adc	shift_reg	cond				0	0	0	0	1	0	1	S	Rn				Rd				Rs				0	typ		1	Rm			
+sbc	shift_reg	cond				0	0	0	0	1	1	0	S	Rn				Rd				Rs				0	typ		1	Rm			
+rsc	shift_reg	cond				0	0	0	0	1	1	1	S	Rn				Rd				Rs				0	typ		1	Rm			
+tst	shift_reg	cond				0	0	0	1	0	0	0	1	Rn				0	0	0	0	Rs				0	typ		1	Rm			
+teq	shift_reg	cond				0	0	0	1	0	0	1	1	Rn				0	0	0	0	Rs				0	typ		1	Rm			
+cmp	shift_reg	cond				0	0	0	1	0	1	0	1	Rn				0	0	0	0	Rs				0	typ		1	Rm			
+cmn	shift_reg	cond				0	0	0	1	0	1	1	1	Rn				0	0	0	0	Rs				0	typ		1	Rm			
+orr	shift_reg	cond				0	0	0	1	1	0	0	S	Rn				Rd				Rs				0	typ		1	Rm			
+mov	shift_reg	cond				0	0	0	1	1	0	1	S	0	0	0	0	Rd				Rs				0	typ		1	Rm			
+bic	shift_reg	cond				0	0	0	1	1	1	0	S	Rn				Rd				Rs				0	typ		1	Rm			
+mvn	shift_reg	cond				0	0	0	1	1	1	1	S	0	0	0	0	Rd				Rs				0	typ		1	Rm			
 																																	
 and	rot_imm	cond				0	0	1	0	0	0	0	S	Rn				Rd				rotate				imm							
 eor	rot_imm	cond				0	0	1	0	0	0	1	S	Rn				Rd				rotate				imm							
@@ -54,30 +54,30 @@ add	rot_imm	cond				0	0	1	0	1	0	0	S	Rn				Rd				rotate				imm
 adc	rot_imm	cond				0	0	1	0	1	0	1	S	Rn				Rd				rotate				imm							
 sbc	rot_imm	cond				0	0	1	0	1	1	0	S	Rn				Rd				rotate				imm							
 rsc	rot_imm	cond				0	0	1	0	1	1	1	S	Rn				Rd				rotate				imm							
-tst	rot_imm	cond				0	0	1	1	0	0	0	1	Rn				SBZ				rotate				imm							
-teq	rot_imm	cond				0	0	1	1	0	0	1	1	Rn				SBZ				rotate				imm							
-cmp	rot_imm	cond				0	0	1	1	0	1	0	1	Rn				SBZ				rotate				imm							
-cmn	rot_imm	cond				0	0	1	1	0	1	1	1	Rn				SBZ				rotate				imm							
+tst	rot_imm	cond				0	0	1	1	0	0	0	1	Rn				0	0	0	0	rotate				imm							
+teq	rot_imm	cond				0	0	1	1	0	0	1	1	Rn				0	0	0	0	rotate				imm							
+cmp	rot_imm	cond				0	0	1	1	0	1	0	1	Rn				0	0	0	0	rotate				imm							
+cmn	rot_imm	cond				0	0	1	1	0	1	1	1	Rn				0	0	0	0	rotate				imm							
 orr	rot_imm	cond				0	0	1	1	1	0	0	S	Rn				Rd				rotate				imm							
-mov	rot_imm	cond				0	0	1	1	1	0	1	S	SBZ				Rd				rotate				imm							
+mov	rot_imm	cond				0	0	1	1	1	0	1	S	0	0	0	0	Rd				rotate				imm							
 bic	rot_imm	cond				0	0	1	1	1	1	0	S	Rn				Rd				rotate				imm							
-mvn	rot_imm	cond				0	0	1	1	1	1	1	S	SBZ				Rd				rotate				imm							
+mvn	rot_imm	cond				0	0	1	1	1	1	1	S	0	0	0	0	Rd				rotate				imm							
 																																	
-swp		cond				0	0	0	1	0	0	SBZ		Rn				Rd				SBZ				1	0	0	1	Rm			
-cswp		cond				0	0	0	1	0	1	SBZ		Rn				Rd				SBZ				1	0	0	1	Rm			
-mul		cond				0	0	0	0	0	0	0	S	Rd				SBZ				Rs				1	0	0	1	Rm			
+swp		cond				0	0	0	1	0	0	0	0	Rn				Rd				0	0	0	0	1	0	0	1	Rm			
+cswp		cond				0	0	0	1	0	1	0	0	Rn				Rd				0	0	0	0	1	0	0	1	Rm			
+mul		cond				0	0	0	0	0	0	0	S	Rd				0	0	0	0	Rs				1	0	0	1	Rm			
 mla		cond				0	0	0	0	0	0	1	S	Rd				Rn				Rs				1	0	0	1	Rm			
 umull		cond				0	0	0	0	1	0	0	S	RdHi				RdLo				Rs				1	0	0	1	Rm			
 umlal		cond				0	0	0	0	1	0	1	S	RdHi				RdLo				Rs				1	0	0	1	Rm			
 smull		cond				0	0	0	0	1	1	0	S	RdHi				RdLo				Rs				1	0	0	1	Rm			
 smlal		cond				0	0	0	0	1	1	1	S	RdHi				RdLo				Rs				1	0	0	1	Rm			
 																																	
-mrs		cond				0	0	0	1	0	S	0	0	SBO				Rd				SBZ											
-msr	reg	cond				0	0	0	1	0	S	1	0	field_mask				SBO				SBZ							0	Rm			
-msr	rot_imm	cond				0	0	1	1	0	S	1	0	field_mask				SBO				rotate				imm							
+mrs		cond				0	0	0	1	0	S	0	0	1	1	1	1	Rd				0	0	0	0	0	0	0	0	0	0	0	0
+msr	reg	cond				0	0	0	1	0	S	1	0	field_mask				1	1	1	1	0	0	0	0	0	0	0	0	Rm			
+msr	rot_imm	cond				0	0	1	1	0	S	1	0	field_mask				1	1	1	1	rotate				imm							
 																																	
-str	shift_imm	cond				0	1	1	P	U	B	W	0	Rn				Rd				shift#					shift		0	Rm			
-ldr	shift_imm	cond				0	1	1	P	U	B	W	1	Rn				Rd				shift#					shift		0	Rm			
+str	shift_imm	cond				0	1	1	P	U	B	W	0	Rn				Rd				shift					typ		0	Rm			
+ldr	shift_imm	cond				0	1	1	P	U	B	W	1	Rn				Rd				shift					typ		0	Rm			
 strh		cond				0	0	0	P	U	I	W	0	Rn				Rd				addr_mode				1	0	1	1	addr_mode			
 ldrh		cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	0	1	1	addr_mode			
 ldrsb		cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	1	0	1	addr_mode			

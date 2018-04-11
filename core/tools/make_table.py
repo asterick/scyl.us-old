@@ -23,13 +23,7 @@ def to_fields(line):
 			fixed	|= int(element) << bit
 		else:
 			field_mask = ((2 << count) - 1) << (bit - count)
-			if element == 'SBZ':
-				mask |= field_mask
-			elif element == 'SBO':
-				mask |= field_mask
-				fixed |= field_mask
-			else:
-				fields[element] = (bit - count, field_mask)
+			fields[element] = (bit - count, field_mask)
 			count = 0
 
 	return { 'name': name, 'type': 'instruction', 'fields': fields, 'mask': mask, 'fixed': fixed }
@@ -123,7 +117,7 @@ def output_jsstub(target, masked):
 		for name, (shift, mask) in call['fields'].items():
 			pre_shift = 31 - top_bit(mask)
 			fields = { 
-				'name': name.replace("#", "Num"), 
+				'name': name, 
 				'shift': shift, 
 				'mask': mask, 
 				'unsigned': "(word & 0x%x) >>> %i" % (mask, shift),
