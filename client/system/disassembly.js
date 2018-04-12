@@ -929,6 +929,258 @@ export function ldr_pre_wb_imm(word, address) {
     return `ldr${cond}${B}	${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]!`;
 }
 
+export function strh_post_reg(word, address) {
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const Rm = Registers[(word & 0xf) >>> 0];
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+
+    return `strh${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`;
+}
+
+export function ldrh_post_reg(word, address) {
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const Rm = Registers[(word & 0xf) >>> 0];
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+
+    return `ldrh${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`;
+}
+
+export function ldrsb_post_reg(word, address) {
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const Rm = Registers[(word & 0xf) >>> 0];
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+
+    return `ldrsb${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`;
+}
+
+export function ldrsh_post_reg(word, address) {
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const Rm = Registers[(word & 0xf) >>> 0];
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+
+    return `ldrsh${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`;
+}
+
+export function strh_pre_reg(word, address) {
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const Rm = Registers[(word & 0xf) >>> 0];
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+
+    return `strh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`;
+}
+
+export function ldrh_pre_reg(word, address) {
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const Rm = Registers[(word & 0xf) >>> 0];
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+
+    return `ldrh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`;
+}
+
+export function ldrsb_pre_reg(word, address) {
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const Rm = Registers[(word & 0xf) >>> 0];
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+
+    return `ldrsb${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`;
+}
+
+export function ldrsh_pre_reg(word, address) {
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const Rm = Registers[(word & 0xf) >>> 0];
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+
+    return `ldrsh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`;
+}
+
+export function strh_pre_wb_reg(word, address) {
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const Rm = Registers[(word & 0xf) >>> 0];
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+
+    return `strh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`;
+}
+
+export function ldrh_pre_wb_reg(word, address) {
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const Rm = Registers[(word & 0xf) >>> 0];
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+
+    return `ldrh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`;
+}
+
+export function ldrsb_pre_wb_reg(word, address) {
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const Rm = Registers[(word & 0xf) >>> 0];
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+
+    return `ldrsb${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`;
+}
+
+export function ldrsh_pre_wb_reg(word, address) {
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const Rm = Registers[(word & 0xf) >>> 0];
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+
+    return `ldrsh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`;
+}
+
+export function strh_post_imm(word, address) {
+    const immH = (word & 0xf00) >>> 8;
+    const immL = (word & 0xf) >>> 0;
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+
+    return `strh${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}#${(immH << 4) | immL}`;
+}
+
+export function ldrh_post_imm(word, address) {
+    const immH = (word & 0xf00) >>> 8;
+    const immL = (word & 0xf) >>> 0;
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+
+    return `ldrh${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}#${(immH << 4) | immL}`;
+}
+
+export function ldrsb_post_imm(word, address) {
+    const immH = (word & 0xf00) >>> 8;
+    const immL = (word & 0xf) >>> 0;
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+
+    return `ldrsb${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}#${(immH << 4) | immL}`;
+}
+
+export function ldrsh_post_imm(word, address) {
+    const immH = (word & 0xf00) >>> 8;
+    const immL = (word & 0xf) >>> 0;
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+
+    return `ldrsh${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}#${(immH << 4) | immL}`;
+}
+
+export function strh_pre_imm(word, address) {
+    const immH = (word & 0xf00) >>> 8;
+    const immL = (word & 0xf) >>> 0;
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+
+    return `strh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]`;
+}
+
+export function ldrh_pre_imm(word, address) {
+    const immH = (word & 0xf00) >>> 8;
+    const immL = (word & 0xf) >>> 0;
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+
+    return `ldrh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]`;
+}
+
+export function ldrsb_pre_imm(word, address) {
+    const immH = (word & 0xf00) >>> 8;
+    const immL = (word & 0xf) >>> 0;
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+
+    return `ldrsb${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]`;
+}
+
+export function ldrsh_pre_imm(word, address) {
+    const immH = (word & 0xf00) >>> 8;
+    const immL = (word & 0xf) >>> 0;
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+
+    return `ldrsh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]`;
+}
+
+export function strh_pre_wb_imm(word, address) {
+    const immH = (word & 0xf00) >>> 8;
+    const immL = (word & 0xf) >>> 0;
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+
+    return `strh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]!`;
+}
+
+export function ldrh_pre_wb_imm(word, address) {
+    const immH = (word & 0xf00) >>> 8;
+    const immL = (word & 0xf) >>> 0;
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+
+    return `ldrh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]!`;
+}
+
+export function ldrsb_pre_wb_imm(word, address) {
+    const immH = (word & 0xf00) >>> 8;
+    const immL = (word & 0xf) >>> 0;
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+
+    return `ldrsb${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]!`;
+}
+
+export function ldrsh_pre_wb_imm(word, address) {
+    const immH = (word & 0xf00) >>> 8;
+    const immL = (word & 0xf) >>> 0;
+    const Rd = Registers[(word & 0xf000) >>> 12];
+    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
+    const U = (word & 0x800000) >>> 23;
+    const Rn = Registers[(word & 0xf0000) >>> 16];
+
+    return `ldrsh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]!`;
+}
+
 export function stm_reglist(word, address) {
     const reg_list = (word & 0xffff) >>> 0;
     const P = (word & 0x1000000) >>> 24;
@@ -953,54 +1205,3 @@ export function ldm_reglist(word, address) {
     return 'failed\tldm_reglist';
 }
 
-export function strh(word, address) {
-    const I = (word & 0x400000) >>> 22;
-    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
-    const Rd = Registers[(word & 0xf000) >>> 12];
-    const P = (word & 0x1000000) >>> 24;
-    const addr_mode = (word & 0xf00) >>> 8;
-    const W = (word & 0x200000) >>> 21;
-    const U = (word & 0x800000) >>> 23;
-    const Rn = Registers[(word & 0xf0000) >>> 16];
-
-    return 'failed\tstrh';
-}
-
-export function ldrh(word, address) {
-    const I = (word & 0x400000) >>> 22;
-    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
-    const Rd = Registers[(word & 0xf000) >>> 12];
-    const P = (word & 0x1000000) >>> 24;
-    const addr_mode = (word & 0xf00) >>> 8;
-    const W = (word & 0x200000) >>> 21;
-    const U = (word & 0x800000) >>> 23;
-    const Rn = Registers[(word & 0xf0000) >>> 16];
-
-    return 'failed\tldrh';
-}
-
-export function ldrsb(word, address) {
-    const I = (word & 0x400000) >>> 22;
-    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
-    const Rd = Registers[(word & 0xf000) >>> 12];
-    const P = (word & 0x1000000) >>> 24;
-    const addr_mode = (word & 0xf00) >>> 8;
-    const W = (word & 0x200000) >>> 21;
-    const U = (word & 0x800000) >>> 23;
-    const Rn = Registers[(word & 0xf0000) >>> 16];
-
-    return 'failed\tldrsb';
-}
-
-export function ldrsh(word, address) {
-    const I = (word & 0x400000) >>> 22;
-    const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
-    const Rd = Registers[(word & 0xf000) >>> 12];
-    const P = (word & 0x1000000) >>> 24;
-    const addr_mode = (word & 0xf00) >>> 8;
-    const W = (word & 0x200000) >>> 21;
-    const U = (word & 0x800000) >>> 23;
-    const Rn = Registers[(word & 0xf0000) >>> 16];
-
-    return 'failed\tldrsh';
-}

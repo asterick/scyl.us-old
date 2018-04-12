@@ -1,11 +1,5 @@
 #include <stdint.h>
-
 #include "compiler.h"
-
-// Stub functions
-
-EXPORT void undefined_op(uint32_t address, uint32_t word) {
-}
 
 EXPORT void bx_reg(uint32_t address, uint32_t word) {
 }
@@ -214,24 +208,6 @@ EXPORT void msr_reg(uint32_t address, uint32_t word) {
 EXPORT void msr_rot_imm(uint32_t address, uint32_t word) {
 }
 
-EXPORT void strh(uint32_t address, uint32_t word) {
-}
-
-EXPORT void ldrh(uint32_t address, uint32_t word) {
-}
-
-EXPORT void ldrsb(uint32_t address, uint32_t word) {
-}
-
-EXPORT void ldrsh(uint32_t address, uint32_t word) {
-}
-
-EXPORT void stm_reglist(uint32_t address, uint32_t word) {
-}
-
-EXPORT void ldm_reglist(uint32_t address, uint32_t word) {
-}
-
 EXPORT void str_post_shift_imm(uint32_t address, uint32_t word) {
 }
 
@@ -279,3 +255,85 @@ EXPORT void str_pre_wb_imm(uint32_t address, uint32_t word) {
 
 EXPORT void ldr_pre_wb_imm(uint32_t address, uint32_t word) {
 }
+
+EXPORT void strh_post_reg(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrh_post_reg(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrsb_post_reg(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrsh_post_reg(uint32_t address, uint32_t word) {
+}
+
+EXPORT void strh_pre_reg(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrh_pre_reg(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrsb_pre_reg(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrsh_pre_reg(uint32_t address, uint32_t word) {
+}
+
+EXPORT void strh_pre_wb_reg(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrh_pre_wb_reg(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrsb_pre_wb_reg(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrsh_pre_wb_reg(uint32_t address, uint32_t word) {
+}
+
+EXPORT void strh_post_imm(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrh_post_imm(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrsb_post_imm(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrsh_post_imm(uint32_t address, uint32_t word) {
+}
+
+EXPORT void strh_pre_imm(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrh_pre_imm(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrsb_pre_imm(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrsh_pre_imm(uint32_t address, uint32_t word) {
+}
+
+EXPORT void strh_pre_wb_imm(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrh_pre_wb_imm(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrsb_pre_wb_imm(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldrsh_pre_wb_imm(uint32_t address, uint32_t word) {
+}
+
+EXPORT void stm_reglist(uint32_t address, uint32_t word) {
+}
+
+EXPORT void ldm_reglist(uint32_t address, uint32_t word) {
+}
+
+EXPORT void undefined_op(uint32_t address, uint32_t word) {
+}
+

@@ -196,9 +196,35 @@ def output_jsstub(target, masked):
 		'str_pre_wb_shift_imm':	"`str${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}%(shift_imm)s]!`",
 		'ldr_pre_wb_shift_imm':	"`ldr${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}%(shift_imm)s]!`",
 
-		'mrs':				"`mrs${cond}\t${Rd}, ${S ? 'spsr' : 'cspr'}`",
-		'msr_reg':			"`msr${cond}\t${S ? 'spsr' : 'cspr'}_${field_mask}, ${Rm}`",
-		'msr_rot_imm':		"`msr${cond}\t${S ? 'spsr' : 'cspr'}_${field_mask}, %(rot_imm)s`",
+		'strh_post_reg':		"`strh${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`",
+		'ldrh_post_reg':		"`ldrh${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`",
+		'ldrsb_post_reg':		"`ldrsb${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`",
+		'ldrsh_post_reg':		"`ldrsh${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`",
+		'strh_pre_reg':			"`strh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`",
+		'ldrh_pre_reg':			"`ldrh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`",
+		'ldrsb_pre_reg':		"`ldrsb${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`",
+		'ldrsh_pre_reg':		"`ldrsh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`",
+		'strh_pre_wb_reg':		"`strh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`",
+		'ldrh_pre_wb_reg':		"`ldrh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`",
+		'ldrsb_pre_wb_reg':		"`ldrsb${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`",
+		'ldrsh_pre_wb_reg':		"`ldrsh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`",
+
+		'strh_post_imm':		"`strh${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}%(comp_imm)s`",
+		'ldrh_post_imm':		"`ldrh${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}%(comp_imm)s`",
+		'ldrsb_post_imm':		"`ldrsb${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}%(comp_imm)s`",
+		'ldrsh_post_imm':		"`ldrsh${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}%(comp_imm)s`",
+		'strh_pre_imm':			"`strh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}%(comp_imm)s]`",
+		'ldrh_pre_imm':			"`ldrh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}%(comp_imm)s]`",
+		'ldrsb_pre_imm':		"`ldrsb${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}%(comp_imm)s]`",
+		'ldrsh_pre_imm':		"`ldrsh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}%(comp_imm)s]`",
+		'strh_pre_wb_imm':		"`strh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}%(comp_imm)s]!`",
+		'ldrh_pre_wb_imm':		"`ldrh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}%(comp_imm)s]!`",
+		'ldrsb_pre_wb_imm':		"`ldrsb${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}%(comp_imm)s]!`",
+		'ldrsh_pre_wb_imm':		"`ldrsh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}%(comp_imm)s]!`",
+
+		'mrs':					"`mrs${cond}\t${Rd}, ${S ? 'spsr' : 'cspr'}`",
+		'msr_reg':				"`msr${cond}\t${S ? 'spsr' : 'cspr'}_${field_mask}, ${Rm}`",
+		'msr_rot_imm':			"`msr${cond}\t${S ? 'spsr' : 'cspr'}_${field_mask}, %(rot_imm)s`",
 	}
 
 	target.write("import { Registers, Conditions, ShiftType, MSRFields } from './table';\n\n")
@@ -229,7 +255,8 @@ def output_jsstub(target, masked):
 		fields = {
 			'rot_imm': 		"${(imm << rotate) | (imm >>> (32 - rotate))}",
 			'shift_imm':	"${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}",
-			'shift_reg':	"${Rm}, ${ShiftType[typ]} ${Rs}"
+			'shift_reg':	"${Rm}, ${ShiftType[typ]} ${Rs}",
+			'comp_imm':		"#${(immH << 4) | immL}"
 		}
 
 		if call['name'] in body:
@@ -241,6 +268,13 @@ def output_jsstub(target, masked):
 			print "%s is incomplete" % call['name']
 
 		target.write("\n}\n\n")
+
+def output_cstub(target, masked):
+	target.write('#include <stdint.h>\n#include "compiler.h"\n\n')
+	names = [call['name'] for call in masked] + ['undefined_op']
+
+	for call in names:
+		target.write("EXPORT void %s(uint32_t address, uint32_t word) {\n}\n\n" % call)
 
 def parse(fns):
 	for fn in fns:
@@ -255,6 +289,7 @@ parser.add_argument('TSVs', metavar='N', type=str, nargs='+',
                     help='input tables')
 parser.add_argument('--table', help='generate C table for decoding instructions')
 parser.add_argument('--jsstub', help='generate JS functions for disassembling')
+parser.add_argument('--cstub', help='generate C functions for execution')
 
 args = parser.parse_args()
 
@@ -270,3 +305,8 @@ if args.table:
 if args.jsstub:
 	with open(args.jsstub, "w") as target:
 		output_jsstub(target, masked)
+
+if args.cstub:
+	with open(args.cstub, "w") as target:
+		output_cstub(target, masked)
+

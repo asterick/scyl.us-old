@@ -33,6 +33,9 @@ arm7/op_table.h: ../tools/opcodes.tsv
 jsstub:
 	python2 ../tools/make_table.py ../tools/opcodes.tsv --jsstub ../client/system/disassembly.js
 
+cstub:
+	python2 ../tools/make_table.py ../tools/opcodes.tsv --cstub ./arm7/base.cc
+
 system0.h:
 	make -C ../system0 all
 	../tools/generate.js $(SYSTEM0) > $@

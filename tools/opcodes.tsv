@@ -93,10 +93,31 @@ ldr_pre	imm	cond				0	1	0	1	U	B	0	1	Rn				Rd				imm
 str_pre_wb	imm	cond				0	1	0	1	U	B	1	0	Rn				Rd				imm											
 ldr_pre_wb	imm	cond				0	1	0	1	U	B	1	1	Rn				Rd				imm											
 																																	
+strh_post	reg	cond				0	0	0	0	U	0	0	0	Rn				Rd				0	0	0	0	1	0	1	1	Rm			
+ldrh_post	reg	cond				0	0	0	0	U	0	0	1	Rn				Rd				0	0	0	0	1	0	1	1	Rm			
+ldrsb_post	reg	cond				0	0	0	0	U	0	0	1	Rn				Rd				0	0	0	0	1	1	0	1	Rm			
+ldrsh_post	reg	cond				0	0	0	0	U	0	0	1	Rn				Rd				0	0	0	0	1	1	1	1	Rm			
+strh_pre	reg	cond				0	0	0	1	U	0	0	0	Rn				Rd				0	0	0	0	1	0	1	1	Rm			
+ldrh_pre	reg	cond				0	0	0	1	U	0	0	1	Rn				Rd				0	0	0	0	1	0	1	1	Rm			
+ldrsb_pre	reg	cond				0	0	0	1	U	0	0	1	Rn				Rd				0	0	0	0	1	1	0	1	Rm			
+ldrsh_pre	reg	cond				0	0	0	1	U	0	0	1	Rn				Rd				0	0	0	0	1	1	1	1	Rm			
+strh_pre_wb	reg	cond				0	0	0	1	U	0	1	0	Rn				Rd				0	0	0	0	1	0	1	1	Rm			
+ldrh_pre_wb	reg	cond				0	0	0	1	U	0	1	1	Rn				Rd				0	0	0	0	1	0	1	1	Rm			
+ldrsb_pre_wb	reg	cond				0	0	0	1	U	0	1	1	Rn				Rd				0	0	0	0	1	1	0	1	Rm			
+ldrsh_pre_wb	reg	cond				0	0	0	1	U	0	1	1	Rn				Rd				0	0	0	0	1	1	1	1	Rm			
+																																	
+strh_post	imm	cond				0	0	0	0	U	1	0	0	Rn				Rd				immH				1	0	1	1	immL			
+ldrh_post	imm	cond				0	0	0	0	U	1	0	1	Rn				Rd				immH				1	0	1	1	immL			
+ldrsb_post	imm	cond				0	0	0	0	U	1	0	1	Rn				Rd				immH				1	1	0	1	immL			
+ldrsh_post	imm	cond				0	0	0	0	U	1	0	1	Rn				Rd				immH				1	1	1	1	immL			
+strh_pre	imm	cond				0	0	0	1	U	1	0	0	Rn				Rd				immH				1	0	1	1	immL			
+ldrh_pre	imm	cond				0	0	0	1	U	1	0	1	Rn				Rd				immH				1	0	1	1	immL			
+ldrsb_pre	imm	cond				0	0	0	1	U	1	0	1	Rn				Rd				immH				1	1	0	1	immL			
+ldrsh_pre	imm	cond				0	0	0	1	U	1	0	1	Rn				Rd				immH				1	1	1	1	immL			
+strh_pre_wb	imm	cond				0	0	0	1	U	1	1	0	Rn				Rd				immH				1	0	1	1	immL			
+ldrh_pre_wb	imm	cond				0	0	0	1	U	1	1	1	Rn				Rd				immH				1	0	1	1	immL			
+ldrsb_pre_wb	imm	cond				0	0	0	1	U	1	1	1	Rn				Rd				immH				1	1	0	1	immL			
+ldrsh_pre_wb	imm	cond				0	0	0	1	U	1	1	1	Rn				Rd				immH				1	1	1	1	immL			
+																																	
 stm	reglist	cond				1	0	0	P	U	S	W	0	Rn				reg_list															
 ldm	reglist	cond				1	0	0	P	U	S	W	1	Rn				reg_list															
-																																	
-strh		cond				0	0	0	P	U	I	W	0	Rn				Rd				addr_mode				1	0	1	1	addr_mode			
-ldrh		cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	0	1	1	addr_mode			
-ldrsb		cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	1	0	1	addr_mode			
-ldrsh		cond				0	0	0	P	U	I	W	1	Rn				Rd				addr_mode				1	1	1	1	addr_mode			
