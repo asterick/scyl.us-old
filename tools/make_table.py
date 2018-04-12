@@ -111,7 +111,7 @@ def output_jsfields(target, masked):
 		'B':						'%(unsigned)s ? "b" : ""'
 	}
 
-	target.write("import { Registers, Conditions, ShiftType, MSRFields } from './table';\n\nexport function get_fields(name, word) {\n    switch(name) {")
+	target.write("import { Registers, Conditions, ShiftType, MSRFields } from './disassemble';\n\nexport function get_fields(name, word) {\n    switch(name) {")
 	for call in masked:
 		# Format / break out fields
 		mapped_fields = []

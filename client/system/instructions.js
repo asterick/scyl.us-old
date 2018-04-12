@@ -1,4 +1,4 @@
-import { instructions } from "./table";
+import { instructions } from "./disassemble";
 import { load, exports } from ".";
 
 import Export from "../../dynast/export";
@@ -371,10 +371,5 @@ export function locate(word) {
 
 	if (instruction <= 0) throw new Error(`Could not decode instruction ${word.toString(16)}`);
 
-	const fields = {
-		'name': function_names[instruction],
-		'word': word
-	};
-
-	return fields;
+	return function_names[instruction];
 }

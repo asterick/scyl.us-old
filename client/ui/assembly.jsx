@@ -1,7 +1,7 @@
 import Inferno from 'inferno';
 import Component from 'inferno-component';
 
-import { disassemble } from "../system/table";
+import { disassemble } from "../system/disassemble";
 
 import { load, get_pc } from "../system";
 

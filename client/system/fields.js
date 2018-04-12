@@ -1,4 +1,4 @@
-import { Registers, Conditions, ShiftType, MSRFields } from './table';
+import { Registers, Conditions, ShiftType, MSRFields } from './disassemble';
 
 export function get_fields(name, word) {
     switch(name) {        case 'bx_reg': return { Rm: Registers[(word & 0xf) >>> 0], 'cond': Conditions[ (word & 0xf0000000) >>> 28 ] };
