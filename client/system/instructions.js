@@ -1,4 +1,3 @@
-import { Fields } from "./fields";
 import { instructions } from "./table";
 import { load, exports } from ".";
 
@@ -224,11 +223,6 @@ function process(template, ... values) {
 
 		case 'delay':
 			let pc = values[0];
-			let delayed = values[2];
-
-			if (delayed) {
-				acc.push("unreachable");
-			}
 
 			// Template the adjust clock code
 			acc.push.apply(acc, process(_templates.calculate_clock, (pc + 8) >>> 0));
@@ -251,35 +245,35 @@ function process(template, ... values) {
 	}, []);
 }
 
-function fallback(pc, delayed) {
-	const body = delayed ? [] : process(_templates.finalize_call, pc + 4)
+function fallback(pc) {
+	const body = process(_templates.finalize_call, pc + 4)
 
 	return {
 		type: { type: "func_type", parameters: [], returns: [] },
 		locals: _templates.finalize_call.locals,
 		code: body.concat(
 			{ op: 'i32.const', value: pc >> 0 },
-			{ op: 'i32.const', value: delayed ? 1 : 0 },
 	        { op: "call", function_index: _imports.execute },
 	        "end"
 		)
 	};
 }
 
-function instruction(pc, delayed, tailcall = null) {
+function instruction(pc, tailcall = null) {
 	var funct;
 
 	// Do not assemble past block end (fallback to intepret)
 	if (pc < _block_end && pc >= _block_start) {
 		try {
-			const op = locate(load(pc));
-			const template = _templates[op.name];
-			const body = process(template, pc, op.word, delayed, tailcall);
+			const op_word = load(pc);
+			const op_name = locate(op_word);
+			const template = _templates[op_name];
+			const body = process(template, pc, op_word, tailcall);
 
 			// This is the start of a test harness to make sure my templating works (it doesn't)
 			if ([].indexOf(op.name) < 0)
 			{
-				//console.log(op.name)
+				console.log(op.name)
 				throw null;
 			}
 
@@ -296,10 +290,10 @@ function instruction(pc, delayed, tailcall = null) {
 			funct.code.push("end");
 		} catch (e) {
 			// fall back to interpreted
-			funct = fallback(pc, delayed);
+			funct = fallback(pc);
 		}
 	} else {
-		funct = fallback(pc, delayed);
+		funct = fallback(pc);
 	}
 
 	return _function_base + _functions.push(funct) - 1;
@@ -377,8 +371,10 @@ export function locate(word) {
 
 	if (instruction <= 0) throw new Error(`Could not decode instruction ${word.toString(16)}`);
 
-	const fields = new Fields(word);
-	fields.name = function_names[instruction];
+	const fields = {
+		'name': function_names[instruction],
+		'word': word
+	};
 
 	return fields;
 }

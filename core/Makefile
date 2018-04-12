@@ -30,8 +30,8 @@ $(TARGET): arm7/op_table.h $(OBJECTS)
 arm7/op_table.h: ../tools/opcodes.tsv
 	python2 ../tools/make_table.py ../tools/opcodes.tsv --table $@
 
-jsstub:
-	python2 ../tools/make_table.py ../tools/opcodes.tsv --jsstub ../client/system/disassembly.js
+jsfields:
+	python2 ../tools/make_table.py ../tools/opcodes.tsv --jsfields ../client/system/fields.js
 
 cstub:
 	python2 ../tools/make_table.py ../tools/opcodes.tsv --cstub ./arm7/base.cc

@@ -7,7 +7,7 @@ export default class {
 	}
 
 	toString() {
-		return `Exception${this.exception}: ${ExceptionNames[this.exception]} at 0x${this.pc.toString(16)}${this.delayed ? " delayed" : ""}`;
+		return `Exception${this.exception}: ${ExceptionNames[this.exception]} at 0x${this.pc.toString(16)}`;
 	}
 
 	get name() { return ExceptionNames[this.exception]; }

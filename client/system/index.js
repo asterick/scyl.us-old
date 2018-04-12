@@ -1,6 +1,6 @@
 import Exception from "./exception";
 
-import { locate, compile, function_names, initialize as initialize_compiler } from "./instructions";
+import { compile, function_names, initialize as initialize_compiler } from "./instructions";
 import { Exceptions, SYSTEM_CLOCK, MAX_COMPILE_SIZE, MIN_COMPILE_SIZE } from "./consts";
 
 import { read as cedar_read, write as cedar_write } from "./cedar";
