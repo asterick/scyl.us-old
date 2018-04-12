@@ -4,28 +4,28 @@ export function bx_reg(word, address) {
     const Rm = Registers[(word & 0xf) >>> 0];
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
 
-    return `bx${cond}	${Rn}`;
+    return `bx${cond}\t${Rn}`;
 }
 
 export function blx_reg(word, address) {
     const Rm = Registers[(word & 0xf) >>> 0];
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
 
-    return `blx${cond}	${Rm}`;
+    return `blx${cond}\t${Rm}`;
 }
 
 export function b_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const imm = (word & 0xffffff) << 8 >> 8;
 
-    return `b${cond}	#0x${((imm << 2) + address + 8).toString(16)}`;
+    return `b${cond}\t#0x${((imm << 2) + address + 8).toString(16)}`;
 }
 
 export function bl_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const imm = (word & 0xffffff) << 8 >> 8;
 
-    return `bl${cond}	#0x${((imm << 2) + address + 8).toString(16)}`;
+    return `bl${cond}\t#0x${((imm << 2) + address + 8).toString(16)}`;
 }
 
 export function stc(word, address) {
@@ -96,7 +96,7 @@ export function swi_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const imm = (word & 0xffffff) << 8 >> 8;
 
-    return `swi${cond}	#0x#${imm}`;
+    return `swi${cond}\t#0x#${imm}`;
 }
 
 export function and_shift_imm(word, address) {
@@ -108,7 +108,7 @@ export function and_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `and${cond}${S}	${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `and${cond}${S}\t${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function eor_shift_imm(word, address) {
@@ -119,7 +119,7 @@ export function eor_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `eor${cond}${S}	${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `eor${cond}${S}\t${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function sub_shift_imm(word, address) {
@@ -131,7 +131,7 @@ export function sub_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `sub${cond}${S}	${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `sub${cond}${S}\t${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function rsb_shift_imm(word, address) {
@@ -143,7 +143,7 @@ export function rsb_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `rsb${cond}${S}	${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `rsb${cond}${S}\t${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function add_shift_imm(word, address) {
@@ -155,7 +155,7 @@ export function add_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `add${cond}${S}	${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `add${cond}${S}\t${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function adc_shift_imm(word, address) {
@@ -167,7 +167,7 @@ export function adc_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `adc${cond}${S}	${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `adc${cond}${S}\t${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function sbc_shift_imm(word, address) {
@@ -179,7 +179,7 @@ export function sbc_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `sbc${cond}${S}	${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `sbc${cond}${S}\t${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function rsc_shift_imm(word, address) {
@@ -191,7 +191,7 @@ export function rsc_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `rsc${cond}${S}	${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `rsc${cond}${S}\t${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function tst_shift_imm(word, address) {
@@ -201,7 +201,7 @@ export function tst_shift_imm(word, address) {
     const typ = (word & 0x60) >>> 5;
     const shift = (word & 0xf80) >>> 7;
 
-    return `tst${cond}${S}	${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `tst${cond}${S}\t${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function teq_shift_imm(word, address) {
@@ -211,7 +211,7 @@ export function teq_shift_imm(word, address) {
     const typ = (word & 0x60) >>> 5;
     const shift = (word & 0xf80) >>> 7;
 
-    return `teq${cond}${S}	${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `teq${cond}${S}\t${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function cmp_shift_imm(word, address) {
@@ -221,7 +221,7 @@ export function cmp_shift_imm(word, address) {
     const typ = (word & 0x60) >>> 5;
     const shift = (word & 0xf80) >>> 7;
 
-    return `cmp${cond}${S}	${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `cmp${cond}${S}\t${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function cmn_shift_imm(word, address) {
@@ -231,7 +231,7 @@ export function cmn_shift_imm(word, address) {
     const typ = (word & 0x60) >>> 5;
     const shift = (word & 0xf80) >>> 7;
 
-    return `cmn${cond}${S}	${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `cmn${cond}${S}\t${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function orr_shift_imm(word, address) {
@@ -243,7 +243,7 @@ export function orr_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `orr${cond}${S}	${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `orr${cond}${S}\t${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function mov_shift_imm(word, address) {
@@ -254,7 +254,7 @@ export function mov_shift_imm(word, address) {
     const Rm = Registers[(word & 0xf) >>> 0];
     const typ = (word & 0x60) >>> 5;
 
-    return `mov${cond}${S}	${Rd}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `mov${cond}${S}\t${Rd}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function bic_shift_imm(word, address) {
@@ -266,7 +266,7 @@ export function bic_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `bic${cond}${S}	${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `bic${cond}${S}\t${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function mvn_shift_imm(word, address) {
@@ -277,7 +277,7 @@ export function mvn_shift_imm(word, address) {
     const Rm = Registers[(word & 0xf) >>> 0];
     const typ = (word & 0x60) >>> 5;
 
-    return `mvn${cond}${S}	${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `mvn${cond}${S}\t${Rd}, ${Rn}, ${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function and_shift_reg(word, address) {
@@ -289,7 +289,7 @@ export function and_shift_reg(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `and${cond}${S}	${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `and${cond}${S}\t${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function eor_shift_reg(word, address) {
@@ -300,7 +300,7 @@ export function eor_shift_reg(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `eor${cond}${S}	${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `eor${cond}${S}\t${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function sub_shift_reg(word, address) {
@@ -312,7 +312,7 @@ export function sub_shift_reg(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `sub${cond}${S}	${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `sub${cond}${S}\t${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function rsb_shift_reg(word, address) {
@@ -324,7 +324,7 @@ export function rsb_shift_reg(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `rsb${cond}${S}	${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `rsb${cond}${S}\t${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function add_shift_reg(word, address) {
@@ -336,7 +336,7 @@ export function add_shift_reg(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `add${cond}${S}	${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `add${cond}${S}\t${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function adc_shift_reg(word, address) {
@@ -348,7 +348,7 @@ export function adc_shift_reg(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `adc${cond}${S}	${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `adc${cond}${S}\t${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function sbc_shift_reg(word, address) {
@@ -360,7 +360,7 @@ export function sbc_shift_reg(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `sbc${cond}${S}	${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `sbc${cond}${S}\t${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function rsc_shift_reg(word, address) {
@@ -372,7 +372,7 @@ export function rsc_shift_reg(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `rsc${cond}${S}	${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `rsc${cond}${S}\t${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function tst_shift_reg(word, address) {
@@ -382,7 +382,7 @@ export function tst_shift_reg(word, address) {
     const typ = (word & 0x60) >>> 5;
     const Rs = Registers[(word & 0xf00) >>> 8];
 
-    return `tst${cond}${S}	${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `tst${cond}${S}\t${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function teq_shift_reg(word, address) {
@@ -392,7 +392,7 @@ export function teq_shift_reg(word, address) {
     const typ = (word & 0x60) >>> 5;
     const Rs = Registers[(word & 0xf00) >>> 8];
 
-    return `teq${cond}${S}	${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `teq${cond}${S}\t${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function cmp_shift_reg(word, address) {
@@ -402,7 +402,7 @@ export function cmp_shift_reg(word, address) {
     const typ = (word & 0x60) >>> 5;
     const Rs = Registers[(word & 0xf00) >>> 8];
 
-    return `cmp${cond}${S}	${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `cmp${cond}${S}\t${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function cmn_shift_reg(word, address) {
@@ -412,7 +412,7 @@ export function cmn_shift_reg(word, address) {
     const typ = (word & 0x60) >>> 5;
     const Rs = Registers[(word & 0xf00) >>> 8];
 
-    return `cmn${cond}${S}	${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `cmn${cond}${S}\t${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function orr_shift_reg(word, address) {
@@ -424,7 +424,7 @@ export function orr_shift_reg(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `orr${cond}${S}	${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `orr${cond}${S}\t${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function mov_shift_reg(word, address) {
@@ -435,7 +435,7 @@ export function mov_shift_reg(word, address) {
     const Rm = Registers[(word & 0xf) >>> 0];
     const typ = (word & 0x60) >>> 5;
 
-    return `mov${cond}${S}	${Rd}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `mov${cond}${S}\t${Rd}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function bic_shift_reg(word, address) {
@@ -447,7 +447,7 @@ export function bic_shift_reg(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `bic${cond}${S}	${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `bic${cond}${S}\t${Rd}, ${Rn}, ${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function mvn_shift_reg(word, address) {
@@ -458,7 +458,7 @@ export function mvn_shift_reg(word, address) {
     const Rm = Registers[(word & 0xf) >>> 0];
     const typ = (word & 0x60) >>> 5;
 
-    return `mvn${cond}${S}	${Rd}, ${Rn},${Rm}, ${ShiftType[typ]} ${Rs}`;
+    return `mvn${cond}${S}\t${Rd}, ${Rn},${Rm}, ${ShiftType[typ]} ${Rs}`;
 }
 
 export function and_rot_imm(word, address) {
@@ -469,7 +469,7 @@ export function and_rot_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `and${cond}${S}	${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `and${cond}${S}\t${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function eor_rot_imm(word, address) {
@@ -480,7 +480,7 @@ export function eor_rot_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `eor${cond}${S}	${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `eor${cond}${S}\t${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function sub_rot_imm(word, address) {
@@ -491,7 +491,7 @@ export function sub_rot_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `sub${cond}${S}	${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `sub${cond}${S}\t${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function rsb_rot_imm(word, address) {
@@ -502,7 +502,7 @@ export function rsb_rot_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `rsb${cond}${S}	${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `rsb${cond}${S}\t${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function add_rot_imm(word, address) {
@@ -513,7 +513,7 @@ export function add_rot_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `add${cond}${S}	${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `add${cond}${S}\t${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function adc_rot_imm(word, address) {
@@ -524,7 +524,7 @@ export function adc_rot_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `adc${cond}${S}	${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `adc${cond}${S}\t${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function sbc_rot_imm(word, address) {
@@ -535,7 +535,7 @@ export function sbc_rot_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `sbc${cond}${S}	${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `sbc${cond}${S}\t${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function rsc_rot_imm(word, address) {
@@ -546,7 +546,7 @@ export function rsc_rot_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `rsc${cond}${S}	${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `rsc${cond}${S}\t${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function tst_rot_imm(word, address) {
@@ -555,7 +555,7 @@ export function tst_rot_imm(word, address) {
     const rotate = ((word & 0xf00) >>> 8) * 2;
     const imm = (word & 0xff) >>> 0;
 
-    return `tst${cond}${S}	${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `tst${cond}${S}\t${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function teq_rot_imm(word, address) {
@@ -564,7 +564,7 @@ export function teq_rot_imm(word, address) {
     const rotate = ((word & 0xf00) >>> 8) * 2;
     const imm = (word & 0xff) >>> 0;
 
-    return `teq${cond}${S}	${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `teq${cond}${S}\t${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function cmp_rot_imm(word, address) {
@@ -573,7 +573,7 @@ export function cmp_rot_imm(word, address) {
     const rotate = ((word & 0xf00) >>> 8) * 2;
     const imm = (word & 0xff) >>> 0;
 
-    return `cmp${cond}${S}	${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `cmp${cond}${S}\t${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function cmn_rot_imm(word, address) {
@@ -582,7 +582,7 @@ export function cmn_rot_imm(word, address) {
     const rotate = ((word & 0xf00) >>> 8) * 2;
     const imm = (word & 0xff) >>> 0;
 
-    return `cmn${cond}${S}	${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `cmn${cond}${S}\t${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function orr_rot_imm(word, address) {
@@ -593,7 +593,7 @@ export function orr_rot_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `orr${cond}${S}	${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `orr${cond}${S}\t${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function mov_rot_imm(word, address) {
@@ -603,7 +603,7 @@ export function mov_rot_imm(word, address) {
     const rotate = ((word & 0xf00) >>> 8) * 2;
     const imm = (word & 0xff) >>> 0;
 
-    return `mov${cond}${S}	${Rd}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `mov${cond}${S}\t${Rd}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function bic_rot_imm(word, address) {
@@ -614,7 +614,7 @@ export function bic_rot_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `bic${cond}${S}	${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `bic${cond}${S}\t${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function mvn_rot_imm(word, address) {
@@ -624,7 +624,7 @@ export function mvn_rot_imm(word, address) {
     const rotate = ((word & 0xf00) >>> 8) * 2;
     const imm = (word & 0xff) >>> 0;
 
-    return `mvn${cond}${S}	${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `mvn${cond}${S}\t${Rd}, ${Rn}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function swp(word, address) {
@@ -633,7 +633,7 @@ export function swp(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
 
-    return `swp${cond}${S}	${Rd}, ${Rm}, ${Rs}, ${Rn}`;
+    return `swp${cond}${S}\t${Rd}, ${Rm}, ${Rs}, ${Rn}`;
 }
 
 export function cswp(word, address) {
@@ -642,7 +642,7 @@ export function cswp(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
 
-    return `cswp${cond}${S}	${Rd}, ${Rm}, ${Rs}, ${Rn}`;
+    return `cswp${cond}${S}\t${Rd}, ${Rm}, ${Rs}, ${Rn}`;
 }
 
 export function mul(word, address) {
@@ -652,7 +652,7 @@ export function mul(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rs = Registers[(word & 0xf00) >>> 8];
 
-    return `mul${cond}${S}	${Rd}, ${Rm}, ${Rs}`;
+    return `mul${cond}${S}\t${Rd}, ${Rm}, ${Rs}`;
 }
 
 export function mla(word, address) {
@@ -663,7 +663,7 @@ export function mla(word, address) {
     const Rm = Registers[(word & 0xf) >>> 0];
     const Rn = Registers[(word & 0xf000) >>> 12];
 
-    return `mla${cond}${S}	${Rd}, ${Rm}, ${Rs}, ${Rn}`;
+    return `mla${cond}${S}\t${Rd}, ${Rm}, ${Rs}, ${Rn}`;
 }
 
 export function umull(word, address) {
@@ -674,7 +674,7 @@ export function umull(word, address) {
     const RdHi = (word & 0xf0000) >>> 16;
     const Rm = Registers[(word & 0xf) >>> 0];
 
-    return `umull${cond}${S}	${RdLo}, ${RdHi}, ${Rm}, ${Rs}`;
+    return `umull${cond}${S}\t${RdLo}, ${RdHi}, ${Rm}, ${Rs}`;
 }
 
 export function umlal(word, address) {
@@ -685,7 +685,7 @@ export function umlal(word, address) {
     const RdHi = (word & 0xf0000) >>> 16;
     const Rm = Registers[(word & 0xf) >>> 0];
 
-    return `umlal${cond}${S}	${RdLo}, ${RdHi}, ${Rm}, ${Rs}`;
+    return `umlal${cond}${S}\t${RdLo}, ${RdHi}, ${Rm}, ${Rs}`;
 }
 
 export function smull(word, address) {
@@ -696,7 +696,7 @@ export function smull(word, address) {
     const RdHi = (word & 0xf0000) >>> 16;
     const Rm = Registers[(word & 0xf) >>> 0];
 
-    return `smull${cond}${S}	${RdLo}, ${RdHi}, ${Rm}, ${Rs}`;
+    return `smull${cond}${S}\t${RdLo}, ${RdHi}, ${Rm}, ${Rs}`;
 }
 
 export function smlal(word, address) {
@@ -707,7 +707,7 @@ export function smlal(word, address) {
     const RdHi = (word & 0xf0000) >>> 16;
     const Rm = Registers[(word & 0xf) >>> 0];
 
-    return `smlal${cond}${S}	${RdLo}, ${RdHi}, ${Rm}, ${Rs}`;
+    return `smlal${cond}${S}\t${RdLo}, ${RdHi}, ${Rm}, ${Rs}`;
 }
 
 export function mrs(word, address) {
@@ -715,7 +715,7 @@ export function mrs(word, address) {
     const S = (word & 0x400000) >>> 22;
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
 
-    return `mrs${cond}	${Rd}, ${S ? 'spsr' : 'cspr'}`;
+    return `mrs${cond}\t${Rd}, ${S ? 'spsr' : 'cspr'}`;
 }
 
 export function msr_reg(word, address) {
@@ -724,7 +724,7 @@ export function msr_reg(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const field_mask = MSRFields[(word & 0xf0000) >>> 16];
 
-    return `msr${cond}	${S ? 'spsr' : 'cspr'}_${field_mask}, ${Rm}`;
+    return `msr${cond}\t${S ? 'spsr' : 'cspr'}_${field_mask}, ${Rm}`;
 }
 
 export function msr_rot_imm(word, address) {
@@ -734,7 +734,7 @@ export function msr_rot_imm(word, address) {
     const imm = (word & 0xff) >>> 0;
     const field_mask = MSRFields[(word & 0xf0000) >>> 16];
 
-    return `msr${cond}	${S ? 'spsr' : 'cspr'}_${field_mask}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
+    return `msr${cond}\t${S ? 'spsr' : 'cspr'}_${field_mask}, ${(imm << rotate) | (imm >>> (32 - rotate))}`;
 }
 
 export function str_post_shift_imm(word, address) {
@@ -747,7 +747,7 @@ export function str_post_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `str${cond}${B}	${Rd}, [${Rn}], #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `str${cond}${B}\t${Rd}, [${Rn}], #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function ldr_post_shift_imm(word, address) {
@@ -760,7 +760,7 @@ export function ldr_post_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `ldr${cond}${B}	${Rd}, [${Rn}], #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `ldr${cond}${B}\t${Rd}, [${Rn}], #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function strt_shift_imm(word, address) {
@@ -773,7 +773,7 @@ export function strt_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `str${cond}${B}t	${Rd}, [${Rn}], #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `str${cond}${B}t\t${Rd}, [${Rn}], #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function ldrt_shift_imm(word, address) {
@@ -786,7 +786,7 @@ export function ldrt_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `ldr${cond}${B}t	${Rd}, [${Rn}], #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
+    return `ldr${cond}${B}t\t${Rd}, [${Rn}], #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}`;
 }
 
 export function str_pre_shift_imm(word, address) {
@@ -799,7 +799,7 @@ export function str_pre_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `str${cond}${B}	${Rd}, [${Rn}, #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}]`;
+    return `str${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}]`;
 }
 
 export function ldr_pre_shift_imm(word, address) {
@@ -812,7 +812,7 @@ export function ldr_pre_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `ldr${cond}${B}	${Rd}, [${Rn}, #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}]`;
+    return `ldr${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}]`;
 }
 
 export function str_pre_wb_shift_imm(word, address) {
@@ -825,7 +825,7 @@ export function str_pre_wb_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `str${cond}${B}	${Rd}, [${Rn}, #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}]!`;
+    return `str${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}]!`;
 }
 
 export function ldr_pre_wb_shift_imm(word, address) {
@@ -838,7 +838,7 @@ export function ldr_pre_wb_shift_imm(word, address) {
     const Rn = Registers[(word & 0xf0000) >>> 16];
     const typ = (word & 0x60) >>> 5;
 
-    return `ldr${cond}${B}	${Rd}, [${Rn}, #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}]!`;
+    return `ldr${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}${(typ || shift) ? `${Rm}, ${ShiftType[typ]} #${shift}` : Rm}]!`;
 }
 
 export function str_post_imm(word, address) {
@@ -849,7 +849,7 @@ export function str_post_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `str${cond}${B}	${Rd}, [${Rn}], #${U ? '' : '-'}${imm}`;
+    return `str${cond}${B}\t${Rd}, [${Rn}], #${U ? '' : '-'}${imm}`;
 }
 
 export function ldr_post_imm(word, address) {
@@ -860,7 +860,7 @@ export function ldr_post_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `ldr${cond}${B}	${Rd}, [${Rn}], #${U ? '' : '-'}${imm}`;
+    return `ldr${cond}${B}\t${Rd}, [${Rn}], #${U ? '' : '-'}${imm}`;
 }
 
 export function strt_imm(word, address) {
@@ -871,7 +871,7 @@ export function strt_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `str${cond}${B}t	${Rd}, [${Rn}], #${U ? '' : '-'}${imm}`;
+    return `str${cond}${B}t\t${Rd}, [${Rn}], #${U ? '' : '-'}${imm}`;
 }
 
 export function ldrt_imm(word, address) {
@@ -882,7 +882,7 @@ export function ldrt_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `ldr${cond}${B}t	${Rd}, [${Rn}], #${U ? '' : '-'}${imm}`;
+    return `ldr${cond}${B}t\t${Rd}, [${Rn}], #${U ? '' : '-'}${imm}`;
 }
 
 export function str_pre_imm(word, address) {
@@ -893,7 +893,7 @@ export function str_pre_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `str${cond}${B}	${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]`;
+    return `str${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]`;
 }
 
 export function ldr_pre_imm(word, address) {
@@ -904,7 +904,7 @@ export function ldr_pre_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `ldr${cond}${B}	${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]`;
+    return `ldr${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]`;
 }
 
 export function str_pre_wb_imm(word, address) {
@@ -915,7 +915,7 @@ export function str_pre_wb_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `str${cond}${B}	${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]!`;
+    return `str${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]!`;
 }
 
 export function ldr_pre_wb_imm(word, address) {
@@ -926,7 +926,7 @@ export function ldr_pre_wb_imm(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `ldr${cond}${B}	${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]!`;
+    return `ldr${cond}${B}\t${Rd}, [${Rn}, #${U ? '' : '-'}${imm}]!`;
 }
 
 export function strh_post_reg(word, address) {
@@ -936,7 +936,7 @@ export function strh_post_reg(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const U = (word & 0x800000) >>> 23;
 
-    return `strh${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`;
+    return `strh${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`;
 }
 
 export function ldrh_post_reg(word, address) {
@@ -946,7 +946,7 @@ export function ldrh_post_reg(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const U = (word & 0x800000) >>> 23;
 
-    return `ldrh${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`;
+    return `ldrh${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`;
 }
 
 export function ldrsb_post_reg(word, address) {
@@ -956,7 +956,7 @@ export function ldrsb_post_reg(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const U = (word & 0x800000) >>> 23;
 
-    return `ldrsb${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`;
+    return `ldrsb${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`;
 }
 
 export function ldrsh_post_reg(word, address) {
@@ -966,7 +966,7 @@ export function ldrsh_post_reg(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const U = (word & 0x800000) >>> 23;
 
-    return `ldrsh${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`;
+    return `ldrsh${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}${Rn}`;
 }
 
 export function strh_pre_reg(word, address) {
@@ -976,7 +976,7 @@ export function strh_pre_reg(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const U = (word & 0x800000) >>> 23;
 
-    return `strh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`;
+    return `strh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`;
 }
 
 export function ldrh_pre_reg(word, address) {
@@ -986,7 +986,7 @@ export function ldrh_pre_reg(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const U = (word & 0x800000) >>> 23;
 
-    return `ldrh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`;
+    return `ldrh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`;
 }
 
 export function ldrsb_pre_reg(word, address) {
@@ -996,7 +996,7 @@ export function ldrsb_pre_reg(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const U = (word & 0x800000) >>> 23;
 
-    return `ldrsb${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`;
+    return `ldrsb${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`;
 }
 
 export function ldrsh_pre_reg(word, address) {
@@ -1006,7 +1006,7 @@ export function ldrsh_pre_reg(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const U = (word & 0x800000) >>> 23;
 
-    return `ldrsh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`;
+    return `ldrsh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]`;
 }
 
 export function strh_pre_wb_reg(word, address) {
@@ -1016,7 +1016,7 @@ export function strh_pre_wb_reg(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const U = (word & 0x800000) >>> 23;
 
-    return `strh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`;
+    return `strh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`;
 }
 
 export function ldrh_pre_wb_reg(word, address) {
@@ -1026,7 +1026,7 @@ export function ldrh_pre_wb_reg(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const U = (word & 0x800000) >>> 23;
 
-    return `ldrh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`;
+    return `ldrh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`;
 }
 
 export function ldrsb_pre_wb_reg(word, address) {
@@ -1036,7 +1036,7 @@ export function ldrsb_pre_wb_reg(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const U = (word & 0x800000) >>> 23;
 
-    return `ldrsb${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`;
+    return `ldrsb${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`;
 }
 
 export function ldrsh_pre_wb_reg(word, address) {
@@ -1046,7 +1046,7 @@ export function ldrsh_pre_wb_reg(word, address) {
     const cond = Conditions[ (word & 0xf0000000) >>> 28 ];
     const U = (word & 0x800000) >>> 23;
 
-    return `ldrsh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`;
+    return `ldrsh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}${Rn}]!`;
 }
 
 export function strh_post_imm(word, address) {
@@ -1057,7 +1057,7 @@ export function strh_post_imm(word, address) {
     const U = (word & 0x800000) >>> 23;
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `strh${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}#${(immH << 4) | immL}`;
+    return `strh${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}#${(immH << 4) | immL}`;
 }
 
 export function ldrh_post_imm(word, address) {
@@ -1068,7 +1068,7 @@ export function ldrh_post_imm(word, address) {
     const U = (word & 0x800000) >>> 23;
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `ldrh${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}#${(immH << 4) | immL}`;
+    return `ldrh${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}#${(immH << 4) | immL}`;
 }
 
 export function ldrsb_post_imm(word, address) {
@@ -1079,7 +1079,7 @@ export function ldrsb_post_imm(word, address) {
     const U = (word & 0x800000) >>> 23;
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `ldrsb${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}#${(immH << 4) | immL}`;
+    return `ldrsb${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}#${(immH << 4) | immL}`;
 }
 
 export function ldrsh_post_imm(word, address) {
@@ -1090,7 +1090,7 @@ export function ldrsh_post_imm(word, address) {
     const U = (word & 0x800000) >>> 23;
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `ldrsh${cond}	${Rd}, [${Rn}], ${U ? '' : '-'}#${(immH << 4) | immL}`;
+    return `ldrsh${cond}\t${Rd}, [${Rn}], ${U ? '' : '-'}#${(immH << 4) | immL}`;
 }
 
 export function strh_pre_imm(word, address) {
@@ -1101,7 +1101,7 @@ export function strh_pre_imm(word, address) {
     const U = (word & 0x800000) >>> 23;
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `strh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]`;
+    return `strh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]`;
 }
 
 export function ldrh_pre_imm(word, address) {
@@ -1112,7 +1112,7 @@ export function ldrh_pre_imm(word, address) {
     const U = (word & 0x800000) >>> 23;
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `ldrh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]`;
+    return `ldrh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]`;
 }
 
 export function ldrsb_pre_imm(word, address) {
@@ -1123,7 +1123,7 @@ export function ldrsb_pre_imm(word, address) {
     const U = (word & 0x800000) >>> 23;
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `ldrsb${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]`;
+    return `ldrsb${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]`;
 }
 
 export function ldrsh_pre_imm(word, address) {
@@ -1134,7 +1134,7 @@ export function ldrsh_pre_imm(word, address) {
     const U = (word & 0x800000) >>> 23;
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `ldrsh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]`;
+    return `ldrsh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]`;
 }
 
 export function strh_pre_wb_imm(word, address) {
@@ -1145,7 +1145,7 @@ export function strh_pre_wb_imm(word, address) {
     const U = (word & 0x800000) >>> 23;
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `strh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]!`;
+    return `strh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]!`;
 }
 
 export function ldrh_pre_wb_imm(word, address) {
@@ -1156,7 +1156,7 @@ export function ldrh_pre_wb_imm(word, address) {
     const U = (word & 0x800000) >>> 23;
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `ldrh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]!`;
+    return `ldrh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]!`;
 }
 
 export function ldrsb_pre_wb_imm(word, address) {
@@ -1167,7 +1167,7 @@ export function ldrsb_pre_wb_imm(word, address) {
     const U = (word & 0x800000) >>> 23;
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `ldrsb${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]!`;
+    return `ldrsb${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]!`;
 }
 
 export function ldrsh_pre_wb_imm(word, address) {
@@ -1178,7 +1178,7 @@ export function ldrsh_pre_wb_imm(word, address) {
     const U = (word & 0x800000) >>> 23;
     const Rn = Registers[(word & 0xf0000) >>> 16];
 
-    return `ldrsh${cond}	${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]!`;
+    return `ldrsh${cond}\t${Rd}, [${Rn}, ${U ? '' : '-'}#${(immH << 4) | immL}]!`;
 }
 
 export function stm_reglist(word, address) {
