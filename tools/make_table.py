@@ -141,10 +141,14 @@ def output_jsfields(target, masked):
 
 def output_cstub(target, masked):
 	target.write('#include <stdint.h>\n#include "compiler.h"\n\n')
-	names = [call['name'] for call in masked] + ['undefined_op']
 
-	for call in names:
-		target.write("EXPORT void %s(uint32_t address, uint32_t word) {\n}\n\n" % call)
+	for call in masked:
+		target.write("EXPORT void %s(uint32_t address, uint32_t word) {\n" % call['name'])
+
+		for name, (shift, mask) in call['fields'].items():
+			target.write("    const uint32_t %s = (word & 0x%x) >> %i;\n" % (name, mask, shift))
+
+		target.write("\n}\n\n")
 
 def parse(fns):
 	for fn in fns:
