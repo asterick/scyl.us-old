@@ -1,25 +1,25 @@
 #include <stdint.h>
 #include "compiler.h"
 
-EXPORT void bx_reg(uint32_t address, uint32_t word) {
+EXPORT void bx(uint32_t address, uint32_t word) {
     const uint32_t Rm = (word & 0xf) >> 0;
     const uint32_t cond = (word & 0xf0000000) >> 28;
 
 }
 
-EXPORT void blx_reg(uint32_t address, uint32_t word) {
+EXPORT void blx(uint32_t address, uint32_t word) {
     const uint32_t Rm = (word & 0xf) >> 0;
     const uint32_t cond = (word & 0xf0000000) >> 28;
 
 }
 
-EXPORT void b_imm(uint32_t address, uint32_t word) {
+EXPORT void b(uint32_t address, uint32_t word) {
     const uint32_t cond = (word & 0xf0000000) >> 28;
     const uint32_t imm = (word & 0xffffff) >> 0;
 
 }
 
-EXPORT void bl_imm(uint32_t address, uint32_t word) {
+EXPORT void bl(uint32_t address, uint32_t word) {
     const uint32_t cond = (word & 0xf0000000) >> 28;
     const uint32_t imm = (word & 0xffffff) >> 0;
 
@@ -84,7 +84,7 @@ EXPORT void mrc(uint32_t address, uint32_t word) {
 
 }
 
-EXPORT void swi_imm(uint32_t address, uint32_t word) {
+EXPORT void swi(uint32_t address, uint32_t word) {
     const uint32_t cond = (word & 0xf0000000) >> 28;
     const uint32_t imm = (word & 0xffffff) >> 0;
 
@@ -103,6 +103,7 @@ EXPORT void and_shift_imm(uint32_t address, uint32_t word) {
 
 EXPORT void eor_shift_imm(uint32_t address, uint32_t word) {
     const uint32_t shift = (word & 0xf80) >> 7;
+    const uint32_t Rd = (word & 0xf000) >> 12;
     const uint32_t S = (word & 0x100000) >> 20;
     const uint32_t cond = (word & 0xf0000000) >> 28;
     const uint32_t Rm = (word & 0xf) >> 0;
@@ -268,6 +269,7 @@ EXPORT void and_shift_reg(uint32_t address, uint32_t word) {
 
 EXPORT void eor_shift_reg(uint32_t address, uint32_t word) {
     const uint32_t Rs = (word & 0xf00) >> 8;
+    const uint32_t Rd = (word & 0xf000) >> 12;
     const uint32_t S = (word & 0x100000) >> 20;
     const uint32_t cond = (word & 0xf0000000) >> 28;
     const uint32_t Rm = (word & 0xf) >> 0;
@@ -578,7 +580,7 @@ EXPORT void swp(uint32_t address, uint32_t word) {
 
 }
 
-EXPORT void cswp(uint32_t address, uint32_t word) {
+EXPORT void swpb(uint32_t address, uint32_t word) {
     const uint32_t Rd = (word & 0xf000) >> 12;
     const uint32_t Rm = (word & 0xf) >> 0;
     const uint32_t Rn = (word & 0xf0000) >> 16;

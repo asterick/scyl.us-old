@@ -1,16 +1,16 @@
 import { Registers, Conditions, ShiftType, MSRFields } from './disassemble';
 
 export function get_fields(name, word) {
-    switch(name) {        case 'bx_reg': return { Rm: Registers[(word & 0xf) >>> 0], 'cond': Conditions[ (word & 0xf0000000) >>> 28 ] };
-        case 'blx_reg': return { Rm: Registers[(word & 0xf) >>> 0], 'cond': Conditions[ (word & 0xf0000000) >>> 28 ] };
-        case 'b_imm': return { 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], 'imm': (word & 0xffffff) << 8 >> 8 };
-        case 'bl_imm': return { 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], 'imm': (word & 0xffffff) << 8 >> 8 };
+    switch(name) {        case 'bx': return { Rm: Registers[(word & 0xf) >>> 0], 'cond': Conditions[ (word & 0xf0000000) >>> 28 ] };
+        case 'blx': return { Rm: Registers[(word & 0xf) >>> 0], 'cond': Conditions[ (word & 0xf0000000) >>> 28 ] };
+        case 'b': return { 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], 'imm': (word & 0xffffff) << 8 >> 8 };
+        case 'bl': return { 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], 'imm': (word & 0xffffff) << 8 >> 8 };
         case 'stc': return { cp_num: (word & 0xf00) >>> 8, CRd: (word & 0xf000) >>> 12, imm: (word & 0xff) >>> 0, N: (word & 0x400000) >>> 22, P: (word & 0x1000000) >>> 24, U: (word & 0x800000) >>> 23, W: (word & 0x200000) >>> 21, 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], Rn: Registers[(word & 0xf0000) >>> 16] };
         case 'ldc': return { cp_num: (word & 0xf00) >>> 8, CRd: (word & 0xf000) >>> 12, imm: (word & 0xff) >>> 0, N: (word & 0x400000) >>> 22, P: (word & 0x1000000) >>> 24, U: (word & 0x800000) >>> 23, W: (word & 0x200000) >>> 21, 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], Rn: Registers[(word & 0xf0000) >>> 16] };
         case 'cdp': return { cp_num: (word & 0xf00) >>> 8, op1: (word & 0xf00000) >>> 20, op2: (word & 0xe0) >>> 5, 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], CRd: (word & 0xf000) >>> 12, CRn: (word & 0xf0000) >>> 16, CRm: (word & 0xf) >>> 0 };
         case 'mcr': return { cp_num: (word & 0xf00) >>> 8, op1: (word & 0xe00000) >>> 21, op2: (word & 0xe0) >>> 5, Rd: Registers[(word & 0xf000) >>> 12], 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], CRn: (word & 0xf0000) >>> 16, CRm: (word & 0xf) >>> 0 };
         case 'mrc': return { cp_num: (word & 0xf00) >>> 8, op1: (word & 0xe00000) >>> 21, op2: (word & 0xe0) >>> 5, Rd: Registers[(word & 0xf000) >>> 12], 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], CRn: (word & 0xf0000) >>> 16, CRm: (word & 0xf) >>> 0 };
-        case 'swi_imm': return { 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], 'imm': (word & 0xffffff) << 8 >> 8 };
+        case 'swi': return { 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], 'imm': (word & 0xffffff) << 8 >> 8 };
         case 'and_shift_imm': return { shift: (word & 0xf80) >>> 7, Rd: Registers[(word & 0xf000) >>> 12], 'S': ((word & 0x100000) >>> 20) ? "s" : "", 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], Rm: Registers[(word & 0xf) >>> 0], Rn: Registers[(word & 0xf0000) >>> 16], typ: (word & 0x60) >>> 5 };
         case 'eor_shift_imm': return { shift: (word & 0xf80) >>> 7, Rd: Registers[(word & 0xf000) >>> 12], 'S': ((word & 0x100000) >>> 20) ? "s" : "", 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], Rm: Registers[(word & 0xf) >>> 0], Rn: Registers[(word & 0xf0000) >>> 16], typ: (word & 0x60) >>> 5 };
         case 'sub_shift_imm': return { shift: (word & 0xf80) >>> 7, Rd: Registers[(word & 0xf000) >>> 12], 'S': ((word & 0x100000) >>> 20) ? "s" : "", 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], Rm: Registers[(word & 0xf) >>> 0], Rn: Registers[(word & 0xf0000) >>> 16], typ: (word & 0x60) >>> 5 };
@@ -60,7 +60,7 @@ export function get_fields(name, word) {
         case 'bic_rot_imm': return { 'rotate': ((word & 0xf00) >>> 8) * 2, imm: (word & 0xff) >>> 0, Rd: Registers[(word & 0xf000) >>> 12], 'S': ((word & 0x100000) >>> 20) ? "s" : "", 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], Rn: Registers[(word & 0xf0000) >>> 16] };
         case 'mvn_rot_imm': return { Rd: Registers[(word & 0xf000) >>> 12], 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], 'S': ((word & 0x100000) >>> 20) ? "s" : "", 'rotate': ((word & 0xf00) >>> 8) * 2, imm: (word & 0xff) >>> 0 };
         case 'swp': return { Rd: Registers[(word & 0xf000) >>> 12], Rm: Registers[(word & 0xf) >>> 0], Rn: Registers[(word & 0xf0000) >>> 16], 'cond': Conditions[ (word & 0xf0000000) >>> 28 ] };
-        case 'cswp': return { Rd: Registers[(word & 0xf000) >>> 12], Rm: Registers[(word & 0xf) >>> 0], Rn: Registers[(word & 0xf0000) >>> 16], 'cond': Conditions[ (word & 0xf0000000) >>> 28 ] };
+        case 'swpb': return { Rd: Registers[(word & 0xf000) >>> 12], Rm: Registers[(word & 0xf) >>> 0], Rn: Registers[(word & 0xf0000) >>> 16], 'cond': Conditions[ (word & 0xf0000000) >>> 28 ] };
         case 'mul': return { Rd: Registers[(word & 0xf0000) >>> 16], Rm: Registers[(word & 0xf) >>> 0], 'S': ((word & 0x100000) >>> 20) ? "s" : "", 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], Rs: Registers[(word & 0xf00) >>> 8] };
         case 'mla': return { Rs: Registers[(word & 0xf00) >>> 8], Rd: Registers[(word & 0xf0000) >>> 16], 'S': ((word & 0x100000) >>> 20) ? "s" : "", 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], Rm: Registers[(word & 0xf) >>> 0], Rn: Registers[(word & 0xf000) >>> 12] };
         case 'umull': return { RdLo: (word & 0xf000) >>> 12, Rs: Registers[(word & 0xf00) >>> 8], 'S': ((word & 0x100000) >>> 20) ? "s" : "", 'cond': Conditions[ (word & 0xf0000000) >>> 28 ], RdHi: (word & 0xf0000) >>> 16, Rm: Registers[(word & 0xf) >>> 0] };

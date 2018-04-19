@@ -1,8 +1,8 @@
 		31	30	29	28	27	26	25	24	23	22	21	20	19	18	17	16	15	14	13	12	11	10	9	8	7	6	5	4	3	2	1	0
-bx	reg	cond				0	0	0	1	0	0	1	0	1	1	1	1	1	1	1	1	1	1	1	1	0	0	0	1	Rm			
-blx	reg	cond				0	0	0	1	0	0	1	0	1	1	1	1	1	1	1	1	1	1	1	1	0	0	1	1	Rm			
-b	imm	cond				1	0	1	0	imm																							
-bl	imm	cond				1	0	1	1	imm																							
+bx		cond				0	0	0	1	0	0	1	0	1	1	1	1	1	1	1	1	1	1	1	1	0	0	0	1	Rm			
+blx		cond				0	0	0	1	0	0	1	0	1	1	1	1	1	1	1	1	1	1	1	1	0	0	1	1	Rm			
+b		cond				1	0	1	0	imm																							
+bl		cond				1	0	1	1	imm																							
 																																	
 stc		cond				1	1	0	P	U	N	W	0	Rn				CRd				cp_num				imm							
 ldc		cond				1	1	0	P	U	N	W	1	Rn				CRd				cp_num				imm							
@@ -10,7 +10,7 @@ cdp		cond				1	1	1	0	op1				CRn				CRd				cp_num				op2			0	CRm
 mcr		cond				1	1	1	0	op1			0	CRn				Rd				cp_num				op2			1	CRm			
 mrc		cond				1	1	1	0	op1			1	CRn				Rd				cp_num				op2			1	CRm			
 																																	
-swi	imm	cond				1	1	1	1	imm																							
+swi		cond				1	1	1	1	imm																							
 																																	
 and	shift_imm	cond				0	0	0	0	0	0	0	S	Rn				Rd				shift					typ		0	Rm			
 eor	shift_imm	cond				0	0	0	0	0	0	1	S	Rn				Rd				shift					typ		0	Rm			
@@ -64,7 +64,7 @@ bic	rot_imm	cond				0	0	1	1	1	1	0	S	Rn				Rd				rotate				imm
 mvn	rot_imm	cond				0	0	1	1	1	1	1	S	0	0	0	0	Rd				rotate				imm							
 																																	
 swp		cond				0	0	0	1	0	0	0	0	Rn				Rd				0	0	0	0	1	0	0	1	Rm			
-cswp		cond				0	0	0	1	0	1	0	0	Rn				Rd				0	0	0	0	1	0	0	1	Rm			
+swpb		cond				0	0	0	1	0	1	0	0	Rn				Rd				0	0	0	0	1	0	0	1	Rm			
 mul		cond				0	0	0	0	0	0	0	S	Rd				0	0	0	0	Rs				1	0	0	1	Rm			
 mla		cond				0	0	0	0	0	0	1	S	Rd				Rn				Rs				1	0	0	1	Rm			
 umull		cond				0	0	0	0	1	0	0	S	RdHi				RdLo				Rs				1	0	0	1	Rm			
