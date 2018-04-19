@@ -142,6 +142,8 @@ def output_jsfields(target, masked):
 def output_cstub(target, masked):
 	target.write('#include <stdint.h>\n#include "compiler.h"\n\n')
 
+	target.write("EXPORT void undefined_op(uint32_t address, uint32_t word) {\n}\n\n")
+
 	for call in masked:
 		target.write("EXPORT void %s(uint32_t address, uint32_t word) {\n" % call['name'])
 

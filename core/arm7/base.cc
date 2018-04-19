@@ -1,6 +1,9 @@
 #include <stdint.h>
 #include "compiler.h"
 
+EXPORT void undefined_op(uint32_t address, uint32_t word) {
+}
+
 EXPORT void bx(uint32_t address, uint32_t word) {
     const uint32_t Rm = (word & 0xf) >> 0;
     const uint32_t cond = (word & 0xf0000000) >> 28;
