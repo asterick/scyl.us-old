@@ -13,7 +13,7 @@ mrc		cond				1	1	1	0	op1			1	CRn				Rd				cp_num				op2			1	CRm
 swi	imm	cond				1	1	1	1	imm																							
 																																	
 and	shift_imm	cond				0	0	0	0	0	0	0	S	Rn				Rd				shift					typ		0	Rm			
-eor	shift_imm	cond				0	0	0	0	0	0	1	S	Rn				Rn				shift					typ		0	Rm			
+eor	shift_imm	cond				0	0	0	0	0	0	1	S	Rn				Rd				shift					typ		0	Rm			
 sub	shift_imm	cond				0	0	0	0	0	1	0	S	Rn				Rd				shift					typ		0	Rm			
 rsb	shift_imm	cond				0	0	0	0	0	1	1	S	Rn				Rd				shift					typ		0	Rm			
 add	shift_imm	cond				0	0	0	0	1	0	0	S	Rn				Rd				shift					typ		0	Rm			
@@ -30,7 +30,7 @@ bic	shift_imm	cond				0	0	0	1	1	1	0	S	Rn				Rd				shift					typ		0	Rm
 mvn	shift_imm	cond				0	0	0	1	1	1	1	S	0	0	0	0	Rd				shift					typ		0	Rm			
 																																	
 and	shift_reg	cond				0	0	0	0	0	0	0	S	Rn				Rd				Rs				0	typ		1	Rm			
-eor	shift_reg	cond				0	0	0	0	0	0	1	S	Rn				Rn				Rs				0	typ		1	Rm			
+eor	shift_reg	cond				0	0	0	0	0	0	1	S	Rn				Rd				Rs				0	typ		1	Rm			
 sub	shift_reg	cond				0	0	0	0	0	1	0	S	Rn				Rd				Rs				0	typ		1	Rm			
 rsb	shift_reg	cond				0	0	0	0	0	1	1	S	Rn				Rd				Rs				0	typ		1	Rm			
 add	shift_reg	cond				0	0	0	0	1	0	0	S	Rn				Rd				Rs				0	typ		1	Rm			
