@@ -1,8 +1,8 @@
 		31	30	29	28	27	26	25	24	23	22	21	20	19	18	17	16	15	14	13	12	11	10	9	8	7	6	5	4	3	2	1	0
 bx		cond				0	0	0	1	0	0	1	0	1	1	1	1	1	1	1	1	1	1	1	1	0	0	0	1	Rm			
 blx		cond				0	0	0	1	0	0	1	0	1	1	1	1	1	1	1	1	1	1	1	1	0	0	1	1	Rm			
-b		cond				1	0	1	0	imm																							
-bl		cond				1	0	1	1	imm																							
+b		cond				1	0	1	0	imm@s																							
+bl		cond				1	0	1	1	imm@s																							
 																																	
 stc		cond				1	1	0	P	U	N	W	0	Rn				CRd				cp_num				imm							
 ldc		cond				1	1	0	P	U	N	W	1	Rn				CRd				cp_num				imm							
@@ -119,5 +119,5 @@ ldrh_pre_wb	imm	cond				0	0	0	1	U	1	1	1	Rn				Rd				immH				1	0	1	1	immL
 ldrsb_pre_wb	imm	cond				0	0	0	1	U	1	1	1	Rn				Rd				immH				1	1	0	1	immL			
 ldrsh_pre_wb	imm	cond				0	0	0	1	U	1	1	1	Rn				Rd				immH				1	1	1	1	immL			
 																																	
-stm	reglist	cond				1	0	0	P	U	S	W	0	Rn				reg_list															
-ldm	reglist	cond				1	0	0	P	U	S	W	1	Rn				reg_list															
+stm	reglist	cond				1	0	0	P	U	F	W	0	Rn				reg_list															
+ldm	reglist	cond				1	0	0	P	U	F	W	1	Rn				reg_list															

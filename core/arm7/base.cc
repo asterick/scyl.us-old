@@ -17,14 +17,14 @@ EXPORT void blx(uint32_t address, uint32_t word) {
 }
 
 EXPORT void b(uint32_t address, uint32_t word) {
+    const uint32_t imm = (word & 0xffffff) << 8 >> 8;
     const uint32_t cond = (word & 0xf0000000) >> 28;
-    const uint32_t imm = (word & 0xffffff) >> 0;
 
 }
 
 EXPORT void bl(uint32_t address, uint32_t word) {
+    const uint32_t imm = (word & 0xffffff) << 8 >> 8;
     const uint32_t cond = (word & 0xf0000000) >> 28;
-    const uint32_t imm = (word & 0xffffff) >> 0;
 
 }
 
@@ -1080,8 +1080,8 @@ EXPORT void ldrsh_pre_wb_imm(uint32_t address, uint32_t word) {
 
 EXPORT void stm_reglist(uint32_t address, uint32_t word) {
     const uint32_t reg_list = (word & 0xffff) >> 0;
+    const uint32_t F = (word & 0x400000) >> 22;
     const uint32_t P = (word & 0x1000000) >> 24;
-    const uint32_t S = (word & 0x400000) >> 22;
     const uint32_t U = (word & 0x800000) >> 23;
     const uint32_t W = (word & 0x200000) >> 21;
     const uint32_t cond = (word & 0xf0000000) >> 28;
@@ -1091,8 +1091,8 @@ EXPORT void stm_reglist(uint32_t address, uint32_t word) {
 
 EXPORT void ldm_reglist(uint32_t address, uint32_t word) {
     const uint32_t reg_list = (word & 0xffff) >> 0;
+    const uint32_t F = (word & 0x400000) >> 22;
     const uint32_t P = (word & 0x1000000) >> 24;
-    const uint32_t S = (word & 0x400000) >> 22;
     const uint32_t U = (word & 0x800000) >> 23;
     const uint32_t W = (word & 0x200000) >> 21;
     const uint32_t cond = (word & 0xf0000000) >> 28;

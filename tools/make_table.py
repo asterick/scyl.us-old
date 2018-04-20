@@ -99,39 +99,44 @@ def output_tree(target, tree, name="root_table"):
 
 def output_jsfields(target, masked):
 	remap_field = {
-		(  'cond', 28, 0xf0000000): 'Conditions[ (word & 0x%(mask)x) >>> %(shift)i ]',
-		(   'imm',  0, 0x00ffffff): '%(signed)s',
-		('rotate',  8, 0x00000f00): '(%(unsigned)s) * 2',
-		(     'S', 20, 0x00100000): '(%(unsigned)s) ? "s" : ""',
-		'field_mask':				'MSRFields[%(unsigned)s]',
-		'Rn':						'Registers[%(unsigned)s]',
-		'Rd':						'Registers[%(unsigned)s]',
-		'Rs':						'Registers[%(unsigned)s]',
-		'Rm':						'Registers[%(unsigned)s]',
-		'B':						'%(unsigned)s ? "b" : ""'
+		'rotate': 		'(%(value)s) * 2',
+		'S': 			'(%(value)s) ? "s" : ""',
+		'cond': 		'Conditions[(word & 0x%(mask)x) >>> %(shift)i]',
+		'field_mask':	'MSRFields[%(value)s]',
+		'Rn':			'Registers[%(value)s]',
+		'Rd':			'Registers[%(value)s]',
+		'Rs':			'Registers[%(value)s]',
+		'Rm':			'Registers[%(value)s]',
+		'B':			'%(value)s ? "b" : ""'
 	}
 
 	target.write("import { Registers, Conditions, ShiftType, MSRFields } from './disassemble';\n\nexport function get_fields(name, word) {\n    switch(name) {")
 	for call in masked:
 		# Format / break out fields
 		mapped_fields = []
-		for name, (shift, mask) in call['fields'].items():
-			pre_shift = 31 - top_bit(mask)
+		for name, (shift, mask) in call['fields'].items():		
+			fields = name.split("@")
+			name, parameters = fields[0], fields[1:]
+
+			# signed field
+			if 's' in parameters:
+				pre_shift = 31 - top_bit(mask)
+				value = "(word & 0x%x) << %i >> %i" % (mask, pre_shift, shift + pre_shift)
+			else:
+				value = "(word & 0x%x) >>> %i" % (mask, shift)
+
 			fields = { 
 				'name': name, 
 				'shift': shift, 
 				'mask': mask, 
-				'unsigned': "(word & 0x%x) >>> %i" % (mask, shift),
-				'signed': "(word & 0x%x) << %i >> %i" % (mask, pre_shift, shift + pre_shift)
+				'value': value
 			}
 
 
-			if (name, shift, mask) in remap_field:
-				format = "'%(name)s': " + remap_field[(name, shift, mask)]
-			elif name in remap_field:
+			if name in remap_field:
 				format = "%(name)s: " + remap_field[name]
 			else:
-				format = "%(name)s: %(unsigned)s"
+				format = "%(name)s: %(value)s"
 
 			mapped_fields += [format % fields]
 
@@ -148,7 +153,18 @@ def output_cstub(target, masked):
 		target.write("EXPORT void %s(uint32_t address, uint32_t word) {\n" % call['name'])
 
 		for name, (shift, mask) in call['fields'].items():
-			target.write("    const uint32_t %s = (word & 0x%x) >> %i;\n" % (name, mask, shift))
+			fields = name.split("@")
+			name, parameters = fields[0], fields[1:]
+
+			# signed field
+			if 's' in parameters:
+				pre_shift = 31 - top_bit(mask)
+				value = "(word & 0x%x) << %i >> %i" % (mask, pre_shift, shift + pre_shift)
+			else:
+				value = "(word & 0x%x) >> %i" % (mask, shift)
+
+
+			target.write("    const uint32_t %s = %s;\n" % (name, value))
 
 		target.write("\n}\n\n")
 
