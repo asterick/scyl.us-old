@@ -21,6 +21,8 @@ struct RegisterDesc {
 };
 
 static const RegisterDesc reg_space[] = {
+    {      "pc",        &reg_pc },
+    {    "cspr",      &reg_cspr },
     {      "r0", &reg_r_usr[ 0] },
     {      "r1", &reg_r_usr[ 1] },
     {      "r2", &reg_r_usr[ 2] },
@@ -36,8 +38,6 @@ static const RegisterDesc reg_space[] = {
     {     "r12", &reg_r_usr[12] },
     {      "sp", &reg_r_usr[13] },
     {      "lr", &reg_r_usr[14] },
-    {      "pc",        &reg_pc },
-    {    "cspr",      &reg_cspr },
     {  "r8_fiq", &reg_r_fiq[ 0] },
     {  "r9_fiq", &reg_r_fiq[ 1] },
     { "r10_fiq", &reg_r_fiq[ 2] },
