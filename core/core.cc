@@ -65,8 +65,6 @@ EXPORT void execute(uint32_t pc, bool delayed) {
 // ** Interface helpers
 // *******
 
-extern "C" void _start() { }
-
 EXPORT void execute_call(uint32_t start, uint32_t length) {
     typedef void (*instruction_index)();
 
