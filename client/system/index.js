@@ -4,8 +4,6 @@ import Registers from "./registers";
 import { locate, compile, function_names, initialize as initialize_compiler } from "./instructions";
 import { Exceptions, SYSTEM_CLOCK, MAX_COMPILE_SIZE, MIN_COMPILE_SIZE } from "./consts";
 
-import { read as cedar_read, write as cedar_write } from "./cedar";
-import { read as spu_read, write as spu_write } from "./spu";
 import { read as dsp_read, write as dsp_write } from "./dsp";
 
 import * as renderer from "./renderer";
@@ -38,9 +36,8 @@ const _environment = {
 	set_dither, set_mask,
 	get_vram_data, set_vram_data, render,
 
-	// Accessors
-	cedar_read, dsp_read, spu_read, 
-	cedar_write, dsp_write, spu_write,
+	// DSP perf
+	dsp_read, dsp_write,
 
 	// Stub to stop complaining
 	debug: (x, l) => {
