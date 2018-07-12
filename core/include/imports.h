@@ -14,4 +14,5 @@ extern "C" {
 }
 
 EXPORT void adjust_clock(uint32_t cycles);
+EXPORT void branch(uint32_t pc, uint32_t target);
 EXPORT void execute(uint32_t, bool);

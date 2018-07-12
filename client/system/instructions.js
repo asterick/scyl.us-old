@@ -18,7 +18,7 @@ var _templates;
 var _block_start;
 var _block_end;
 
-const boilerplate = ["execute_call", "calculate_clock", "finalize_call"].concat(Object.keys(instructions));
+const boilerplate = ["execute_call", "branch"].concat(Object.keys(instructions));
 
 function evaluate(code) {
 	var stack = [];
@@ -230,9 +230,6 @@ function process(template, ... values) {
 				acc.push("unreachable");
 			}
 
-			// Template the adjust clock code
-			acc.push.apply(acc, process(_templates.calculate_clock, (pc + 8) >>> 0));
-
 			// call the delayed branch slot
 			acc.push(
 				{ op: 'call', function_index: instruction(pc + 4, true) },
@@ -252,11 +249,11 @@ function process(template, ... values) {
 }
 
 function fallback(pc, delayed) {
-	const body = delayed ? [] : process(_templates.finalize_call, pc + 4)
+	const body = delayed ? [] : process(_templates.branch, pc, pc + 4);
 
 	return {
 		type: { type: "func_type", parameters: [], returns: [] },
-		locals: _templates.finalize_call.locals,
+		locals: _templates.branch.locals,
 		code: body.concat(
 			{ op: 'i32.const', value: pc >> 0 },
 			{ op: 'i32.const', value: delayed ? 1 : 0 },
@@ -321,8 +318,8 @@ export function compile(start, length) {
 		// Finalize call
 		{
 			type: { type: "func_type", parameters: [], returns: [] },
-			locals: _templates.execute_call.locals,
-			code: process(_templates.finalize_call, _block_end).concat("end")
+			locals: _templates.branch.locals,
+			code: process(_templates.branch, _block_end - 4, _block_end).concat("end")
 		},
 	];
 

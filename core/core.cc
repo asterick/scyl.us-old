@@ -57,7 +57,6 @@ EXPORT void execute(uint32_t pc, bool delayed) {
     const uint32_t data = Memory::load(pc, true, pc, delayed);
     const InstructionCall call = locate(data);
 
-    adjust_clock(1);
     call(pc, data, delayed);
 }
 
@@ -80,15 +79,12 @@ EXPORT void execute_call(uint32_t start, uint32_t length) {
     }
 }
 
-EXPORT void adjust_clock(uint32_t cycles) {
+void adjust_clock(uint32_t cycles) {
     registers.clocks -= cycles;
 }
 
-EXPORT void calculate_clock(uint32_t end) {
-    adjust_clock((end - start_pc) >> 2);    
-}
-
-EXPORT void finalize_call(uint32_t end) {
+EXPORT void branch(uint32_t pc, uint32_t end) {
+    // This eats a cycle for a branch delay slot
+    adjust_clock((pc - start_pc + 8) >> 2); 
     registers.pc = end;
-    adjust_clock((end - start_pc) >> 2);
 }

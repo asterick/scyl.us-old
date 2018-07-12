@@ -346,65 +346,65 @@ EXPORT void MTLO(uint32_t address, uint32_t word, uint32_t delayed) {
 // ******
 
 EXPORT void J(uint32_t address, uint32_t word, uint32_t delayed) {
-    registers.pc = (address & 0xF0000000) | (FIELD_IMM26(word) << 2);
+    branch(address, (address & 0xF0000000) | (FIELD_IMM26(word) << 2));
     execute(address + 4, 1);
 }
 
 EXPORT void JAL(uint32_t address, uint32_t word, uint32_t delayed) {
-    registers.pc = (address & 0xF0000000) | (FIELD_IMM26(word) << 2);
+    branch(address, (address & 0xF0000000) | (FIELD_IMM26(word) << 2));
     write_reg(REGS_RA, address + 8);
     execute(address + 4, 1);
 }
 
 EXPORT void JR(uint32_t address, uint32_t word, uint32_t delayed) {
-    registers.pc = read_reg(FIELD_RS(word)) & 0xFFFFFFFC;
+    branch(address, read_reg(FIELD_RS(word)) & 0xFFFFFFFC);
     execute(address + 4, 1);
 }
 
 EXPORT void JALR(uint32_t address, uint32_t word, uint32_t delayed) {
     write_reg(FIELD_RD(word), address + 8);
-    registers.pc = read_reg(FIELD_RS(word)) & 0xFFFFFFFC;
+    branch(address, read_reg(FIELD_RS(word)) & 0xFFFFFFFC);
     execute(address + 4, 1);
 }
 
 EXPORT void BEQ(uint32_t address, uint32_t word, uint32_t delayed) {
     if (read_reg(FIELD_RS(word)) == read_reg(FIELD_RT(word))) {
-        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        branch(address, FIELD_SIMM16(word) * 4 + address + 4);
         execute(address + 4, 1);
     }
 }
 
 EXPORT void BNE(uint32_t address, uint32_t word, uint32_t delayed) {
     if (read_reg(FIELD_RS(word)) != read_reg(FIELD_RT(word))) {
-        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        branch(address, FIELD_SIMM16(word) * 4 + address + 4);
         execute(address + 4, 1);
     }
 }
 
 EXPORT void BLTZ(uint32_t address, uint32_t word, uint32_t delayed) {
     if ((int32_t)read_reg(FIELD_RS(word)) < 0) {
-        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        branch(address, FIELD_SIMM16(word) * 4 + address + 4);
         execute(address + 4, 1);
     }
 }
 
 EXPORT void BGEZ(uint32_t address, uint32_t word, uint32_t delayed) {
     if ((int32_t)read_reg(FIELD_RS(word)) >= 0) {
-        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        branch(address, FIELD_SIMM16(word) * 4 + address + 4);
         execute(address + 4, 1);
     }
 }
 
 EXPORT void BGTZ(uint32_t address, uint32_t word, uint32_t delayed) {
     if ((int32_t)read_reg(FIELD_RS(word)) > 0) {
-        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        branch(address, FIELD_SIMM16(word) * 4 + address + 4);
         execute(address + 4, 1);
     }
 }
 
 EXPORT void BLEZ(uint32_t address, uint32_t word, uint32_t delayed) {
     if ((int32_t)read_reg(FIELD_RS(word)) <= 0) {
-        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        branch(address, FIELD_SIMM16(word) * 4 + address + 4);
         execute(address + 4, 1);
     }
 }
@@ -412,7 +412,7 @@ EXPORT void BLEZ(uint32_t address, uint32_t word, uint32_t delayed) {
 EXPORT void BLTZAL(uint32_t address, uint32_t word, uint32_t delayed) {
     if ((int32_t)read_reg(FIELD_RS(word)) < 0) {
         write_reg(REGS_RA, address + 8);
-        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        branch(address, FIELD_SIMM16(word) * 4 + address + 4);
         execute(address + 4, 1);
     }
 }
@@ -420,7 +420,7 @@ EXPORT void BLTZAL(uint32_t address, uint32_t word, uint32_t delayed) {
 EXPORT void BGEZAL(uint32_t address, uint32_t word, uint32_t delayed) {
     if ((int32_t)read_reg(FIELD_RS(word)) >= 0) {
         write_reg(REGS_RA, address + 8);
-        registers.pc = FIELD_SIMM16(word) * 4 + address + 4;
+        branch(address, FIELD_SIMM16(word) * 4 + address + 4);
         execute(address + 4, 1);
     }
 }

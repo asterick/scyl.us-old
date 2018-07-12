@@ -161,7 +161,6 @@ export function block_execute () {
 			funct.code();
 		} catch (e) {
 			if (e instanceof Exception) {
-				exports.calculate_clock(e.pc);
 				exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
 			} else {
 				throw e;

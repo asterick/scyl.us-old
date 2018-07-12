@@ -154,16 +154,21 @@ EXPORT void trap(int exception, int address, int delayed, int coprocessor) {
 		(coprocessor << 28) |
 		(exception << 2);
 
+	uint32_t target;
+
 	switch (exception) {
 	case EXCEPTION_TLBLOAD:
 	case EXCEPTION_TLBSTORE:
-		registers.pc = (status & STATUS_BEV) ? TLB_EXCEPTION_VECTOR : REMAPPED_TLB_EXCEPTION_VECTOR;
+		target = (status & STATUS_BEV) ? TLB_EXCEPTION_VECTOR : REMAPPED_TLB_EXCEPTION_VECTOR;
 		break ;
 
 	default:
-		registers.pc = (status & STATUS_BEV) ? EXCEPTION_VECTOR : REMAPPED_EXCEPTION_VECTOR;
+		target = (status & STATUS_BEV) ? EXCEPTION_VECTOR : REMAPPED_EXCEPTION_VECTOR;
 		break ;
 	}
+
+	// Branch to the target address
+	branch(address, target);
 }
 
 // ******
