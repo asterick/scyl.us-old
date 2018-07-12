@@ -83,16 +83,17 @@ static int calc_tri_size(int size, const uint16_t* data) {
 	return ((total < 0) ? -total : total) / 2;
 }
 
+static inline int abs(int value) {
+	return (value < 0) ? -value : value;
+}
+
 static int calc_clocks(int count, int size, const uint16_t* vertexes) {
 	switch (count) {
 		case 1: return 1;
 		case 2: {
-			int x = vertexes[0] - vertexes[size];
-			int y = vertexes[1] - vertexes[size+1];
+			int x = abs(vertexes[0] - vertexes[size]);
+			int y = abs(vertexes[1] - vertexes[size+1]);
 			
-			if (x < 0) x = -x;
-			if (y < 0) y = -y;
-
 			return (x < y) ? y : x;
 		}
 		case 3:
