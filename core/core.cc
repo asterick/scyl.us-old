@@ -40,14 +40,6 @@ EXPORT const SystemConfiguration* getConfiguration() {
     return &cfg;
 }
 
-EXPORT void step_execute() {
-    start_pc = registers.pc;
-    registers.pc += 4;
-
-    COP0::handle_interrupt();
-    execute(start_pc, false);
-}
-
 EXPORT void execute(uint32_t pc, bool delayed) {
     const uint32_t data = Memory::load(pc, true, pc, delayed);
     const InstructionCall call = locate(data);
@@ -55,9 +47,23 @@ EXPORT void execute(uint32_t pc, bool delayed) {
     call(pc, data, delayed);
 }
 
-// *******
-// ** Interface helpers
-// *******
+static int clock_adjust = 0;
+
+static void catch_up() {
+    GPU::catchup(clock_adjust);
+    DMA::advance();
+    COP0::handle_interrupt();
+
+    clock_adjust = 0;
+}
+
+EXPORT void step_execute() {
+    start_pc = registers.pc;
+    registers.pc += 4;
+
+    catch_up();
+    execute(start_pc, false);
+}
 
 EXPORT void block_execute(uint32_t start, uint32_t length) {
     typedef void (*instruction_index)();
@@ -71,16 +77,14 @@ EXPORT void block_execute(uint32_t start, uint32_t length) {
         if (index >= length) return ;
         const instruction_index call = (instruction_index) index;
         
-        COP0::handle_interrupt();
+        catch_up();
         call();
     }
 }
 
 void adjust_clock(uint32_t cycles) {
+    clock_adjust += cycles;
     registers.clocks -= cycles;
-
-    GPU::catchup(cycles);
-    DMA::advance();
 }
 
 EXPORT void branch(uint32_t pc, uint32_t end) {

@@ -41,11 +41,13 @@ function evaluate(code) {
 export function initialize(ab) {
 	const defs = Import(ab);
 
-	// Validate
+	// Count imported functions
 	const imported_functions =
 		defs.import_section.filter((v) => v.type.type === 'func_type').length;
 
+	// Build (and sort) indexed table of exported functions
 	const exported_functions = defs.export_section
+		.sort((a, b) => a.index - b.index)
 		.filter(v => v.kind === 'func_type')
 		.reduce((acc, v) => { 
 			acc[v.index] = v.field;
