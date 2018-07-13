@@ -64,6 +64,7 @@ export function initialize(ab) {
 		.filter(v => v.kind === 'func_type')
 		.reduce((acc, v) => { 
 			acc[v.index] = v.field;
+			_function_base = v.index + 1;
 			return acc;
 		}, [])
 		;
@@ -112,7 +113,6 @@ export function initialize(ab) {
 		if (imp.type.type !== 'func_type') return ;
 		_imports[imp.field] = index++;
 	});
-	_function_base = index;
 
 	// Templatize things we will use
 	const template_names = ["block_execute", "branch"].concat(Object.keys(instructions));
