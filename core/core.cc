@@ -40,16 +40,11 @@ EXPORT const SystemConfiguration* getConfiguration() {
     return &cfg;
 }
 
-EXPORT void sync_state() {
-    COP0::handle_interrupt();
-    DMA::advance();
-}
-
 EXPORT void step_execute() {
     start_pc = registers.pc;
     registers.pc += 4;
 
-    sync_state();
+    COP0::handle_interrupt();
     execute(start_pc, false);
 }
 
@@ -64,7 +59,7 @@ EXPORT void execute(uint32_t pc, bool delayed) {
 // ** Interface helpers
 // *******
 
-EXPORT void execute_call(uint32_t start, uint32_t length) {
+EXPORT void block_execute(uint32_t start, uint32_t length) {
     typedef void (*instruction_index)();
 
     if (registers.clocks > MAX_CLOCK_LAG) registers.clocks = MAX_CLOCK_LAG;
@@ -75,12 +70,17 @@ EXPORT void execute_call(uint32_t start, uint32_t length) {
 
         if (index >= length) return ;
         const instruction_index call = (instruction_index) index;
+        
+        COP0::handle_interrupt();
         call();
     }
 }
 
 void adjust_clock(uint32_t cycles) {
     registers.clocks -= cycles;
+
+    GPU::catchup(cycles);
+    DMA::advance();
 }
 
 EXPORT void branch(uint32_t pc, uint32_t end) {

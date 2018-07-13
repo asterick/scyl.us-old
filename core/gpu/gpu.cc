@@ -104,7 +104,9 @@ static int calc_clocks(int count, int size, const uint16_t* vertexes) {
 	return 0;
 }
 
-static void process_fifo() {
+static bool process_fifo() {
+	if (delay_timer || fifo_size <= 0) return false;
+
 	static uint32_t cmd, width, height, x, y;
 	static bool shaded, textured, poly, blended;
 	static uint32_t vertexes[12];
@@ -118,7 +120,7 @@ static void process_fifo() {
 	static bool vertex_reset;
 	static GLenum prim_type;
 
-	while (fifo_size > 0) {
+	do {
 		switch (mode) {
 			case GPU_MODE_RENDERING:
 				{
@@ -152,7 +154,7 @@ static void process_fifo() {
 
 				continue ;
 			case GPU_MODE_GET_DATA:
-				return ;
+				return false;
 			case GPU_MODE_IDLE:
 				mode = GPU_MODE_WAITING;
 				cmd = read_fifo();
@@ -160,7 +162,7 @@ static void process_fifo() {
 				break ;
 			case GPU_MODE_SET_DATA:
 				while (vram_index < width * height) {
-					if (fifo_size <= 0) return ;
+					if (fifo_size <= 0) return false;
 
 					uint32_t i = read_fifo();
 
@@ -279,7 +281,7 @@ static void process_fifo() {
 			break ;
 	 	case GPU_SETDATA_COMMAND:
 	 		{
-	 			if (fifo_size <= 0) return ;	// Wait for parameter
+	 			if (fifo_size <= 0) return false;	// Wait for parameter
 
 				const uint32_t param = read_fifo();
 
@@ -294,7 +296,7 @@ static void process_fifo() {
 			}
 	 	case GPU_GETDATA_COMMAND:
 	 		{
-	 			if (fifo_size <= 0) return ;	// Wait for parameter
+	 			if (fifo_size <= 0) return false;	// Wait for parameter
 
 				const uint32_t param = read_fifo();
 
@@ -321,7 +323,7 @@ static void process_fifo() {
 				vram_index = 0;
 				vram_size = (width * height + 1) / 2;
 	 			mode = GPU_MODE_GET_DATA;
-		 		return ;
+		 		return false;
 			}
 		case GPU_COMMAND_POINT:
 		case GPU_COMMAND_LINE:
@@ -374,7 +376,9 @@ static void process_fifo() {
 		}
 
 		mode = GPU_MODE_IDLE;
-	}
+	} while (fifo_size > 0);
+
+	return true;
 }
 
 bool GPU::rx_full() {
@@ -458,5 +462,20 @@ void GPU::write(uint32_t address, uint32_t value, uint32_t mask) {
 		}
 
 		break ; 
+	}
+}
+
+void GPU::catchup(int cycles) {
+	while (cycles >= delay_timer) {
+		cycles -= delay_timer;
+		delay_timer = 0;
+
+		if (!process_fifo()) break ;
+	}
+
+	if (delay_timer > cycles) {
+		delay_timer -= cycles;
+	} else {
+		delay_timer = 0;
 	}
 }

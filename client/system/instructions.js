@@ -18,7 +18,7 @@ var _templates;
 var _block_start;
 var _block_end;
 
-const boilerplate = ["execute_call", "branch"].concat(Object.keys(instructions));
+const boilerplate = ["block_execute", "branch"].concat(Object.keys(instructions));
 
 function evaluate(code) {
 	var stack = [];
@@ -312,8 +312,8 @@ export function compile(start, length) {
 		// Execute body
 		{
 			type: { type: "func_type", parameters: [], returns: [] },
-			locals: _templates.execute_call.locals,
-			code: process(_templates.execute_call, start, length).concat("end")
+			locals: _templates.block_execute.locals,
+			code: process(_templates.block_execute, start, length).concat("end")
 		},
 		// Finalize call
 		{

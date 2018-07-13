@@ -157,7 +157,6 @@ export function block_execute () {
 		}
 
 		try {
-			exports.sync_state();
 			funct.code();
 		} catch (e) {
 			if (e instanceof Exception) {
