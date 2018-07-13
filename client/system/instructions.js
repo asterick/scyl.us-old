@@ -288,7 +288,6 @@ function instruction(pc, delayed, tailcall = null) {
 		try {
 			const word = load(pc);
 			const op_name = locate(word);
-			const op = new Fields(word);
 
 			const template = _templates[op_name];
 			const body = process(template, pc, word, delayed, tailcall);
