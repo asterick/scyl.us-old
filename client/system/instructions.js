@@ -12,23 +12,25 @@ var _import_section;
 var _imports;
 var _functions;
 var _function_base;
-var function_names;
+var _function_names;
 var _templates;
 
 var _block_start;
 var _block_end;
 
-const boilerplate = ["block_execute", "branch"].concat(Object.keys(instructions));
-
 function locate(word) {
 	const instruction = exports.locate(word);
 
-	if (instruction <= 0) throw new Error(`Could not decode instruction ${word.toString(16)}`);
+	if (instruction < 0) throw new Error(`Could not decode instruction ${word.toString(16)}`);
 
+	return _function_names[instruction];
+}
+
+export function disassemble(word, address) {
+	const op = locate(word);
 	const fields = new Fields(word);
-	fields.name = function_names[instruction];
 
-	return fields;
+	return instructions[op](fields, address);
 }
 
 function evaluate(code) {
@@ -93,14 +95,14 @@ export function initialize(ab) {
 		})
 	);
 
-	function_names = [];
+	_function_names = [];
 	defs.table_section.forEach((v, index) => {
 		if (v.element_type !== 'anyfunc') return ;
 
 		defs.element_section.forEach((el) => {
 			if (el.index !== index) return ;
 			var offset = evaluate(el.offset);
-			el.elements.forEach((el, i) => function_names[i+offset] = exported_functions[el])
+			el.elements.forEach((el, i) => _function_names[i+offset] = exported_functions[el])
 		});	
 	});
 
@@ -112,9 +114,11 @@ export function initialize(ab) {
 	});
 	_function_base = index;
 
+	// Templatize things we will use
+	const template_names = ["block_execute", "branch"].concat(Object.keys(instructions));
 	_templates = {};
 	defs.export_section.forEach((exp) => {
-		if (boilerplate.indexOf(exp.field) < 0) return ;
+		if (template_names.indexOf(exp.field) < 0) return ;
 
 		if (exp.index < imported_functions || exp.kind !== 'func_type') return ;
 
@@ -282,14 +286,17 @@ function instruction(pc, delayed, tailcall = null) {
 	// Do not assemble past block end (fallback to intepret)
 	if (pc < _block_end && pc >= _block_start) {
 		try {
-			const op = locate(load(pc));
-			const template = _templates[op.name];
-			const body = process(template, pc, op.word, delayed, tailcall);
+			const word = load(pc);
+			const op_name = locate(word);
+			const op = new Fields(word);
+
+			const template = _templates[op_name];
+			const body = process(template, pc, word, delayed, tailcall);
 
 			// This is the start of a test harness to make sure my templating works (it doesn't)
-			if ([].indexOf(op.name) < 0)
+			if ([].indexOf(op_name) < 0)
 			{
-				//console.log(op.name)
+				//console.log(op_name)
 				throw null;
 			}
 
@@ -380,9 +387,4 @@ export function compile(start, length) {
 	_functions = null;
 
 	return Export(module);
-}
-
-export function disassemble(word, address) {
-	const op = locate(word);
-	return instructions[op.name](op, address);
 }
