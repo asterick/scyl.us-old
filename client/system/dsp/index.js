@@ -197,7 +197,7 @@ function compile() {
 		        "returns": []
 		    },
 		    "locals": [{ count: 1, type: "f32" }],
-		    "code": generate().concat("end")
+		    "code": generate()
 		}],
 
 		type_section: [{ type: "func_type", parameters: [], returns: [] }],

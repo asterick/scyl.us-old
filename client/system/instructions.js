@@ -127,7 +127,7 @@ function template(func, name) {
 
 	// Process backwards
 	const code = func.code;
-	var i = code.length - 2;	// Trim tail "end"
+	var i = code.length - 1;
 	var depth = 0;
 
 	while (i >= 0) {
@@ -268,7 +268,6 @@ function fallback(pc, delayed) {
 			{ op: 'i32.const', value: pc >> 0 },
 			{ op: 'i32.const', value: delayed ? 1 : 0 },
 	        { op: "call", function_index: _imports.execute },
-	        "end"
 		)
 	};
 }
@@ -295,8 +294,6 @@ function instruction(pc, delayed, tailcall = null) {
 			if (tailcall !== null) {
 				funct.code.push({ op: 'call', function_index: tailcall });
 			}
-			
-			funct.code.push("end");
 		}
 	}
 
@@ -314,13 +311,13 @@ export function compile(start, length) {
 		{
 			type: { type: "func_type", parameters: [], returns: [] },
 			locals: _templates.block_execute.locals,
-			code: process(_templates.block_execute, start, length).concat("end")
+			code: process(_templates.block_execute, _block_start, _block_end)
 		},
 		// Finalize call
 		{
 			type: { type: "func_type", parameters: [], returns: [] },
 			locals: _templates.branch.locals,
-			code: process(_templates.branch, _block_end - 4, _block_end).concat("end")
+			code: process(_templates.branch, _block_end - 4, _block_end)
 		},
 	];
 
@@ -349,7 +346,6 @@ export function compile(start, length) {
 			index: 0,
 			offset: [
 				{ op: "i32.const", value: 0 },
-				"end"
 			],
 			elements: table
 		}],

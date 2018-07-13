@@ -65,16 +65,17 @@ EXPORT void step_execute() {
     execute(start_pc, false);
 }
 
-EXPORT void block_execute(uint32_t start, uint32_t length) {
+EXPORT void block_execute(uint32_t start, uint32_t end) {
     typedef void (*instruction_index)();
 
     if (registers.clocks > MAX_CLOCK_LAG) registers.clocks = MAX_CLOCK_LAG;
 
     while (registers.clocks > 0) {
         start_pc = registers.pc;
-        const uint32_t index = (start_pc - start) >> 2;
+        
+        if (start_pc < start || start_pc >= end) return ;
 
-        if (index >= length) return ;
+        const uint32_t index = (start_pc - start) >> 2;
         const instruction_index call = (instruction_index) index;
         
         catch_up();

@@ -83,9 +83,9 @@ function encode_global_type(payload, ast) {
 
 function encode_code_expr(payload, codes) {
 	var index = 0;
-	var depth = 1;
+	var depth = 0;
 
-	while (depth > 0) {
+	while (index < codes.length) {
 		const code = codes[index++];
 		const op = typeof code === 'string' ? code : code.op;
 
@@ -173,6 +173,10 @@ function encode_code_expr(payload, codes) {
 			depth--;
 		}
 	}
+
+	if (depth != 0) throw new Error("Scope depth incorrect");
+
+	payload.uint8(ByteCode["end"]);
 }
 
 function encode_type_section(defs) {

@@ -160,7 +160,7 @@ function decode_code_expr(payload) {
 			codes.push({ op: ReverseByteCode[byte], flags: payload.varuint(), offset: payload.varuint() });
 			break ;
 		case ByteCode["end"]:
-			depth--;
+			if (--depth == 0) break ;
 		default:
 			codes.push(ReverseByteCode[byte]);
 			break ;
