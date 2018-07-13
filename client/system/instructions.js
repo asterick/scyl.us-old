@@ -274,7 +274,7 @@ function fallback(pc, delayed) {
 }
 
 function instruction(pc, delayed, tailcall = null) {
-	var funct;
+	var funct = null;
 
 	// Do not assemble past block end (fallback to intepret)
 	if (pc < _block_end && pc >= _block_start) {
@@ -328,7 +328,7 @@ export function compile(start, length) {
 	var previous = _function_base + 1;
 	for (var i = length - 1; i >= 0; i--) {
 		table[i] =
-		previous = instruction(start+i*4, 0, previous);
+		previous = instruction(start+i*4, false, previous);
 	}
 
 	const module = {
