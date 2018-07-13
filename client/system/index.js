@@ -1,7 +1,7 @@
 import Exception from "./exception";
 import Registers from "./registers";
 
-import { locate, compile, function_names, initialize as initialize_compiler } from "./instructions";
+import { compile, initialize as initialize_compiler } from "./instructions";
 import { Exceptions, SYSTEM_CLOCK, MAX_COMPILE_SIZE, MIN_COMPILE_SIZE } from "./consts";
 
 import { read as dsp_read, write as dsp_write } from "./dsp";

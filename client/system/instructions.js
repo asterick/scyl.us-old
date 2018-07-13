@@ -12,13 +12,24 @@ var _import_section;
 var _imports;
 var _functions;
 var _function_base;
-export var function_names;
+var function_names;
 var _templates;
 
 var _block_start;
 var _block_end;
 
 const boilerplate = ["block_execute", "branch"].concat(Object.keys(instructions));
+
+function locate(word) {
+	const instruction = exports.locate(word);
+
+	if (instruction <= 0) throw new Error(`Could not decode instruction ${word.toString(16)}`);
+
+	const fields = new Fields(word);
+	fields.name = function_names[instruction];
+
+	return fields;
+}
 
 function evaluate(code) {
 	var stack = [];
@@ -369,17 +380,6 @@ export function compile(start, length) {
 	_functions = null;
 
 	return Export(module);
-}
-
-export function locate(word) {
-	const instruction = exports.locate(word);
-
-	if (instruction <= 0) throw new Error(`Could not decode instruction ${word.toString(16)}`);
-
-	const fields = new Fields(word);
-	fields.name = function_names[instruction];
-
-	return fields;
 }
 
 export function disassemble(word, address) {
