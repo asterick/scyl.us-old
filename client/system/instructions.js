@@ -18,19 +18,12 @@ var _templates;
 var _block_start;
 var _block_end;
 
-function locate(word) {
-	const instruction = exports.locate(word);
-
-	if (instruction < 0) throw new Error(`Could not decode instruction ${word.toString(16)}`);
-
-	return _function_names[instruction];
-}
-
 export function disassemble(word, address) {
-	const op = locate(word);
-	const fields = new Fields(word);
+	const op_index = exports.locate(word);
 
-	return instructions[op](fields, address);
+	if (op_index < 0) throw new Error(`Could not decode instruction ${word.toString(16)}`);
+
+	return instructions[_function_names[op_index]](new Fields(word), address);
 }
 
 function evaluate(code) {
@@ -285,19 +278,13 @@ function instruction(pc, delayed, tailcall = null) {
 
 	// Do not assemble past block end (fallback to intepret)
 	if (pc < _block_end && pc >= _block_start) {
-		try {
-			const word = load(pc);
-			const op_name = locate(word);
+		const word = load(pc);
+		const op_index = exports.locate(word);
 
+		if (op_index >= 0) {
+			const op_name = _function_names[op_index];
 			const template = _templates[op_name];
 			const body = process(template, pc, word, delayed, tailcall);
-
-			// This is the start of a test harness to make sure my templating works (it doesn't)
-			if ([].indexOf(op_name) < 0)
-			{
-				//console.log(op_name)
-				throw null;
-			}
 
 			funct = {
 				type: { type: "func_type", parameters: [], returns: [] },
@@ -310,15 +297,10 @@ function instruction(pc, delayed, tailcall = null) {
 			}
 			
 			funct.code.push("end");
-		} catch (e) {
-			// fall back to interpreted
-			funct = fallback(pc, delayed);
 		}
-	} else {
-		funct = fallback(pc, delayed);
 	}
 
-	return _function_base + _functions.push(funct) - 1;
+	return _function_base + _functions.push(funct || fallback(pc, delayed)) - 1;
 }
 
 export function compile(start, length) {
