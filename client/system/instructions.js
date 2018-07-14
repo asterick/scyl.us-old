@@ -217,7 +217,7 @@ function template(func, name) {
 }
 
 function process(template, ... values) {
-	return template.code.reduce((acc, k) => {
+	const body = template.code.reduce((acc, k) => {
 		if (k.template === undefined) {
 			acc.push(k);
 			return acc;
@@ -256,10 +256,16 @@ function process(template, ... values) {
 			throw k;
 		}
 	}, []);
+
+	return {
+		type: { type: "func_type", parameters: [], returns: [] },
+		locals: template.locals,
+		code: body
+	};
 }
 
 function fallback(pc, delayed) {
-	const body = delayed ? [] : process(_templates.branch, pc, pc + 4);
+	const body = delayed ? [] : process(_templates.branch, pc, pc + 4).code;
 
 	return {
 		type: { type: "func_type", parameters: [], returns: [] },
@@ -283,13 +289,8 @@ function instruction(pc, delayed, tailcall = null) {
 		if (op_index >= 0) {
 			const op_name = _function_names[op_index];
 			const template = _templates[op_name];
-			const body = process(template, pc, word, delayed, tailcall);
 
-			funct = {
-				type: { type: "func_type", parameters: [], returns: [] },
-				locals: template.locals,
-				code: body
-			};
+			funct = process(template, pc, word, delayed, tailcall);
 
 			if (tailcall !== null) {
 				funct.code.push({ op: 'call', function_index: tailcall });
@@ -307,18 +308,8 @@ export function compile(start, length) {
 	_block_end = start + length * 4;
 
 	_functions = [
-		// Execute body
-		{
-			type: { type: "func_type", parameters: [], returns: [] },
-			locals: _templates.block_execute.locals,
-			code: process(_templates.block_execute, _block_start, _block_end)
-		},
-		// Finalize call
-		{
-			type: { type: "func_type", parameters: [], returns: [] },
-			locals: _templates.branch.locals,
-			code: process(_templates.branch, _block_end - 4, _block_end)
-		},
+		process(_templates.block_execute, _block_start, _block_end), // Execute body
+		process(_templates.branch, _block_end - 4, _block_end) // Finalize call
 	];
 
 	// Prime function table with the "Tail"
