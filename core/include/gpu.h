@@ -4,7 +4,7 @@
 #include "compiler.h"
 
 namespace GPU {
-	void catchup(int cycles);
+	bool catchup(int cycles);
 	bool rx_full();
 	bool tx_empty();
 	uint32_t read(uint32_t);

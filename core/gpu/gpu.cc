@@ -38,9 +38,15 @@ enum GPUMode {
 	GPU_MODE_RENDERING
 };
 
-static const float blend_coffs[] = {
-	 1.000f,  0.500f,  0.250f,  0.125f,  0.000f,  0.500f,  0.750f,  0.875f,
-	-1.000f, -0.500f, -0.250f, -0.125f, -0.000f, -0.500f, -0.750f, -0.875f
+static const float blend_coffs[16][2] = {
+	{ 0.50,  0.50 },
+	{ 0.50,  1.00 },
+	{ 0.50, -1.00 },
+	{ 0.50,  0.25 },
+	{ 1.00,  0.50 },
+	{ 1.00,  1.00 },
+	{ 1.00, -1.00 },
+	{ 1.00,  0.25 },
 };
 
 static const int fifo_depth = 1024;
@@ -158,6 +164,7 @@ static bool process_fifo() {
 			case GPU_MODE_IDLE:
 				mode = GPU_MODE_WAITING;
 				cmd = read_fifo();
+				delay_timer++;	// Eat a cycle to process a command
 			case GPU_MODE_WAITING:
 				break ;
 			case GPU_MODE_SET_DATA:
@@ -206,17 +213,29 @@ static bool process_fifo() {
 			break ;
 		case GPU_DRAWCONFIG_COMMAND:
 			{
-				const uint32_t a = (cmd & GPU_DRAWCONFIG_SET_SRC_MASK) >> GPU_DRAWCONFIG_SET_SRC_SHIFT;
-				const uint32_t b = (cmd & GPU_DRAWCONFIG_SET_DST_MASK) >> GPU_DRAWCONFIG_SET_DST_SHIFT;
-				const uint32_t c = (cmd & GPU_DRAWCONFIG_RESET_SRC_MASK) >> GPU_DRAWCONFIG_RESET_SRC_SHIFT;
-				const uint32_t d = (cmd & GPU_DRAWCONFIG_RESET_DST_MASK) >> GPU_DRAWCONFIG_RESET_DST_SHIFT;
+				const bool s_blend = (cmd & GPU_DRAWCONFIG_BLEND_SET) != 0;
+				const bool r_blend = (cmd & GPU_DRAWCONFIG_BLEND_RESET) != 0;
 
-				const float s_s = blend_coffs[(cmd & GPU_DRAWCONFIG_SET_SRC_MASK) >> GPU_DRAWCONFIG_SET_SRC_SHIFT];
-				const float s_d = blend_coffs[(cmd & GPU_DRAWCONFIG_SET_DST_MASK) >> GPU_DRAWCONFIG_SET_DST_SHIFT];
-				const float r_s = blend_coffs[(cmd & GPU_DRAWCONFIG_RESET_SRC_MASK) >> GPU_DRAWCONFIG_RESET_SRC_SHIFT];
-				const float r_d = blend_coffs[(cmd & GPU_DRAWCONFIG_RESET_DST_MASK) >> GPU_DRAWCONFIG_RESET_DST_SHIFT];
+				float s_b = 0.0;
+				float s_f = 1.0;
+				float r_b = 0.0;
+				float r_f = 1.1;
 
-				set_blend_coff(s_s, s_d, r_s, r_d);
+				if (s_blend) {
+					const uint32_t s_coff = (cmd & GPU_DRAWCONFIG_SET_MASK) >> GPU_DRAWCONFIG_SET_SHIFT;
+
+					s_b = blend_coffs[s_coff][0];
+					s_f = blend_coffs[s_coff][1];
+				}
+
+				if (r_blend) {
+					const uint32_t r_coff = (cmd & GPU_DRAWCONFIG_RESET_MASK) >> GPU_DRAWCONFIG_RESET_SHIFT;
+					
+					r_b = blend_coffs[r_coff][0];
+					r_f = blend_coffs[r_coff][1];
+				}
+
+				set_blend_coff(s_f, s_b, r_f, r_b);
 
 				const bool dither = (cmd & GPU_DRAWCONFIG_DITHER) != 0;
 
@@ -465,12 +484,15 @@ void GPU::write(uint32_t address, uint32_t value, uint32_t mask) {
 	}
 }
 
-void GPU::catchup(int cycles) {
+bool GPU::catchup(int cycles) {
+	bool processed = false;
+
 	while (cycles >= delay_timer) {
 		cycles -= delay_timer;
 		delay_timer = 0;
 
 		if (!process_fifo()) break ;
+		processed = true;
 	}
 
 	if (delay_timer > cycles) {
@@ -478,4 +500,6 @@ void GPU::catchup(int cycles) {
 	} else {
 		delay_timer = 0;
 	}
+
+	return processed;
 }

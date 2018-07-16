@@ -50,8 +50,10 @@ EXPORT void execute(uint32_t pc, bool delayed) {
 static int clock_adjust = 0;
 
 static void catch_up() {
-    GPU::catchup(clock_adjust);
-    DMA::advance();
+    do {
+        DMA::advance();
+    } while (GPU::catchup(clock_adjust));
+
     COP0::handle_interrupt();
 
     clock_adjust = 0;
