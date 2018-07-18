@@ -25,7 +25,7 @@ module.exports = {
                 test: /\.jsx?$/,
                 use: [ { loader: 'babel-loader' } ],
             }
-      ]
+        ]
     },
     resolve: {
         extensions: ['.js', '.jsx']
