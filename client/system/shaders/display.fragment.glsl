@@ -14,10 +14,9 @@ const vec2 vram_size = vec2(1024.0, 512.0);
 in vec2 vTexture;
 out vec4 fragColor;
 
-const vec2 iResolution = vec2(32.0, 24.0);
-#define res (iResolution.xy/6.0)
+#define res (uDisplaySize.xy/6.0)
 
-const vec2 warp = vec2(0.0000,0.0000);  // Display warp: 1.0/8.0 = extreme, 0.0 = None
+const vec2 warp = vec2(0.0, 0.0);       // Display warp: 1.0/8.0 = extreme, 0.0 = None
 const float hardScan = -8.0;            // Hardness of scanline: -8.0 = soft, -16.0 = medium
 const float hardPix = -2.0;             // Hardness of pixels in scanline: -2.0 = soft, -4.0 = hard
 const float maskDark = 0.5;             // Amount of shadow mask.
@@ -132,6 +131,7 @@ void main(void) {
   vec2 fragCoord = (vTexture * vec2(1.0, -1.0) + 1.0) / 2.0;
   vec2 pos = Warp(fragCoord);
 
-  fragColor.rgb = ToSrgb(Tri(pos) * Mask(fragCoord * uDisplaySize));
+  fragColor.rgb = ToSrgb(Fetch(pos, vec2(0.0, 0.0)));//ToSrgb(Tri(pos) * Mask(fragCoord * uDisplaySize));
+
   fragColor.a = 1.0;  
 }
