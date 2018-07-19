@@ -313,6 +313,7 @@ function _repaint () {
    	gl.uniform1f(_displayShader.uniforms.uAspectRatio, _aspectRatio);
    	gl.uniform2f(_displayShader.uniforms.uViewportSize, _viewWidth, _viewHeight);
    	gl.uniform2f(_displayShader.uniforms.uViewportPosition, _viewX, _viewY);
+   	gl.uniform2f(_displayShader.uniforms.uDisplaySize, _viewportWidth, _viewportHeight);
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, _copyBuffer);
 	gl.vertexAttribPointer(_displayShader.attributes.aVertex, 2, gl.FLOAT, false, 0, 0);

@@ -5,6 +5,6 @@ import { attach, start, initialize } from "./system";
 
 attach("system");
 initialize().then(() => {
-	render(<UI />, document.getElementById("container"));
+	//render(<UI />, document.getElementById("container"));
 	start();
 });
