@@ -8,8 +8,24 @@ import Registers from "./registers";
 import { running, start, stop, step_execute } from "../system";
 
 export default class extends Component {
+	constructor(props) {
+		super(props);
+
+		this.state = {
+			user: null
+		}
+
+		this.auth = props.auth;
+		this.auth.currentUser.listen((user) => this.setState({ user: user.isSignedIn() ? user : null }));
+	}
+
 	render() {
 		return <div class="debugger">
+			{
+				this.state.user ?
+					<button onClick={() => this.auth.signOut()}>Sign out</button> :
+					<button onClick={() => this.auth.signIn()}>Sign in</button>
+			}
 			<div style="display: inline-block">
 				{ running
 					? <input type="button" value="stop" onClick={() => {

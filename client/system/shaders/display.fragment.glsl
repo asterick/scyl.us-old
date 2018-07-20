@@ -131,7 +131,8 @@ void main(void) {
   vec2 fragCoord = (vTexture * vec2(1.0, -1.0) + 1.0) / 2.0;
   vec2 pos = Warp(fragCoord);
 
-  fragColor.rgb = ToSrgb(Fetch(pos, vec2(0.0, 0.0)));//ToSrgb(Tri(pos) * Mask(fragCoord * uDisplaySize));
+  fragColor.rgb = ToSrgb(Fetch(pos, vec2(0.0, 0.0)));
+  //fragColor.rgb = ToSrgb(Tri(pos) * Mask(fragCoord * uDisplaySize));
 
   fragColor.a = 1.0;  
 }

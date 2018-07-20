@@ -118,7 +118,7 @@ export function attach (container) {
 		return ;
 	}
 
-	const canvas = document.getElementById(container);
+	const canvas = container;
 	_canvas = canvas;
 
 	// Create our context

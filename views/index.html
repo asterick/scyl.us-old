@@ -3,19 +3,39 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="google-signin-client_id" content="<%= client_id %>">
+
+        <!-- This is inlined to control load order -->
+        <script>
+            (function() {
+                let resolve = null;
+
+                window.google = new Promise((a, r) => {
+                    resolve = a;
+                });
+
+                window.setupGAPI = () => {
+                    window.gapi.load('auth2', () => {
+                        gapi.auth2.init({
+                            "client_id": "<%= client_id %>"
+                        });
+
+                        resolve(window.gapi);
+                    });
+
+                    delete window.setupGAPI;
+                }
+            })();
+        </script>
+        <script src="https://apis.google.com/js/platform.js?onload=setupGAPI" async defer></script>
 
         <script src="app.js" async></script>
-        <script src="https://apis.google.com/js/platform.js" async defer></script>
-        
+
         <link rel="stylesheet" type="text/css" href="style.css">
 
         <title>scyl.us</title>
     </head>
     <body>
         <canvas id="system" width="640" height="480"></canvas>
-        <div class="g-signin2" data-onsuccess="onSignIn"></div>
-
         <div id="container"></div>
     </body>
 </html>

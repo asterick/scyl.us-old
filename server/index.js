@@ -3,6 +3,9 @@ const express = require("express");
 const logging = require("./logging");
 const Config = require("../config.json");
 
+const {OAuth2Client} = require('google-auth-library');
+const google_client = new OAuth2Client(Config.client_id);
+
 // === Main ===
 const app = express();
 
@@ -14,6 +17,22 @@ app.get("/", (req, res) => {
 	res.render('index.html', {
 		client_id: Config.oauth.client_id
 	});
+});
+
+app.get('/auth', async (req, res) => {
+    const idToken = req.headers.id_token;
+    
+    const ticket = await google_client.verifyIdToken({
+        idToken,
+        audience: Config.client_id
+    });
+    
+    const payload = ticket.getPayload();
+    const user_id = payload.sub;
+
+    console.log(user_id);
+
+    res.json(payload);
 });
 
 if (Config.environment === 'development') {

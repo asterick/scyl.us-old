@@ -3,8 +3,21 @@ import UI  from  "./ui/index.jsx";
 
 import { attach, start, initialize } from "./system";
 
-attach("system");
-initialize().then(() => {
-	//render(<UI />, document.getElementById("container"));
+(async () => {
+	await initialize();
+	const gapi = await google;
+	const auth = gapi.auth2.getAuthInstance();
+
+	auth.currentUser.listen(async user => {
+		if (!user.isSignedIn()) return ;
+		
+		// This is the only thing we will use, or care about using
+		const id_token = user.getAuthResponse().id_token;
+		
+		fetch("/auth", {headers: { id_token }})
+	});
+
+	attach(document.getElementById("system"));
+	render(<UI auth={auth} />, document.getElementById("container"));
 	start();
-});
+})();
