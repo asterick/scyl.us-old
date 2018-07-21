@@ -8,6 +8,7 @@ const google_client = new OAuth2Client(Config.client_id);
 
 // === Main ===
 const app = express();
+const expressWs = require('express-ws')(app);
 
 app.engine('html', require('ejs').renderFile);
 
@@ -19,18 +20,22 @@ app.get("/", (req, res) => {
 	});
 });
 
-app.get('/auth', async (req, res) => {
-    const idToken = req.query.token;
-    
-    const ticket = await google_client.verifyIdToken({
-        idToken,
-        audience: Config.client_id
-    });
-    
-    const payload = ticket.getPayload();
-    const user_id = payload.sub;
+app.ws('/auth', async (ws, req) => {
+    try {
+        const idToken = req.query.token;
+        
+        const ticket = await google_client.verifyIdToken({
+            idToken,
+            audience: Config.client_id
+        });
+        
+        const payload = ticket.getPayload();
+        const user_id = payload.sub;
 
-    res.json(payload);
+        console.log(payload);
+    } catch(e) {
+        ws.close();
+    }
 });
 
 if (Config.environment === 'development') {
@@ -45,8 +50,6 @@ if (Config.environment === 'development') {
 
 	app.use(express.static('assets'));
 }
-
-// "asdf{asdf}".replace(/\{(.*?)\}/ig, (_, a) => (console.log(k, a), "!!!"))
 
 app.listen(Config.server.port, () => {
     logging("debug", `Server started on port ${Config.server.port}`);
