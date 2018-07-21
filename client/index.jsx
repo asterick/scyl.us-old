@@ -14,9 +14,10 @@ import { attach, start, initialize } from "./system";
 		// This is the only thing we will use, or care about using
 		const id_token = user.getAuthResponse().id_token;
 		
-		debugger ;
-
-		fetch("/auth", {headers: { id_token }})
+		fetch(`/auth?token=${id_token}`).then(async response => {
+			const reader = await response.json();
+			console.log(reader)
+		});
 	});
 
 	attach(document.getElementById("system"));

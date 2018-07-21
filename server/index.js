@@ -20,7 +20,7 @@ app.get("/", (req, res) => {
 });
 
 app.get('/auth', async (req, res) => {
-    const idToken = req.headers.id_token;
+    const idToken = req.query.token;
     
     const ticket = await google_client.verifyIdToken({
         idToken,
@@ -29,8 +29,6 @@ app.get('/auth', async (req, res) => {
     
     const payload = ticket.getPayload();
     const user_id = payload.sub;
-
-    console.log(user_id);
 
     res.json(payload);
 });
