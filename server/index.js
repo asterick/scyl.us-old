@@ -22,18 +22,15 @@ app.get("/", (req, res) => {
 
 app.ws('/auth', async (ws, req) => {
     try {
-        const idToken = req.query.token;
-        
         const ticket = await google_client.verifyIdToken({
-            idToken,
-            audience: Config.client_id
+            "idToken": String(req.query.token),
+            "audience": Config.client_id
         });
     
         const payload = ticket.getPayload();
-
         const user_id = payload.sub;
 
-        console.log(payload);
+        logging('info', `Socket connection by: ${user_id}`);
     } catch(e) {
         console.log(e);
         ws.close();
