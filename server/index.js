@@ -28,12 +28,14 @@ app.ws('/auth', async (ws, req) => {
             idToken,
             audience: Config.client_id
         });
-        
+    
         const payload = ticket.getPayload();
+
         const user_id = payload.sub;
 
         console.log(payload);
     } catch(e) {
+        console.log(e);
         ws.close();
     }
 });
