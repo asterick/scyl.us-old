@@ -16,7 +16,8 @@
                 window.setupGAPI = () => {
                     window.gapi.load('auth2', () => {
                         gapi.auth2.init({
-                            "client_id": "<%= client_id %>"
+                            "client_id": "<%= client_id %>",
+                            "scope": "openid"
                         });
 
                         resolve(window.gapi);
@@ -27,7 +28,7 @@
             })();
         </script>
         <script src="https://apis.google.com/js/platform.js?onload=setupGAPI" async defer></script>
-        <script src="app.js" async></script>
+        <script src="app.js" async defer></script>
         <link rel="stylesheet" type="text/css" href="style.css">
 
         <title>scyl.us</title>

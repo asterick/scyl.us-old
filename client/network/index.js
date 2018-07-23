@@ -17,6 +17,6 @@ export function connect(token_id) {
 }
 
 export function disconnect() {
-	socket.close();
+	if (socket !== null) socket.close();
 	socket = null;
 }
