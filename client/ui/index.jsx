@@ -11,34 +11,31 @@ export default class extends Component {
 	constructor(props) {
 		super(props);
 
-		const user = props.auth.currentUser.get();
-
 		this.state = {
-			user: user.isSignedIn() ? user : null
+			user: props.auth.currentUser.get()
 		}
 
 		this.auth = props.auth;
-		this.auth.currentUser.listen((user) => this.setState({ user: user.isSignedIn() ? user : null }));
+		this.auth.currentUser.listen((user) => this.setState({ user }));
 	}
 
 	render() {
 		return <div class="debugger">
 			{
-				this.state.user ?
+				this.state.user.isSignedIn() ?
 					<button onClick={() => this.auth.signOut()}>Sign out</button> :
 					<button onClick={() => this.auth.signIn()}>Sign in</button>
 			}
 			<div style="display: inline-block">
-				{ running
-					? <input type="button" value="stop" onClick={() => {
-						stop();
+				<input type="button" value={running ? "stop" : "start"} onClick={() => {
+						if (running) {
+							stop();
+						} else {
+							start();
+						}
+
 						this.forceUpdate();
-					}}/>
-					: <input type="button" value="start" onClick={() => {
-						start();
-						this.forceUpdate();
-					}}/>
-				}
+				}}/>
 				<input type="button" value="step" onClick={() => {
 					step_execute();
 					this.forceUpdate();
