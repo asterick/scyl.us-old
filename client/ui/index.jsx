@@ -11,8 +11,10 @@ export default class extends Component {
 	constructor(props) {
 		super(props);
 
+		const user = props.auth.currentUser.get();
+
 		this.state = {
-			user: null
+			user: user.isSignedIn() ? user : null
 		}
 
 		this.auth = props.auth;

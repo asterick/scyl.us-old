@@ -4,19 +4,19 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-        <!-- This is inlined to control load order -->
+        <!-- Isolate as much google setup as possible -->
         <script>
-            window.google = new Promise((resolve, reject) => {
+            const google = new Promise((resolve, reject) => {
                 window.setupGAPI = () => {
                     delete window.setupGAPI;
 
-                    window.gapi.load('auth2', () => {
+                    gapi.load('auth2', () => {
                         gapi.auth2.init({
                             "client_id": "<%= client_id %>",
                             "scope": "openid"
                         });
 
-                        resolve(window.gapi);
+                        resolve(gapi.auth2.getAuthInstance());
                     });
                 }
             });

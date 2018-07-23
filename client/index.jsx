@@ -4,18 +4,20 @@ import * as network from "./network";
 
 import { attach, start, initialize } from "./system";
 
-(async () => {
+(async _ => {
 	await initialize();
-	const gapi = await google;
-	const auth = gapi.auth2.getAuthInstance();
+	const auth = await google;
 
-	auth.currentUser.listen(async user => {
+	const status_change = async user => {
 		if (!user.isSignedIn()) {
 			network.disconnect();
 		} else {
 			network.connect(user.getAuthResponse().id_token);
 		}
-	});
+	}
+
+	auth.currentUser.listen(status_change);
+	status_change(auth.currentUser.get());
 
 	attach(document.getElementById("system"));
 	render(<UI auth={auth} />, document.getElementById("container"));
