@@ -34,6 +34,20 @@ app.ws('/auth', async (ws, req) => {
     } catch(e) {
         console.log(e);
         ws.close();
+        return ;
+    }
+
+    ws.on('message', (data) => {
+        console.log(data);
+    });
+
+    switch (ws.protocol) {
+        case 'cedar-bus':
+            // TODO
+            break ;
+        default:
+            ws.close();
+            return ;
     }
 });
 

@@ -1,16 +1,16 @@
 var socket = null;
 
 export function connect(token_id) {
-	const [ _, secure, host ] = /^http(s?):\/\/(.*)$/.exec(document.location.origin);
-	const path = `ws${secure}://${host}/auth?token=${token_id}`;
+	const protocol = document.location.protocol.replace("http","ws");
+	const path = `${protocol}//${document.location.host}/auth?token=${token_id}`;
 
-	var exampleSocket = new WebSocket(path, "protocolOne");
+	socket = new WebSocket(path, "cedar-bus");
 
-	exampleSocket.onopen = function (event) {
-	  exampleSocket.send("Here's some text that the server is urgently awaiting!"); 
+	socket.onopen = function (event) {
+	  socket.send("Here's some text that the server is urgently awaiting!")
 	};
 
-	exampleSocket.onclose = function () {
+	socket.onclose = function () {
 		console.log("Socket closed");
 		socket = null;
 	}
