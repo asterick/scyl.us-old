@@ -3,8 +3,8 @@ TARGET = "../assets/core.wasm"
 ROM = "../system0/code.bin"
 SYSTEM0 =  ../system0/code.bin ../system0/data.bin
 
-CFLAGS = --target=wasm32-wasi -O2 -Iinclude -I../hardware --sysroot /home/asterick/wasi-libc/sysroot
-LDFLAGS = --allow-undefined -lc --no-entry
+CFLAGS = --target=wasm32-wasi -O2 -Iinclude -I../hardware --sysroot=./wasi-libc/sysroot
+LDFLAGS = -L ./wasi-libc/sysroot/lib/wasm32-wasi --no-entry --allow-undefined -lc --export-all
 
 .phony: all clean wast system0.h
 
