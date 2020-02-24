@@ -7,15 +7,17 @@ ELFFILE = system0.elf
 CODEROM = code.bin
 DATAROM = data.bin
 
-AS = riscv32-unknown-linux-gnu-as
-CC = riscv32-unknown-linux-gnu-gcc
-LD = riscv32-unknown-linux-gnu-ld
-OBJCOPY = riscv32-unknown-linux-gnu-objcopy
+TOOLCHAIN = riscv64-unknown-elf
 
-TARGET = 
+AS = $(TOOLCHAIN)-as
+CC = $(TOOLCHAIN)-gcc
+LD = $(TOOLCHAIN)-ld
+OBJCOPY = $(TOOLCHAIN)-objcopy
+
+TARGET = -march=rv32im -mabi=ilp32
 ASFLAGS = $(TARGET)
 CFLAGS = $(TARGET) -Wall -O3 -nostdlib -I../hardware
-LDFLAGS = -T $(LD_SCRIPT)
+LDFLAGS = -m elf32lriscv -T $(LD_SCRIPT)
 
 all: $(CODEROM) $(DATAROM)
 
@@ -23,7 +25,7 @@ clean:
 	rm -Rf  $(OBJECTS) $(CODEROM) $(DATAROM) $(BINARY) $(ELFFILE)
 
 dump: $(ELFFILE)
-	riscv32-unknown-linux-gnu-objdump -x -s -d $(ELFFILE)
+	$(TOOLCHAIN)-objdump -x -s -d $(ELFFILE)
 
 $(CODEROM): $(ELFFILE)
 	$(OBJCOPY) -O binary -R ".data" $< $(CODEROM)
@@ -35,7 +37,7 @@ $(ELFFILE): $(OBJECTS) $(LD_SCRIPT)
 	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
 
 %.o: %.s
-	$(AS) -o $@ $<
+	$(AS) $(ASFLAGS) -o $@ $<
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
