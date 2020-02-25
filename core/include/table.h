@@ -8,11 +8,11 @@ enum EntryType {
 };
 
 typedef void (*InstructionCall)(uint32_t address, uint32_t word);
+typedef int32_t (*ExtractField)(uint32_t word);
 
 struct InstructionTable {
     EntryType               type;
-    int                     shift;
-    int                     mask;
+    ExtractField            extract;
     const InstructionTable* entries[0x40];
 };
 

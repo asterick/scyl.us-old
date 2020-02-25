@@ -7,7 +7,7 @@ ELFFILE = system0.elf
 CODEROM = code.bin
 DATAROM = data.bin
 
-TOOLCHAIN = riscv64-unknown-elf
+TOOLCHAIN = riscv64-unknown-linux-gnu
 
 AS = $(TOOLCHAIN)-as
 CC = $(TOOLCHAIN)-gcc

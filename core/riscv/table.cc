@@ -21,7 +21,7 @@ This is the non-compressed ISA, trim the LSBs because they are pointless
 */
 static const InstructionTable LOAD = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -29,7 +29,7 @@ static const InstructionTable LOAD = {
 
 static const InstructionTable LOAD_FP = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -37,7 +37,7 @@ static const InstructionTable LOAD_FP = {
 
 static const InstructionTable STORE = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -45,7 +45,7 @@ static const InstructionTable STORE = {
 
 static const InstructionTable STORE_FP = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -53,7 +53,7 @@ static const InstructionTable STORE_FP = {
 
 static const InstructionTable MISC_MEM = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -61,7 +61,7 @@ static const InstructionTable MISC_MEM = {
 
 static const InstructionTable OPP_IMM = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -69,7 +69,7 @@ static const InstructionTable OPP_IMM = {
 
 static const InstructionTable OPP_IMM_32 = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -77,7 +77,7 @@ static const InstructionTable OPP_IMM_32 = {
 
 static const InstructionTable AMO = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -85,7 +85,7 @@ static const InstructionTable AMO = {
 
 static const InstructionTable OP = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -93,7 +93,7 @@ static const InstructionTable OP = {
 
 static const InstructionTable OP_32 = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -101,7 +101,7 @@ static const InstructionTable OP_32 = {
 
 static const InstructionTable MADD = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -109,7 +109,7 @@ static const InstructionTable MADD = {
 
 static const InstructionTable MSUB = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -117,7 +117,7 @@ static const InstructionTable MSUB = {
 
 static const InstructionTable NMSUB = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -125,7 +125,7 @@ static const InstructionTable NMSUB = {
 
 static const InstructionTable NMADD = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -133,7 +133,7 @@ static const InstructionTable NMADD = {
 
 static const InstructionTable OP_FP = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -141,7 +141,7 @@ static const InstructionTable OP_FP = {
 
 static const InstructionTable BRANCH = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -149,7 +149,7 @@ static const InstructionTable BRANCH = {
 
 static const InstructionTable OP_IMM_32 = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -157,7 +157,7 @@ static const InstructionTable OP_IMM_32 = {
 
 static const InstructionTable JALR = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -165,7 +165,7 @@ static const InstructionTable JALR = {
 
 static const InstructionTable SYSTEM = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -173,7 +173,7 @@ static const InstructionTable SYSTEM = {
 
 static const InstructionTable RV32I_ISA = {
     ENTRY_TABLE,
-    (OPCODE_SHIFT + 2), (OPCODE_MASK >> 2),
+    FIELD_OPCODE,
     {
         &LOAD,              // 0x03
         &LOAD_FP,           // 0x07
@@ -218,7 +218,7 @@ This is the condensed ISA (currently undefined)
 */
 static const InstructionTable C0_ISA = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -226,7 +226,7 @@ static const InstructionTable C0_ISA = {
 
 static const InstructionTable C1_ISA = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -234,7 +234,7 @@ static const InstructionTable C1_ISA = {
 
 static const InstructionTable C2_ISA = {
     ENTRY_TABLE,
-    0, 0,
+    FIELD_OP,
     {
         NO_ENTRY
     }
@@ -242,7 +242,7 @@ static const InstructionTable C2_ISA = {
 
 static const InstructionTable INSTRUCTIONS = {
     ENTRY_TABLE,
-    0, 0b111,
+    FIELD_OP,
     {
         &C0_ISA, 
         &C1_ISA, 
@@ -251,12 +251,11 @@ static const InstructionTable INSTRUCTIONS = {
     }
 };
 
-
 EXPORT InstructionCall locate(uint32_t iw) {
     const InstructionTable* table = &INSTRUCTIONS;
 
     for (;;) {
-        uint32_t index = (iw >> table->shift) & table->mask;
+        uint32_t index = table->extract(iw);
         table = (const InstructionTable*) table->entries[index];
         
         switch (table->type) {
