@@ -7,7 +7,8 @@ ELFFILE = system0.elf
 CODEROM = code.bin
 DATAROM = data.bin
 
-TOOLCHAIN = riscv64-unknown-linux-gnu
+TOOLCHAIN = $(shell which riscv64-unknown-linux-gnu-gcc)
+TOOLCHAIN := $(if $(TOOLCHAIN), "riscv64-unknown-linux-gnu", "riscv64-unknown-elf")
 
 AS = $(TOOLCHAIN)-as
 CC = $(TOOLCHAIN)-gcc
