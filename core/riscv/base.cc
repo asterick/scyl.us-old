@@ -10,19 +10,23 @@
 #include "memory.h"
 
 // *****
-// ** Branch 
+// ** Immediates
 // *****
-
 EXPORT void AUIPC(uint32_t address, uint32_t word) {
-
+	write_reg(FIELD_RD(word), FIELD_IMM_U(word) + address);
 }
 
 EXPORT void LUI(uint32_t address, uint32_t word) {
-
+	write_reg(FIELD_RD(word), FIELD_IMM_U(word));
 }
+
+// *****
+// ** Branch 
+// *****
 
 EXPORT void JAL(uint32_t address, uint32_t word) {
 	write_reg(FIELD_RD(word), address + 4);
+	branch(address, FIELD_IMM_J(word) + address);
 }
 
 // ******

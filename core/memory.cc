@@ -15,7 +15,7 @@
 #include "spu.h"
 #include "cedar.h"
 
-union Registers registers;
+Registers registers;
 
 uint32_t system_ram[RAM_SIZE / sizeof(uint32_t)];
 uint32_t const system_rom[ROM_SIZE / sizeof(uint32_t)] = {

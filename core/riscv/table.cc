@@ -264,7 +264,7 @@ EXPORT InstructionCall locate(uint32_t iw) {
                 const InstructionEntry* call = (const InstructionEntry*) table;        
                 return call->funct;
             }
-            default: return (InstructionCall) -1;
+            default: return ReservedInstruction;
         }
     }
 }
