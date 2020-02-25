@@ -1,4 +1,4 @@
-OBJECTS = mips/cop0.o mips/base.o mips/table.o dma/dma.o timer/timer.o gpu/gpu.o spu/spu.o cedar/cedar.o memory.o core.o 
+OBJECTS = riscv/base.o riscv/table.o dma/dma.o timer/timer.o gpu/gpu.o spu/spu.o cedar/cedar.o memory.o core.o 
 TARGET = "../assets/core.wasm"
 ROM = "../system0/code.bin"
 SYSTEM0 =  ../system0/code.bin ../system0/data.bin

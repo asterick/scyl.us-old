@@ -7,7 +7,6 @@
 
 #include "registers.h"
 #include "memory.h"
-#include "cop0.h"
 #include "consts.h"
 
 #include "dma.h"
@@ -35,7 +34,7 @@ extern "C" {
 }
 
 uint32_t Memory::read(uint32_t logical, uint32_t code, SystemException& problem) {
-	uint32_t physical = COP0::translate(logical, false, problem);
+	uint32_t physical = translate(logical, false, problem);
 
 	if (problem != EXCEPTION_NONE) return -1;
 
@@ -67,7 +66,7 @@ uint32_t Memory::read(uint32_t logical, uint32_t code, SystemException& problem)
 }
 
 void Memory::write(uint32_t logical, uint32_t value, uint32_t mask, SystemException& problem) {
-	uint32_t physical = COP0::translate(logical, true, problem);
+	uint32_t physical = translate(logical, true, problem);
 
 	if (problem != EXCEPTION_NONE) return ;
 
@@ -106,7 +105,7 @@ EXPORT uint32_t Memory::load(uint32_t logical, uint32_t code, uint32_t pc) {
 	uint32_t value = read(logical, code, problem);
 
 	if (problem != EXCEPTION_NONE) {
-		COP0::bad_addr = logical;
+		//COP0::bad_addr = logical;
 		exception(problem, pc, 0);
 	}
 
@@ -119,7 +118,7 @@ EXPORT void Memory::store(uint32_t logical, uint32_t value, uint32_t mask, uint3
 	write(logical, value, mask, problem);
 
 	if (problem != EXCEPTION_NONE) {
-		COP0::bad_addr = logical;
+		//COP0::bad_addr = logical;
 		exception(problem, pc, 0);
 	}
 }

@@ -5,7 +5,6 @@
 #include "consts.h"
 
 #include "spu.h"
-#include "cop0.h"
 
 uint32_t SPU::read(uint32_t address) {
 	return ~0;

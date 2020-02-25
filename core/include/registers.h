@@ -19,10 +19,10 @@ union Registers {
 extern union Registers registers;
 
 // These are the functions that get inlined
-static uint32_t read_reg(int reg) {
+static inline uint32_t read_reg(int reg) {
 	return reg ? registers.regs[reg] : 0;
 }
 
-static void write_reg(int reg, uint32_t value) {
+static inline void write_reg(int reg, uint32_t value) {
 	if (reg) registers.regs[reg] = value;
 }

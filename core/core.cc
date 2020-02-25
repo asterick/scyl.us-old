@@ -6,7 +6,6 @@
 #include "imports.h"
 #include "table.h"
 
-#include "cop0.h"
 #include "memory.h"
 #include "gpu.h"
 #include "dma.h"
@@ -29,7 +28,7 @@ EXPORT void reset() {
     registers.pc = RESET_VECTOR;
     registers.clocks = 0;
 
-    COP0::reset();
+    //COP0::reset();
 }
 
 EXPORT const SystemConfiguration* getConfiguration() {
@@ -54,7 +53,7 @@ static void catch_up() {
         DMA::advance();
     } while (GPU::catchup(clock_adjust));
 
-    COP0::handle_interrupt();
+    //COP0::handle_interrupt();
 
     clock_adjust = 0;
 }

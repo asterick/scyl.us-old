@@ -9,7 +9,6 @@
 #include "consts.h"
 
 #include "dma.h"
-#include "cop0.h"
 #include "memory.h"
 //#include "registers.h"
 #include "memory.h"
@@ -77,12 +76,12 @@ static inline bool chain(DMAChannel& channel) {
       adjust_clock(clocks);
 
       if (problem != EXCEPTION_NONE) {
-         if (channel.flags & DMACR_INTERRUPT_MASK) COP0::interrupt(DMA_IRQn);
+         if (channel.flags & DMACR_INTERRUPT_MASK) ;//COP0::interrupt(DMA_IRQn);
 
          channel.flags &= ~DMACR_ACTIVE_MASK;
          channel.flags |= DMACR_EXCEPTION_MASK;
       } else if (channel.length == 0) {
-         if (channel.flags & DMACR_INTERRUPT_MASK) COP0::interrupt(DMA_IRQn);
+         if (channel.flags & DMACR_INTERRUPT_MASK) ;//COP0::interrupt(DMA_IRQn);
 
          channel.flags &= ~DMACR_ACTIVE_MASK;
       } else {
@@ -90,7 +89,7 @@ static inline bool chain(DMAChannel& channel) {
       }
    } else {
       channel.flags &= ~DMACR_ACTIVE_MASK;
-      if (channel.flags & DMACR_INTERRUPT_MASK) COP0::interrupt(DMA_IRQn);
+      if (channel.flags & DMACR_INTERRUPT_MASK) ;//COP0::interrupt(DMA_IRQn);
    }
 
    return false;
@@ -130,8 +129,8 @@ static inline bool fast_dma(DMAChannel& channel) {
    uint8_t* trg;
 
    SystemException problem = EXCEPTION_NONE;
-   uint32_t source = COP0::translate(channel.source, false, problem);
-   uint32_t target = COP0::translate(channel.target,  true, problem);
+   uint32_t source = translate(channel.source, false, problem);
+   uint32_t target = translate(channel.target,  true, problem);
 
    if (channel.source < 0xC0000000) {
       int max_length = 0x1000 - (channel.source & 0xFFF);
@@ -147,7 +146,7 @@ static inline bool fast_dma(DMAChannel& channel) {
    if (problem != EXCEPTION_NONE) {
       channel.flags |= DMACR_EXCEPTION_MASK;
       channel.flags &= ~DMACR_ACTIVE_MASK;
-      if (channel.flags & DMACR_INTERRUPT_MASK) COP0::interrupt(DMA_IRQn);
+      if (channel.flags & DMACR_INTERRUPT_MASK) ;//COP0::interrupt(DMA_IRQn);
       return true;
    }
 
@@ -254,7 +253,7 @@ void DMA::advance() {
          if (problem != EXCEPTION_NONE) {
             channel.flags |= DMACR_EXCEPTION_MASK;
             channel.flags &= ~DMACR_ACTIVE_MASK;
-            if (channel.flags & DMACR_INTERRUPT_MASK) COP0::interrupt(DMA_IRQn);
+            if (channel.flags & DMACR_INTERRUPT_MASK) ;//COP0::interrupt(DMA_IRQn);
             break ;
          }
 
