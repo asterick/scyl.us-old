@@ -36,8 +36,8 @@ static const uint32_t ALL_STATUS_BITS =
 	STATUS_BEV | STATUS_IM |
 	STATUS_KUo | STATUS_IEo | STATUS_KUp | STATUS_IEp | STATUS_KUc | STATUS_IEc;
 
-EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed);
-EXPORT void trap(int exception, int address, int delayed, int coprocessor);
+EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc);
+EXPORT void trap(int exception, int address, int coprocessor);
 
 namespace COP0 {
 	extern uint32_t status;

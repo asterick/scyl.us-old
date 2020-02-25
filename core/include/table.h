@@ -32,7 +32,7 @@ enum EntryType {
     ENTRY_INSTRUCTION
 };
 
-typedef void (*InstructionCall)(uint32_t address, uint32_t word, uint32_t delayed);
+typedef void (*InstructionCall)(uint32_t address, uint32_t word);
 
 struct InstructionTable {
     EntryType               type;

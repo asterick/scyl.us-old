@@ -100,26 +100,26 @@ void Memory::write(uint32_t logical, uint32_t value, uint32_t mask, SystemExcept
 	problem = EXCEPTION_BUSERRORDATA;
 }
 
-EXPORT uint32_t Memory::load(uint32_t logical, uint32_t code, uint32_t pc, uint32_t delayed) {
+EXPORT uint32_t Memory::load(uint32_t logical, uint32_t code, uint32_t pc) {
 	SystemException problem = EXCEPTION_NONE;
 
 	uint32_t value = read(logical, code, problem);
 
 	if (problem != EXCEPTION_NONE) {
 		COP0::bad_addr = logical;
-		exception(problem, pc, delayed, 0);
+		exception(problem, pc, 0);
 	}
 
 	return value;
 }
 
-EXPORT void Memory::store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc, uint32_t delayed) {
+EXPORT void Memory::store(uint32_t logical, uint32_t value, uint32_t mask, uint32_t pc) {
 	SystemException problem = EXCEPTION_NONE;
 
 	write(logical, value, mask, problem);
 
 	if (problem != EXCEPTION_NONE) {
 		COP0::bad_addr = logical;
-		exception(problem, pc, delayed, 0);
+		exception(problem, pc, 0);
 	}
 }

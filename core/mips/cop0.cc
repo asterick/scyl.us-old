@@ -46,7 +46,7 @@ void COP0::interrupt(SystemIRQ i) {
 
 void COP0::handle_interrupt() {
 	if ((status & STATUS_IEc) && (cause & status & STATUS_IM)) {
-		trap(EXCEPTION_INTERRUPT, registers.pc, 0, 0);
+		trap(EXCEPTION_INTERRUPT, registers.pc, 0);
 	}
 }
 
@@ -124,7 +124,7 @@ uint32_t COP0::translate(uint32_t address, uint32_t write, SystemException& prob
 	return address & 0x1FFFFFFC;
 }
 
-EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_t delayed) {
+EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc) {
 	SystemException problem = EXCEPTION_NONE;
 	uint32_t target = COP0::translate(address, write, problem);
 
@@ -135,13 +135,13 @@ EXPORT uint32_t translate(uint32_t address, uint32_t write, uint32_t pc, uint32_
 		case EXCEPTION_TLBFAILURE:
 			bad_addr = address;
 		default:
-			exception(problem, pc, delayed, 0);
+			exception(problem, pc, 0);
 		case EXCEPTION_NONE:
 			return target;
 	}
 }
 
-EXPORT void trap(int exception, int address, int delayed, int coprocessor) {
+EXPORT void trap(int exception, int address, int coprocessor) {
 	// Preserve return address
 	epc = address;
 
@@ -150,7 +150,6 @@ EXPORT void trap(int exception, int address, int delayed, int coprocessor) {
 
 	// Set our cause register
 	cause = (cause & 0x0000FF00) |
-		(delayed ? 0x80000000 : 0) |
 		(coprocessor << 28) |
 		(exception << 2);
 
@@ -175,9 +174,9 @@ EXPORT void trap(int exception, int address, int delayed, int coprocessor) {
 // ** Co-Processor Move registers
 // ******
 
-EXPORT void MFC0(uint32_t address, uint32_t word, uint32_t delayed) {
+EXPORT void MFC0(uint32_t address, uint32_t word) {
 	if (!cop_enabled(0)) {
-		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
+		exception(EXCEPTION_COPROCESSORUNUSABLE, address, 0);
 	}
 
 	uint32_t value;
@@ -223,9 +222,9 @@ EXPORT void MFC0(uint32_t address, uint32_t word, uint32_t delayed) {
 	write_reg(FIELD_RT(word), value);
 }
 
-EXPORT void MTC0(uint32_t address, uint32_t word, uint32_t delayed) {
+EXPORT void MTC0(uint32_t address, uint32_t word) {
 	if (!cop_enabled(0)) {
-		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
+		exception(EXCEPTION_COPROCESSORUNUSABLE, address, 0);
 	}
 
 	uint32_t value = read_reg(FIELD_RT(word));
@@ -253,9 +252,9 @@ EXPORT void MTC0(uint32_t address, uint32_t word, uint32_t delayed) {
 // ** Co-Processor instructions
 // ******
 
-EXPORT void RFE(uint32_t address, uint32_t word, uint32_t delayed) {
+EXPORT void RFE(uint32_t address, uint32_t word) {
 	if (!cop_enabled(0)) {
-		exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
+		exception(EXCEPTION_COPROCESSORUNUSABLE, address, 0);
 	}
 
 	status = (status & ~0xF) | ((status >> 2) & 0xF);
@@ -264,18 +263,18 @@ EXPORT void RFE(uint32_t address, uint32_t word, uint32_t delayed) {
 // ***********
 // ** Unused move instructions
 // ***********
-EXPORT void CFC0(uint32_t address, uint32_t word, uint32_t delayed) {
-	exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
+EXPORT void CFC0(uint32_t address, uint32_t word) {
+	exception(EXCEPTION_COPROCESSORUNUSABLE, address, 0);
 }
 
-EXPORT void CTC0(uint32_t address, uint32_t word, uint32_t delayed) {
-	exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
+EXPORT void CTC0(uint32_t address, uint32_t word) {
+	exception(EXCEPTION_COPROCESSORUNUSABLE, address, 0);
 }
 
-EXPORT void LWC0(uint32_t address, uint32_t word, uint32_t delayed) {
-	exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
+EXPORT void LWC0(uint32_t address, uint32_t word) {
+	exception(EXCEPTION_COPROCESSORUNUSABLE, address, 0);
 }
 
-EXPORT void SWC0(uint32_t address, uint32_t word, uint32_t delayed) {
-	exception(EXCEPTION_COPROCESSORUNUSABLE, address, delayed, 0);
+EXPORT void SWC0(uint32_t address, uint32_t word) {
+	exception(EXCEPTION_COPROCESSORUNUSABLE, address, 0);
 }

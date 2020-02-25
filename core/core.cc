@@ -40,11 +40,11 @@ EXPORT const SystemConfiguration* getConfiguration() {
     return &cfg;
 }
 
-EXPORT void execute(uint32_t pc, bool delayed) {
-    const uint32_t data = Memory::load(pc, true, pc, delayed);
+EXPORT void execute(uint32_t pc) {
+    const uint32_t data = Memory::load(pc, true, pc);
     const InstructionCall call = locate(data);
 
-    call(pc, data, delayed);
+    call(pc, data);
 }
 
 static int clock_adjust = 0;
@@ -64,7 +64,7 @@ EXPORT void step_execute() {
     registers.pc += 4;
 
     catch_up();
-    execute(start_pc, false);
+    execute(start_pc);
 }
 
 EXPORT void block_execute(uint32_t start, uint32_t end) {
