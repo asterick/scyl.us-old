@@ -177,36 +177,36 @@ static const InstructionTable RV32I_ISA = {
     {
         &LOAD,              // 0x03
         &LOAD_FP,           // 0x07
-        NO_ENTRY,          // 0x0B
+        NO_ENTRY,           // 0x0B
         &MISC_MEM,          // 0x0F
         &OPP_IMM,           // 0x13
         INSTRUCTION(AUIPC), // 0x17
         &OP_IMM_32,         // 0x1B
-        NO_ENTRY,          // 0x1F
+        NO_ENTRY,           // 0x1F
 
         &STORE,             // 0x23
         &STORE_FP,          // 0x27
-        NO_ENTRY,          // 0x2B
+        NO_ENTRY,           // 0x2B
         &AMO,               // 0x2F
         &OP,                // 0x33
         INSTRUCTION(LUI),   // 0x37
         &OP_32,             // 0x3B
-        NO_ENTRY,          // 0x3F
+        NO_ENTRY,           // 0x3F
 
-        &MADD,               // 0x43
-        &MSUB,               // 0x47
-        &NMSUB,              // 0x4B
-        &NMADD,              // 0x4F
-        &OP_FP,              // 0x53
+        &MADD,              // 0x43
+        &MSUB,              // 0x47
+        &NMSUB,             // 0x4B
+        &NMADD,             // 0x4F
+        &OP_FP,             // 0x53
         NO_ENTRY,           // 0x57
         NO_ENTRY,           // 0x5B
         NO_ENTRY,           // 0x5F
 
-        &BRANCH,             // 0x63
-        &JALR,               // 0x67
+        &BRANCH,            // 0x63
+        &JALR,              // 0x67
         NO_ENTRY,           // 0x6B
         INSTRUCTION(JAL),   // 0x6F
-        &SYSTEM,             // 0x73
+        &SYSTEM,            // 0x73
         NO_ENTRY,           // 0x77
         NO_ENTRY,           // 0x7B
         NO_ENTRY            // 0x7F

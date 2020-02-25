@@ -5,6 +5,5 @@ extern "C" {
     void LUI(uint32_t address, uint32_t word);
     void JAL(uint32_t address, uint32_t word);
 
-
     void ReservedInstruction(uint32_t address, uint32_t word);
 }
