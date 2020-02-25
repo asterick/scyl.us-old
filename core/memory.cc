@@ -106,7 +106,7 @@ EXPORT uint32_t Memory::load(uint32_t logical, uint32_t code, uint32_t pc) {
 
 	if (problem != EXCEPTION_NONE) {
 		//COP0::bad_addr = logical;
-		exception(problem, pc, 0);
+		exception(problem, pc);
 	}
 
 	return value;
@@ -119,6 +119,6 @@ EXPORT void Memory::store(uint32_t logical, uint32_t value, uint32_t mask, uint3
 
 	if (problem != EXCEPTION_NONE) {
 		//COP0::bad_addr = logical;
-		exception(problem, pc, 0);
+		exception(problem, pc);
 	}
 }

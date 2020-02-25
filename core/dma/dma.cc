@@ -10,9 +10,10 @@
 
 #include "dma.h"
 #include "memory.h"
-//#include "registers.h"
+#include "registers.h"
 #include "memory.h"
 #include "gpu.h"
+#include "hart.h"
 
 #define WORD_LENGTH (sizeof(channels) / sizeof(uint32_t))
 
@@ -76,12 +77,12 @@ static inline bool chain(DMAChannel& channel) {
       adjust_clock(clocks);
 
       if (problem != EXCEPTION_NONE) {
-         if (channel.flags & DMACR_INTERRUPT_MASK) ;//COP0::interrupt(DMA_IRQn);
+         if (channel.flags & DMACR_INTERRUPT_MASK) HART::interrupt(DMA_IRQn);
 
          channel.flags &= ~DMACR_ACTIVE_MASK;
          channel.flags |= DMACR_EXCEPTION_MASK;
       } else if (channel.length == 0) {
-         if (channel.flags & DMACR_INTERRUPT_MASK) ;//COP0::interrupt(DMA_IRQn);
+         if (channel.flags & DMACR_INTERRUPT_MASK) HART::interrupt(DMA_IRQn);
 
          channel.flags &= ~DMACR_ACTIVE_MASK;
       } else {
@@ -89,7 +90,7 @@ static inline bool chain(DMAChannel& channel) {
       }
    } else {
       channel.flags &= ~DMACR_ACTIVE_MASK;
-      if (channel.flags & DMACR_INTERRUPT_MASK) ;//COP0::interrupt(DMA_IRQn);
+      if (channel.flags & DMACR_INTERRUPT_MASK) HART::interrupt(DMA_IRQn);
    }
 
    return false;
@@ -146,7 +147,7 @@ static inline bool fast_dma(DMAChannel& channel) {
    if (problem != EXCEPTION_NONE) {
       channel.flags |= DMACR_EXCEPTION_MASK;
       channel.flags &= ~DMACR_ACTIVE_MASK;
-      if (channel.flags & DMACR_INTERRUPT_MASK) ;//COP0::interrupt(DMA_IRQn);
+      if (channel.flags & DMACR_INTERRUPT_MASK) HART::interrupt(DMA_IRQn);
       return true;
    }
 
@@ -253,7 +254,7 @@ void DMA::advance() {
          if (problem != EXCEPTION_NONE) {
             channel.flags |= DMACR_EXCEPTION_MASK;
             channel.flags &= ~DMACR_ACTIVE_MASK;
-            if (channel.flags & DMACR_INTERRUPT_MASK) ;//COP0::interrupt(DMA_IRQn);
+            if (channel.flags & DMACR_INTERRUPT_MASK) HART::interrupt(DMA_IRQn);
             break ;
          }
 

@@ -13,7 +13,7 @@ extern "C" {
 	void invalidate(uint32_t physical);
 }
 
-EXPORT uint32_t exception(uint32_t code, uint32_t pc, uint32_t cop);
+EXPORT uint32_t exception(uint32_t code, uint32_t pc);
 EXPORT uint32_t translate(uint32_t logical, bool code, SystemException& problem);
 EXPORT void adjust_clock(uint32_t cycles);
 EXPORT void branch(uint32_t pc, uint32_t target);

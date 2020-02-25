@@ -30,5 +30,5 @@ EXPORT void JAL(uint32_t address, uint32_t word) {
 // ******
 
 EXPORT void ReservedInstruction(uint32_t address, uint32_t word) {
-    exception(EXCEPTION_RESERVEDINSTRUCTION, address, 0);
+    exception(EXCEPTION_RESERVEDINSTRUCTION, address);
 }
