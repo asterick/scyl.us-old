@@ -88,7 +88,6 @@ void adjust_clock(uint32_t cycles) {
 }
 
 EXPORT void branch(uint32_t pc, uint32_t end) {
-    // This eats a cycle for a branch delay slot
-    adjust_clock((pc - start_pc + 8) >> 2); 
+    adjust_clock((pc - start_pc + 4) >> 2); 
     registers.pc = end;
 }

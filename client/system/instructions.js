@@ -9,6 +9,7 @@ import Import from "../../dynast/import";
 // large an instruction chain is, may have to use trampolines later
 
 var _import_section;
+var _imports;
 var _function_base;
 var _function_names;
 var _templates;
@@ -95,6 +96,13 @@ export function initialize(ab) {
 		});	
 	});
 
+	_imports = {};
+	var index = 0;
+	_import_section.forEach((imp, i) => {
+		if (imp.type.type !== 'func_type') return ;
+		_imports[imp.field] = index++;
+	});
+
 	// Templatize things we will use
 	const template_names = ["block_execute", "branch"].concat(Object.keys(instructions));
 	_templates = {};
@@ -125,8 +133,17 @@ function template(func, name) {
 		switch (op) {
 		case "return":
 			modified.unshift( { template: 'tailcall' } );
-			i--;
-			continue ;
+			break ;
+
+		case "call":
+			// Implicit return after a branch
+			if (term.function_index === _imports.branch) {
+				modified.unshift(term);
+				modified.unshift("return");
+				i--;
+				continue ;
+			}
+			break ;
 
 		case "get_local":
 			if (term.index < parameters.length) {
@@ -178,29 +195,32 @@ function template(func, name) {
 }
 
 function process(template, ... values) {
-	const body = template.code.reduce((acc, k) => {
+	const tailcall = values[2];
+
+	const body = template.code.map((k) => {
 		if (k.template === undefined) {
-			acc.push(k);
-			return acc;
+			return k;
 		}
 
 		switch (k.template) {
 		case 'tailcall':
-			let tailcall = values[3];
-
-			if (tailcall) acc.push({ op: 'call', function_index: tailcall });
-			acc.push("return");
-
-			return acc;
+			if (tailcall) {
+				return { op: 'call', function_index: tailcall };
+			} else {
+				return "nop";
+			}
 
 		case 'argument':
-			acc.push({ op: 'i32.const', value: values[k.index] >> 0 });
-			return acc ;
+			return { op: 'i32.const', value: values[k.index] >> 0 };
 
 		default:
 			throw k;
 		}
-	}, []);
+	});
+
+	if (tailcall) {
+		funct.code.push({ op: 'call', function_index: tailcall });
+	}
 
 	return {
 		type: { type: "func_type", parameters: [], returns: [] },
@@ -211,7 +231,6 @@ function process(template, ... values) {
 
 export function compile(start, length) {
 	const table = [];
-
 	const block_end = start + length * 4;
 
 	let functions = [
@@ -220,20 +239,15 @@ export function compile(start, length) {
 	];
 
 	// Prime function table with the "Tail"
-	var tailcall = _function_base + 1;
-	for (var i = length - 1; i >= 0; i--) {
-		const pc = start+i*4;
+	for (var i = 0; i < length; i++) {
+		const pc = start + i*4;
 		const word = load(pc);
-		const op_index = exports.locate(word);
+		const template = _templates[_function_names[exports.locate(word)]];
+		const funct = process(template, pc, word, _function_base + i + 1);
 
-		const op_name = _function_names[op_index];
-		const template = _templates[op_name];
+		functions.push(funct);
 
-		const funct = process(template, pc, word, tailcall);
-		funct.code.push({ op: 'call', function_index: tailcall });
-
-		table[i] = 
-		tailcall = _function_base + functions.push(funct) - 1;
+		table[i] = _function_base + i;
 	}
 
 	const module = {
