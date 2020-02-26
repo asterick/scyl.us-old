@@ -1,5 +1,3 @@
-#define EXTERN
-
 #include <stdint.h>
 
 #include "compiler.h"
@@ -9,6 +7,7 @@
 #include "memory.h"
 #include "gpu.h"
 #include "dma.h"
+#include "hart.h"
 
 #include "registers.h"
 #include "system.h"
@@ -19,6 +18,7 @@ struct SystemConfiguration {
 
 static const int32_t MAX_CLOCK_LAG = 60000;
 static uint32_t start_pc;
+static int clock_adjust = 0;
 
 // *******
 // ** Insertion point
@@ -28,7 +28,7 @@ EXPORT void reset() {
     registers.pc = RESET_VECTOR;
     registers.clocks = 0;
 
-    //COP0::reset();
+    HART::reset();
 }
 
 EXPORT const SystemConfiguration* getConfiguration() {
@@ -45,8 +45,6 @@ EXPORT void execute(uint32_t pc) {
 
     call(pc, data);
 }
-
-static int clock_adjust = 0;
 
 static void catch_up() {
     do {

@@ -9,14 +9,9 @@ import Import from "../../dynast/import";
 // large an instruction chain is, may have to use trampolines later
 
 var _import_section;
-var _imports;
-var _functions;
 var _function_base;
 var _function_names;
 var _templates;
-
-var _block_start;
-var _block_end;
 
 export function disassemble(word, address) {
 	const op_index = exports.locate(word);
@@ -100,13 +95,6 @@ export function initialize(ab) {
 		});	
 	});
 
-	_imports = {};
-	var index = 0;
-	_import_section.forEach((imp, i) => {
-		if (imp.type.type !== 'func_type') return ;
-		_imports[imp.field] = index++;
-	});
-
 	// Templatize things we will use
 	const template_names = ["block_execute", "branch"].concat(Object.keys(instructions));
 	_templates = {};
@@ -139,33 +127,6 @@ function template(func, name) {
 			modified.unshift( { template: 'tailcall' } );
 			i--;
 			continue ;
-
-		case "call":
-			if (term.function_index === _imports.execute) {
-				let stack = -2;
-
-				while (stack != 0) {
-					const term = code[--i];
-					const op = (typeof term === 'string') ? term : term.op;
-
-					switch(op) {
-					case 'get_local':
-					case 'i32.load':
-					case 'i32.const':
-						stack++;
-						break ;
-					case 'i32.add':
-						stack--;
-						break ;
-					default:
-						throw new Error(`Cannot unroll stack for op ${op}`);
-					}
-				}
-
-				modified.unshift( { template: 'delay' } );
-				continue ;
-			}
-			break ;
 
 		case "get_local":
 			if (term.index < parameters.length) {
@@ -232,22 +193,6 @@ function process(template, ... values) {
 
 			return acc;
 
-		case 'delay':
-			let pc = values[0];
-			let delayed = values[2];
-
-			if (delayed) {
-				acc.push("unreachable");
-			}
-
-			// call the delayed branch slot
-			acc.push(
-				{ op: 'call', function_index: instruction(pc + 4, true) },
-				"return"
-			);
-
-			return acc;
-
 		case 'argument':
 			acc.push({ op: 'i32.const', value: values[k.index] >> 0 });
 			return acc ;
@@ -264,59 +209,31 @@ function process(template, ... values) {
 	};
 }
 
-function fallback(pc, delayed) {
-	const body = delayed ? [] : process(_templates.branch, pc, pc + 4).code;
-
-	return {
-		type: { type: "func_type", parameters: [], returns: [] },
-		locals: _templates.branch.locals,
-		code: body.concat(
-			{ op: 'i32.const', value: pc >> 0 },
-			{ op: 'i32.const', value: delayed ? 1 : 0 },
-	        { op: "call", function_index: _imports.execute },
-		)
-	};
-}
-
-function instruction(pc, delayed, tailcall = null) {
-	var funct = null;
-
-	// Do not assemble past block end (fallback to intepret)
-	if (pc < _block_end && pc >= _block_start) {
-		const word = load(pc);
-		const op_index = exports.locate(word);
-
-		if (op_index >= 0) {
-			const op_name = _function_names[op_index];
-			const template = _templates[op_name];
-
-			funct = process(template, pc, word, delayed, tailcall);
-
-			if (tailcall !== null) {
-				funct.code.push({ op: 'call', function_index: tailcall });
-			}
-		}
-	}
-
-	return _function_base + _functions.push(funct || fallback(pc, delayed)) - 1;
-}
-
 export function compile(start, length) {
 	const table = [];
 
-	_block_start = start;
-	_block_end = start + length * 4;
+	const block_end = start + length * 4;
 
-	_functions = [
-		process(_templates.block_execute, _block_start, _block_end), // Execute body
-		process(_templates.branch, _block_end - 4, _block_end) // Finalize call
+	let functions = [
+		process(_templates.block_execute, start, block_end), // Execute body
+		process(_templates.branch, block_end - 4, block_end) // Finalize call
 	];
 
 	// Prime function table with the "Tail"
-	var previous = _function_base + 1;
+	var tailcall = _function_base + 1;
 	for (var i = length - 1; i >= 0; i--) {
-		table[i] =
-		previous = instruction(start+i*4, false, previous);
+		const pc = start+i*4;
+		const word = load(pc);
+		const op_index = exports.locate(word);
+
+		const op_name = _function_names[op_index];
+		const template = _templates[op_name];
+
+		const funct = process(template, pc, word, tailcall);
+		funct.code.push({ op: 'call', function_index: tailcall });
+
+		table[i] = 
+		tailcall = _function_base + functions.push(funct) - 1;
 	}
 
 	const module = {
@@ -324,7 +241,7 @@ export function compile(start, length) {
 		version: 1,
 
 		import_section: _import_section,
-		function_section: _functions,
+		function_section: functions,
 
 		export_section: [{
 			"field": "block",
@@ -351,8 +268,6 @@ export function compile(start, length) {
 			}
 		}]
 	};
-
-	_functions = null;
 
 	return Export(module);
 }
