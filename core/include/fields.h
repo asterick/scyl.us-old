@@ -14,12 +14,8 @@ static inline int32_t pick(uint32_t word, uint32_t from, uint32_t to, uint32_t b
     }
 }
 
-static inline int32_t FIELD_OP(uint32_t word) {
-    return pick(word, 0, 0, 2);
-}
-
 static inline int32_t FIELD_OPCODE(uint32_t word) {
-    return pick(word, 2, 0, 5);
+    return pick(word, 0, 0, 7);
 }
 
 static inline int32_t FIELD_FUNCT3(uint32_t word) {

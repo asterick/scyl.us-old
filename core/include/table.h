@@ -13,7 +13,7 @@ typedef int32_t (*ExtractField)(uint32_t word);
 struct InstructionTable {
     EntryType               type;
     ExtractField            extract;
-    const InstructionTable* entries[0x40];
+    const InstructionTable* entries[0x80];
 };
 
 struct InstructionEntry {
