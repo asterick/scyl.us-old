@@ -51,7 +51,7 @@ static void catch_up() {
         DMA::advance();
     } while (GPU::catchup(clock_adjust));
 
-    //COP0::handle_interrupt();
+    HART::handle_interrupt();
 
     clock_adjust = 0;
 }

@@ -10,3 +10,7 @@ void HART::reset() {
 void HART::interrupt(SystemIRQ irq) {
 	// TODO
 }
+
+void HART::handle_interrupt() {
+
+}

@@ -47,8 +47,15 @@ This is the non-compressed ISA, trim the LSBs because they are pointless
 */
 static const InstructionTable LOAD = {
     ENTRY_TABLE,
-    FIELD_OPCODE,
+    FIELD_FUNCT3,
     {
+        INSTRUCTION(LB),
+        INSTRUCTION(LH),
+        INSTRUCTION(LW),
+        NO_ENTRY,
+        INSTRUCTION(LBU),
+        INSTRUCTION(LHU),
+        NO_ENTRY,
         NO_ENTRY
     }
 };
@@ -63,8 +70,15 @@ static const InstructionTable LOAD_FP = {
 
 static const InstructionTable STORE = {
     ENTRY_TABLE,
-    FIELD_OPCODE,
+    FIELD_FUNCT3,
     {
+        INSTRUCTION(SB),
+        INSTRUCTION(SH),
+        INSTRUCTION(SW),
+        NO_ENTRY,
+        NO_ENTRY,
+        NO_ENTRY,
+        NO_ENTRY,
         NO_ENTRY
     }
 };
@@ -87,9 +101,16 @@ static const InstructionTable MISC_MEM = {
 
 static const InstructionTable OPP_IMM = {
     ENTRY_TABLE,
-    FIELD_OPCODE,
+    FIELD_FUNCT3,
     {
-        NO_ENTRY
+        INSTRUCTION(ADDI),
+        NO_ENTRY,
+        INSTRUCTION(SLTI),
+        INSTRUCTION(SLTIU),
+        INSTRUCTION(XORI),
+        NO_ENTRY,
+        INSTRUCTION(ORI),
+        INSTRUCTION(ANDI),
     }
 };
 
@@ -167,9 +188,16 @@ static const InstructionTable OP_FP = {
 
 static const InstructionTable BRANCH = {
     ENTRY_TABLE,
-    FIELD_OPCODE,
+    FIELD_FUNCT3,
     {
-        NO_ENTRY
+        INSTRUCTION(BEQ),
+        INSTRUCTION(BNE),
+        NO_ENTRY,
+        NO_ENTRY,
+        INSTRUCTION(BLT),
+        INSTRUCTION(BGE),
+        INSTRUCTION(BLTU),
+        INSTRUCTION(BGEU)
     }
 };
 
