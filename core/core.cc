@@ -1,15 +1,13 @@
-#define EXTERN
-
 #include <stdint.h>
 
 #include "compiler.h"
 #include "imports.h"
 #include "table.h"
 
-#include "cop0.h"
 #include "memory.h"
 #include "gpu.h"
 #include "dma.h"
+#include "hart.h"
 
 #include "registers.h"
 #include "system.h"
@@ -20,6 +18,7 @@ struct SystemConfiguration {
 
 static const int32_t MAX_CLOCK_LAG = 60000;
 static uint32_t start_pc;
+static int clock_adjust = 0;
 
 // *******
 // ** Insertion point
@@ -29,7 +28,7 @@ EXPORT void reset() {
     registers.pc = RESET_VECTOR;
     registers.clocks = 0;
 
-    COP0::reset();
+    HART::reset();
 }
 
 EXPORT const SystemConfiguration* getConfiguration() {
@@ -40,21 +39,19 @@ EXPORT const SystemConfiguration* getConfiguration() {
     return &cfg;
 }
 
-EXPORT void execute(uint32_t pc, bool delayed) {
-    const uint32_t data = Memory::load(pc, true, pc, delayed);
+EXPORT void execute(uint32_t pc) {
+    const uint32_t data = Memory::load(pc, true, pc);
     const InstructionCall call = locate(data);
 
-    call(pc, data, delayed);
+    call(pc, data);
 }
-
-static int clock_adjust = 0;
 
 static void catch_up() {
     do {
         DMA::advance();
     } while (GPU::catchup(clock_adjust));
 
-    COP0::handle_interrupt();
+    HART::handle_interrupt();
 
     clock_adjust = 0;
 }
@@ -64,7 +61,7 @@ EXPORT void step_execute() {
     registers.pc += 4;
 
     catch_up();
-    execute(start_pc, false);
+    execute(start_pc);
 }
 
 EXPORT void block_execute(uint32_t start, uint32_t end) {
@@ -91,7 +88,6 @@ void adjust_clock(uint32_t cycles) {
 }
 
 EXPORT void branch(uint32_t pc, uint32_t end) {
-    // This eats a cycle for a branch delay slot
-    adjust_clock((pc - start_pc + 8) >> 2); 
+    adjust_clock((pc - start_pc + 4) >> 2); 
     registers.pc = end;
 }

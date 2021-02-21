@@ -4,24 +4,13 @@ export const SYSTEM_CLOCK		= 15000000;				// 15mhz core clock
 
 export const Registers = [
  	// Standard r0-r31
-	"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
-	  "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
-	  "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
-	  "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra",
+	"zero", "ra",  "sp",  "gp", "tp", "t0", "t1", "t2",
+	  "s0", "s1",  "a0",  "a1", "a2", "a3", "a4", "a5",
+	  "a6", "a7",  "s2",  "s3", "s4", "s5", "s6", "s7",
+	  "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
 
 	// These are special upper registers
-	  "lo", "hi", "pc"
-];
-
-export const COP0Registers = [
-  	 "c0_index", "c0_random", "c0_entrylo",  "cop0reg3",
-   "c0_context",  "cop0reg5",   "cop0reg6",  "cop0reg7",
-	 "c0_vaddr",  "cop0reg9", "c0_entryhi", "cop0reg11",
-    "c0_status",  "c0_cause",     "c0_epc",   "c0_prid",
-	"cop0reg16", "cop0reg17",  "cop0reg18", "cop0reg19",
-	"cop0reg20", "cop0reg21",  "cop0reg22", "cop0reg23",
-	"cop0reg24", "cop0reg25",  "cop0reg26", "cop0reg27",
-	"cop0reg28", "cop0reg29",  "cop0reg30", "cop0reg31"
+	  "pc"
 ];
 
 export const Exceptions = {

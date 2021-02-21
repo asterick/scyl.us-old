@@ -5,7 +5,6 @@
 #include "consts.h"
 
 #include "timer.h"
-#include "cop0.h"
 
 uint32_t Timer::read(uint32_t address) {
 	return ~0;

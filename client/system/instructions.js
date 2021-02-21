@@ -10,13 +10,9 @@ import Import from "../../dynast/import";
 
 var _import_section;
 var _imports;
-var _functions;
 var _function_base;
 var _function_names;
 var _templates;
-
-var _block_start;
-var _block_end;
 
 export function disassemble(word, address) {
 	const op_index = exports.locate(word);
@@ -137,32 +133,14 @@ function template(func, name) {
 		switch (op) {
 		case "return":
 			modified.unshift( { template: 'tailcall' } );
-			i--;
-			continue ;
+			break ;
 
 		case "call":
-			if (term.function_index === _imports.execute) {
-				let stack = -2;
-
-				while (stack != 0) {
-					const term = code[--i];
-					const op = (typeof term === 'string') ? term : term.op;
-
-					switch(op) {
-					case 'get_local':
-					case 'i32.load':
-					case 'i32.const':
-						stack++;
-						break ;
-					case 'i32.add':
-						stack--;
-						break ;
-					default:
-						throw new Error(`Cannot unroll stack for op ${op}`);
-					}
-				}
-
-				modified.unshift( { template: 'delay' } );
+			// Implicit return after a branch
+			if (term.function_index === _imports.branch) {
+				modified.unshift(term);
+				modified.unshift("return");
+				i--;
 				continue ;
 			}
 			break ;
@@ -217,45 +195,32 @@ function template(func, name) {
 }
 
 function process(template, ... values) {
-	const body = template.code.reduce((acc, k) => {
+	const tailcall = values[2];
+
+	const body = template.code.map((k) => {
 		if (k.template === undefined) {
-			acc.push(k);
-			return acc;
+			return k;
 		}
 
 		switch (k.template) {
 		case 'tailcall':
-			let tailcall = values[3];
-
-			if (tailcall) acc.push({ op: 'call', function_index: tailcall });
-			acc.push("return");
-
-			return acc;
-
-		case 'delay':
-			let pc = values[0];
-			let delayed = values[2];
-
-			if (delayed) {
-				acc.push("unreachable");
+			if (tailcall) {
+				return { op: 'call', function_index: tailcall };
+			} else {
+				return "nop";
 			}
 
-			// call the delayed branch slot
-			acc.push(
-				{ op: 'call', function_index: instruction(pc + 4, true) },
-				"return"
-			);
-
-			return acc;
-
 		case 'argument':
-			acc.push({ op: 'i32.const', value: values[k.index] >> 0 });
-			return acc ;
+			return { op: 'i32.const', value: values[k.index] >> 0 };
 
 		default:
 			throw k;
 		}
-	}, []);
+	});
+
+	if (tailcall) {
+		funct.code.push({ op: 'call', function_index: tailcall });
+	}
 
 	return {
 		type: { type: "func_type", parameters: [], returns: [] },
@@ -264,59 +229,25 @@ function process(template, ... values) {
 	};
 }
 
-function fallback(pc, delayed) {
-	const body = delayed ? [] : process(_templates.branch, pc, pc + 4).code;
-
-	return {
-		type: { type: "func_type", parameters: [], returns: [] },
-		locals: _templates.branch.locals,
-		code: body.concat(
-			{ op: 'i32.const', value: pc >> 0 },
-			{ op: 'i32.const', value: delayed ? 1 : 0 },
-	        { op: "call", function_index: _imports.execute },
-		)
-	};
-}
-
-function instruction(pc, delayed, tailcall = null) {
-	var funct = null;
-
-	// Do not assemble past block end (fallback to intepret)
-	if (pc < _block_end && pc >= _block_start) {
-		const word = load(pc);
-		const op_index = exports.locate(word);
-
-		if (op_index >= 0) {
-			const op_name = _function_names[op_index];
-			const template = _templates[op_name];
-
-			funct = process(template, pc, word, delayed, tailcall);
-
-			if (tailcall !== null) {
-				funct.code.push({ op: 'call', function_index: tailcall });
-			}
-		}
-	}
-
-	return _function_base + _functions.push(funct || fallback(pc, delayed)) - 1;
-}
-
 export function compile(start, length) {
 	const table = [];
+	const block_end = start + length * 4;
 
-	_block_start = start;
-	_block_end = start + length * 4;
-
-	_functions = [
-		process(_templates.block_execute, _block_start, _block_end), // Execute body
-		process(_templates.branch, _block_end - 4, _block_end) // Finalize call
+	let functions = [
+		process(_templates.block_execute, start, block_end), // Execute body
+		process(_templates.branch, block_end - 4, block_end) // Finalize call
 	];
 
 	// Prime function table with the "Tail"
-	var previous = _function_base + 1;
-	for (var i = length - 1; i >= 0; i--) {
-		table[i] =
-		previous = instruction(start+i*4, false, previous);
+	for (var i = 0; i < length; i++) {
+		const pc = start + i*4;
+		const word = load(pc);
+		const template = _templates[_function_names[exports.locate(word)]];
+		const funct = process(template, pc, word, _function_base + i + 1);
+
+		functions.push(funct);
+
+		table[i] = _function_base + i;
 	}
 
 	const module = {
@@ -324,7 +255,7 @@ export function compile(start, length) {
 		version: 1,
 
 		import_section: _import_section,
-		function_section: _functions,
+		function_section: functions,
 
 		export_section: [{
 			"field": "block",
@@ -351,8 +282,6 @@ export function compile(start, length) {
 			}
 		}]
 	};
-
-	_functions = null;
 
 	return Export(module);
 }

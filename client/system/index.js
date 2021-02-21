@@ -48,8 +48,8 @@ const _environment = {
 	},
 
 	// Glue
-	exception: (code, pc, delayed, cop) => {
-		throw new Exception(code, pc, delayed, cop);
+	exception: (code, pc) => {
+		throw new Exception(code, pc);
 	},
 	invalidate: (physical, logical) => {
 		// Invalidate cache line
@@ -160,7 +160,7 @@ export function block_execute () {
 			funct.code();
 		} catch (e) {
 			if (e instanceof Exception) {
-				exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
+				exports.trap(e.exception, e.pc);
 			} else {
 				throw e;
 			}
@@ -176,7 +176,7 @@ export function step_execute () {
 		exports.step_execute();
 	} catch (e) {
 		if (e instanceof Exception) {
-			exports.trap(e.exception, e.pc, e.delayed, e.coprocessor);
+			exports.trap(e.exception, e.pc);
 		} else {
 			throw e;
 		}

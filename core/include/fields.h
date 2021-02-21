@@ -2,39 +2,75 @@
 
 #include <stdint.h>
 
-static inline uint32_t FIELD_OPCODE(uint32_t word) {
-    return ((word >> 26) & 0b111111);
+static inline int32_t pick(uint32_t word, uint32_t from, uint32_t to, uint32_t bits) {
+    const uint32_t mask = ((1 << bits) - 1) << to;
+
+    if (from > to) {
+        return (word >> (from - to)) & mask;
+    } else if (from < to) {
+        return (word << (to - from)) & mask;
+    } else {
+        return word & mask;
+    }
 }
-static inline uint32_t FIELD_FUNCT(uint32_t word) {
-    return (word & 0b111111);
+
+static inline int32_t FIELD_OPCODE(uint32_t word) {
+    return pick(word, 0, 0, 7);
 }
-static inline uint32_t FIELD_SHAMT(uint32_t word) {
-    return ((word >> 6) & 0b11111);
+
+static inline int32_t FIELD_FUNCT3(uint32_t word) {
+    return pick(word, 12, 0, 3);
 }
-static inline uint32_t FIELD_RD(uint32_t word) {
-    return ((word >> 11) & 0b11111);
+
+static inline int32_t FIELD_FUNCT7(uint32_t word) {
+    return pick(word, 25, 0, 7);
 }
-static inline uint32_t FIELD_RT(uint32_t word) {
-    return ((word >> 16) & 0b11111);
+
+static inline int32_t FIELD_RD(uint32_t word) {
+    return pick(word, 7, 0, 5);
 }
-static inline uint32_t FIELD_RS(uint32_t word) {
-    return ((word >> 21) & 0b11111);
+
+static inline int32_t FIELD_RS1(uint32_t word) {
+    return pick(word, 15, 0, 5);
 }
-static inline uint32_t FIELD_IMM16(uint32_t word) {
-    return (word & 0xFFFF);
+
+static inline int32_t FIELD_RS2(uint32_t word) {
+    return pick(word, 20, 0, 5);
 }
-static inline uint32_t FIELD_SIMM16(uint32_t word) {
-    return (((int32_t)word << 16) >> 16);
+
+static inline int32_t FIELD_IMM_I(uint32_t word) {
+    return  ((word & 0x80000000) ? 0xFFFFFC00 : 0)
+            | pick(word, 20,  0, 1)
+            | pick(word, 21,  1, 4)
+            | pick(word, 25,  5, 5)
+            ;
 }
-static inline uint32_t FIELD_IMM20(uint32_t word) {
-    return ((word >> 6) & 0xFFFFF);
+
+static inline int32_t FIELD_IMM_S(uint32_t word) {
+    return  ((word & 0x80000000) ? 0xFFFFFC00 : 0)
+            | pick(word,  7,  0, 1)
+            | pick(word,  8,  1, 4)
+            | pick(word, 25,  5, 5)
+            ;
 }
-static inline uint32_t FIELD_IMM25(uint32_t word) {
-    return (word & 0x1FFFFFF);
+
+static inline int32_t FIELD_IMM_B(uint32_t word) {
+    return  ((word & 0x80000000) ? 0xFFFFF800 : 0)
+            | pick(word,  8,  1, 4)
+            | pick(word, 25,  5, 5)
+            | pick(word,  7, 11, 1)
+            ;
 }
-static inline uint32_t FIELD_IMM26(uint32_t word) {
-    return (word & 0x3FFFFFF);
+
+static inline int32_t FIELD_IMM_U(uint32_t word) {
+    return word & 0xFFFFC000;
 }
-static inline uint32_t FIELD_COP(uint32_t word) {
-    return ((word >> 26) & 3);
+
+static inline int32_t FIELD_IMM_J(uint32_t word) {
+    return  ((word & 0x80000000) ? 0xFFF00000 : 0)
+            | pick(word, 21,  1, 4)
+            | pick(word, 25,  5, 5)
+            | pick(word, 20, 11, 1)
+            | pick(word, 12, 12, 6)
+            ;
 }
